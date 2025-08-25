@@ -41,7 +41,8 @@ interface HomePageProps {
   // REMOVED: onPageChange: (page: string) => void;
   isAuthenticated: boolean;
   onShowAuth: () => void;
-  onShowSubscriptionPlans: (featureId?: string, expandAddons?: boolean) => void; // MODIFIED: Added expandAddons parameter
+  onShowSubscriptionPlans: (featureId?: string, expandAddons?: boolean) => void;
+  onShowSubscriptionPlansDirectly: () => void; // NEW PROP
   userSubscription: any; // New prop for user's subscription status
 }
 
@@ -51,7 +52,8 @@ export const HomePage: React.FC<HomePageProps> = ({
   // REMOVED: onPageChange,
   isAuthenticated,
   onShowAuth,
-  onShowSubscriptionPlans, // Destructure new prop
+  onShowSubscriptionPlans,
+  onShowSubscriptionPlansDirectly, // NEW PROP
   userSubscription // Destructure new prop
 }) => {
   const [showOptimizationDropdown, setShowOptimizationDropdown] = React.useState(false);
@@ -326,7 +328,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                       )}
                       <div className="p-4 border-t border-gray-100 dark:border-dark-300">
                         <button
-                          onClick={() => onShowSubscriptionPlans(undefined, true)} // MODIFIED: Pass true to expandAddons
+                          onClick={() => onShowSubscriptionPlans(undefined, true)}
                           className="w-full btn-primary py-2"
                         >
                           {userSubscription ? 'Upgrade Plan' : 'Choose Your Plan'}
@@ -341,7 +343,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             
             <div className="text-center mt-12">
               <button
-                onClick={() => onShowSubscriptionPlans(undefined, true)} // MODIFIED: Pass true to expandAddons
+                onClick={onShowSubscriptionPlansDirectly} // MODIFIED: Call the new direct function
                 className="btn-secondary px-8 py-3"
               >
                 View All Plans & Add-ons
