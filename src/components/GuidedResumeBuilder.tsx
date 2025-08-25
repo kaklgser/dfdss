@@ -33,13 +33,14 @@ import { ResumePreview } from './ResumePreview';
 import { ExportButtons } from './ExportButtons';
 import { paymentService } from '../services/paymentService';
 import { useNavigate } from 'react-router-dom';
+import { LoadingAnimation } from './LoadingAnimation'; // Import LoadingAnimation
 
 interface GuidedResumeBuilderProps {
   onNavigateBack: () => void;
   isAuthenticated: boolean;
   onShowAuth: () => void;
   userSubscription: any;
-  onShowSubscriptionPlans: (featureId?: string) => void; // MODIFIED: Changed prop name
+  onShowSubscriptionPlans: (featureId?: string) => void;
   onShowAlert: (title: string, message: string, type?: 'info' | 'success' | 'warning' | 'error', actionText?: string, onAction?: () => void) => void;
   refreshUserSubscription: () => Promise<void>;
 }
@@ -49,7 +50,7 @@ export const GuidedResumeBuilder: React.FC<GuidedResumeBuilderProps> = ({
   isAuthenticated,
   onShowAuth,
   userSubscription,
-  onShowSubscriptionPlans, // MODIFIED: Destructure the new prop name
+  onShowSubscriptionPlans,
   onShowAlert,
   refreshUserSubscription,
 }) => {
@@ -141,7 +142,6 @@ export const GuidedResumeBuilder: React.FC<GuidedResumeBuilderProps> = ({
 
     // Check subscription and guided build credits
     if (!userSubscription || (userSubscription.guidedBuildsTotal - userSubscription.guidedBuildsUsed) <= 0) {
-      // MODIFIED: Call with the correct prop name
       onShowSubscriptionPlans('guided-builder');
       return;
     }
@@ -178,6 +178,17 @@ export const GuidedResumeBuilder: React.FC<GuidedResumeBuilderProps> = ({
       setCurrentStep(currentStep - 1);
     }
   };
+
+  // Conditional rendering for LoadingAnimation
+  if (isGenerating) {
+    return (
+      <LoadingAnimation
+        message="Generating Your Professional Resume..."
+        submessage="Our AI is crafting your resume based on your inputs..."
+        type="generation"
+      />
+    );
+  }
 
   if (showPreview) {
     return (
@@ -940,10 +951,10 @@ const SkillsStep: React.FC<{ resumeData: ResumeData; setResumeData: React.Dispat
           key={index}
           skillCategory={skillCategory}
           index={index}
-          onUpdateCategory={onUpdateCategory}
-          onRemoveCategory={onRemoveCategory}
-          onAddSkill={onAddSkill}
-          onRemoveSkill={onRemoveSkill}
+          onUpdateCategory={updateSkillCategory}
+          onRemoveCategory={removeSkillCategory}
+          onAddSkill={addSkillToCategory}
+          onRemoveSkill={removeSkillFromCategory}
           canRemove={resumeData.skills.length > 1}
         />
       ))}
@@ -1102,4 +1113,3 @@ const ReviewStep: React.FC<{
     </div>
   );
 };
-
