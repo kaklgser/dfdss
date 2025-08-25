@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { FileUpload } from './FileUpload';
 import { getComprehensiveScore } from '../services/scoringService';
+import { LoadingAnimation } from './LoadingAnimation'; // Import LoadingAnimation
 import { ComprehensiveScore, ScoringMode, ExtractionResult } from '../types/resume';
 
 // Import Subscription type if it's not already globally available
@@ -173,6 +174,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
     return 'F';
   };
 
+  // Moved these helper functions outside the component for better readability and reusability
   const getConfidenceColor = (confidence: ConfidenceLevel) => {
     switch (confidence) {
       case 'High': return 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/20';
@@ -186,7 +188,6 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
     if (band.includes('Good') || band.includes('Fair')) return 'text-yellow-600 dark:text-yellow-400';
     return 'text-red-600 dark:text-red-400';
   };
-
   const getCategoryScoreColor = (score: number, maxScore: number) => {
     const percentage = (score / maxScore) * 100;
     if (percentage >= 90) return 'text-green-600';
@@ -225,6 +226,13 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   };
 
   return (
+    <>
+    {isAnalyzing && (
+      <LoadingAnimation
+        message={loadingStep}
+        submessage="Please wait while we analyze your resume."
+      />
+    )}
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 px-4 sm:px-0 dark:from-dark-50 dark:to-dark-200 transition-colors duration-300">
       {/* Header */}
       <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40 dark:bg-dark-50 dark:border-dark-300">
@@ -375,24 +383,15 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
               <div className="text-center">
                 <button
                   onClick={analyzeResume}
-                  disabled={!extractionResult.text.trim() || isAnalyzing || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))}
+                  disabled={!extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))}
                   className={`px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 flex items-center space-x-3 mx-auto shadow-xl hover:shadow-2xl ${
-                    !extractionResult.text.trim() || isAnalyzing || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))
+                    !extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))
                       ? 'bg-gray-400 cursor-not-allowed text-white'
                       : 'bg-gradient-to-r from-neon-cyan-500 to-neon-purple-500 hover:from-neon-cyan-400 hover:to-neon-purple-400 text-white hover:shadow-neon-cyan transform hover:scale-105'
                   }`}
                 >
-                  {isAnalyzing ? (
-                    <>
-                      <Loader2 className="w-6 h-6 animate-spin" />
-                      <span>{loadingStep || 'Analyzing Resume...'}</span>
-                    </>
-                  ) : (
-                    <>
                       <TrendingUp className="w-6 h-6" />
                       <span>{isAuthenticated ? 'Analyze My Resume' : 'Sign In to Analyze'}</span>
-                    </>
-                  )}
                 </button>
 
                 {!isAuthenticated && (
@@ -606,16 +605,18 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                   </h2>
                 </div>
                 <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {scoreResult.actions.map((action, index) => (
-                      <div key={index} className="flex items-start p-4 bg-purple-50 rounded-lg border border-purple-200 dark:bg-neon-purple-500/10 dark:border-neon-purple-400/50">
-                        <div className="bg-purple-100 w-6 h-6 rounded-full flex items-center justify-center mr-3 mt-0.5 flex-shrink-0 dark:bg-neon-purple-500/20">
-                          <span className="text-purple-600 dark:text-neon-purple-400 text-xs font-bold">{index + 1}</span>
-                        </div>
-                        <span className="text-purple-800 dark:text-neon-purple-300 text-sm">{action}</span>
-                      </div>
-                    ))}
-                  </div>
+                  <ul className="space-y-3">
+                    {scoreResult.actions.length > 0 ? (
+                      scoreResult.actions.map((action, index) => (
+                        <li key={index} className="flex items-start">
+                          <ArrowRight className="w-5 h-5 text-purple-500 dark:text-neon-purple-400 mr-3 mt-0.5 flex-shrink-0" />
+                          <span className="text-gray-700 dark:text-gray-300">{action}</span>
+                        </li>
+                      ))
+                    ) : (
+                      <p className="text-gray-600 dark:text-gray-300 italic">No specific recommendations at this time. Your resume looks great!</p>
+                    )}
+                  </ul>
                 </div>
               </div>
 
@@ -750,6 +751,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 };
+
