@@ -56,7 +56,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   onShowAlert,
   refreshUserSubscription, // DESTUCTURE THE NEW PROP
 }) => {
-  console.log('ResumeScoreChecker: Component rendered. userSubscription:', userSubscription);
+   console.log('ResumeScoreChecker: Component rendered. userSubscription:', userSubscription);
   const [extractionResult, setExtractionResult] = useState<ExtractionResult>({ text: '', extraction_mode: 'TEXT', trimmed: false });
   const [jobDescription, setJobDescription] = useState('');
   const [jobTitle, setJobTitle] = useState('');
@@ -242,466 +242,471 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
 
   return (
     <>
-      {isAnalyzing ? (
-        <LoadingAnimation
-          message={loadingStep}
-          submessage="Please wait while we analyze your resume."
-        />
-      ) : (
-        <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 px-4 sm:px-0 dark:from-dark-50 dark:to-dark-200 transition-colors duration-300">
-          {/* Header with persistent "Back to Home" button */}
-          <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40 dark:bg-dark-50 dark:border-dark-300">
+    {isAnalyzing ? (
+      <LoadingAnimation
+        message={loadingStep}
+        submessage="Please wait while we analyze your resume."
+      />
+    ) : (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50 px-4 sm:px-0 dark:from-dark-50 dark:to-dark-200 transition-colors duration-300">
+        {/* Header */}
+        <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40 dark:bg-dark-50 dark:border-dark-300">
+          <div className="container-responsive">
+            <div className="flex items-center justify-between h-16 py-3">
+              <button
+                onClick={onNavigateBack}
+                className="bg-gradient-to-r from-neon-cyan-500 to-neon-blue-500 text-white hover:from-neon-cyan-400 hover:to-neon-blue-400 active:from-neon-cyan-600 active:to-neon-blue-600 shadow-md hover:shadow-neon-cyan py-3 px-5 rounded-xl inline-flex items-center space-x-2 transition-all duration-200"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="hidden sm:block">Back to Home</span>
+              </button>
+
+              <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Resume Score Checker</h1>
+
+              <div className="w-24"></div> {/* Spacer for alignment */}
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Area (flex-grow to take remaining space, with centering) */}
+        <div className="flex-grow flex items-center justify-center py-8"> {/* Added py-8 for vertical padding */}
+          {/* Step 0: Choose Scoring Method */}
+          {currentStep === 0 && (
             <div className="container-responsive">
-              <div className="flex items-center justify-between h-16 py-3">
-                <button
-                  onClick={onNavigateBack}
-                  className="bg-gradient-to-r from-neon-cyan-500 to-neon-blue-500 text-white hover:from-neon-cyan-400 hover:to-neon-blue-400 active:from-neon-cyan-600 active:to-neon-blue-600 shadow-md hover:shadow-neon-cyan py-3 px-5 rounded-xl inline-flex items-center space-x-2 transition-all duration-200"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                  <span className="hidden sm:block">Back to Home</span>
-                </button>
+              <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
+                <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Choose Scoring Method</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button
+                      onClick={() => handleSelectScoringMode('jd_based')}
+                      className={`p-6 rounded-xl border-2 transition-all duration-300 text-left ${
+                        scoringMode === 'jd_based'
+                          ? 'border-blue-500 bg-blue-50 shadow-lg dark:border-neon-cyan-500 dark:bg-neon-cyan-500/20'
+                          : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50 dark:border-dark-300 dark:hover:border-neon-cyan-400 dark:hover:bg-neon-cyan-500/10'
+                      }`}
+                    >
+                      <div className="flex items-center mb-3">
+                        <Target className="w-6 h-6 text-blue-600 dark:text-neon-cyan-400 mr-3" />
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Score Against a Job</h3>
+                        <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium dark:bg-neon-cyan-500/20 dark:text-neon-cyan-300">Best</span>
+                      </div>
+                      <p className="text-gray-600 dark:text-gray-300 text-sm">Get a targeted score by comparing your resume against a specific job description and title.</p>
+                    </button>
 
-                <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Resume Score Checker</h1>
-
-                <div className="w-24"></div> {/* Spacer for alignment */}
+                    <button
+                      onClick={() => handleSelectScoringMode('general')}
+                      className={`p-6 rounded-xl border-2 transition-all duration-300 text-left ${
+                        scoringMode === 'general'
+                          ? 'border-purple-500 bg-purple-50 shadow-lg dark:border-neon-purple-500 dark:bg-neon-purple-500/20'
+                          : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50 dark:border-dark-300 dark:hover:border-neon-purple-400 dark:hover:bg-neon-purple-500/10'
+                      }`}
+                    >
+                      <div className="flex items-center mb-3">
+                        <BarChart3 className="w-6 h-6 text-purple-600 dark:text-neon-purple-400 mr-3" />
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">General Score</h3>
+                      </div>
+                      <p className="text-gray-600 dark:text-gray-300 text-sm">Get a general assessment of your resume quality against industry standards.</p>
+                      
+                      {scoringMode === 'general' && (
+                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-dark-300">
+                          <label className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={autoScoreOnUpload}
+                              onChange={(e) => setAutoScoreOnUpload(e.target.checked)}
+                              className="form-checkbox h-4 w-4 text-purple-600 rounded focus:ring-purple-500"
+                            />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">Auto-score on upload</span>
+                          </label>
+                        </div>
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+        )}
 
-          <div className="flex-grow flex items-center justify-center">
-            <div className="container-responsive">
-              {/* Step 0: Choose Scoring Method */}
-              {currentStep === 0 && (
-                <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
-                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Choose Scoring Method</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <button
-                        onClick={() => handleSelectScoringMode('jd_based')}
-                        className={`p-6 rounded-xl border-2 transition-all duration-300 text-left ${
-                          scoringMode === 'jd_based'
-                            ? 'border-blue-500 bg-blue-50 shadow-lg dark:border-neon-cyan-500 dark:bg-neon-cyan-500/20'
-                            : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50 dark:border-dark-300 dark:hover:border-neon-cyan-400 dark:hover:bg-neon-cyan-500/10'
-                        }`}
-                      >
-                        <div className="flex items-center mb-3">
-                          <Target className="w-6 h-6 text-blue-600 dark:text-neon-cyan-400 mr-3" />
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Score Against a Job</h3>
-                          <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium dark:bg-neon-cyan-500/20 dark:text-neon-cyan-300">Best</span>
-                        </div>
-                        <p className="text-gray-600 dark:text-gray-300 text-sm">Get a targeted score by comparing your resume against a specific job description and title.</p>
-                      </button>
-
-                      <button
-                        onClick={() => handleSelectScoringMode('general')}
-                        className={`p-6 rounded-xl border-2 transition-all duration-300 text-left ${
-                          scoringMode === 'general'
-                            ? 'border-purple-500 bg-purple-50 shadow-lg dark:border-neon-purple-500 dark:bg-neon-purple-500/20'
-                            : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50 dark:border-dark-300 dark:hover:border-neon-purple-400 dark:hover:bg-neon-purple-500/10'
-                        }`}
-                      >
-                        <div className="flex items-center mb-3">
-                          <BarChart3 className="w-6 h-6 text-purple-600 dark:text-neon-purple-400 mr-3" />
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">General Score</h3>
-                        </div>
-                        <p className="text-gray-600 dark:text-gray-300 text-sm">Get a general assessment of your resume quality against industry standards.</p>
-                        
-                        {scoringMode === 'general' && (
-                          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-dark-300">
-                            <label className="flex items-center space-x-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={autoScoreOnUpload}
-                                onChange={(e) => setAutoScoreOnUpload(e.target.checked)}
-                                className="form-checkbox h-4 w-4 text-purple-600 rounded focus:ring-purple-500"
-                              />
-                              <span className="text-sm text-gray-700 dark:text-gray-300">Auto-score on upload</span>
-                            </label>
-                          </div>
-                        )}
-                      </button>
-                    </div>
+        {/* Step 1: Input Fields */}
+        {currentStep === 1 && (
+          <div className="container-responsive">
+            <div className="max-w-4xl mx-auto">
+              <div className="mb-6">
+                <button
+                  onClick={() => setCurrentStep(0)}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-xl transition-colors flex items-center space-x-2 dark:bg-dark-300 dark:hover:bg-dark-400"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  <span>Back to Scoring Method</span>
+                </button>
+              </div>
+              <div className="space-y-8">
+                {/* Resume Upload Section */}
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                      <Upload className="w-5 h-5 mr-2 text-blue-600 dark:text-neon-cyan-400" />
+                      Upload Your Resume
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-300 mt-1">Upload your current resume for analysis</p>
+                  </div>
+                  <div className="p-6">
+                    <FileUpload onFileUpload={handleFileUpload} />
                   </div>
                 </div>
-              )}
 
-              {/* Step 1: Input Fields */}
-              {currentStep === 1 && (
-                <div className="space-y-8 max-w-4xl mx-auto">
-                  <div className="mb-6">
-                    <button
-                      onClick={() => setCurrentStep(0)}
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-xl transition-colors flex items-center space-x-2 dark:bg-dark-300 dark:hover:bg-dark-400"
-                    >
-                      <ArrowLeft className="w-5 h-5" />
-                      <span>Back to Scoring Method</span>
-                    </button>
-                  </div>
-                  
-                  {/* Resume Upload Section */}
+                {/* Job Title Section (Required for JD-based scoring) */}
+                {scoringMode === 'jd_based' && (
                   <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
-                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
+                    <div className="bg-gradient-to-r from-orange-50 to-red-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
                       <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
-                        <Upload className="w-5 h-5 mr-2 text-blue-600 dark:text-neon-cyan-400" />
-                        Upload Your Resume
+                        <Briefcase className="w-5 h-5 mr-2 text-orange-600 dark:text-orange-400" />
+                        Job Title *
                       </h2>
-                      <p className="text-gray-600 dark:text-gray-300 mt-1">Upload your current resume for analysis</p>
+                      <p className="text-gray-600 dark:text-gray-300 mt-1">Enter the exact job title you're targeting</p>
                     </div>
                     <div className="p-6">
-                      <FileUpload onFileUpload={handleFileUpload} />
-                    </div>
-                  </div>
-
-                  {/* Job Title Section (Required for JD-based scoring) */}
-                  {scoringMode === 'jd_based' && (
-                    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
-                      <div className="bg-gradient-to-r from-orange-50 to-red-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
-                          <Briefcase className="w-5 h-5 mr-2 text-orange-600 dark:text-orange-400" />
-                          Job Title *
-                        </h2>
-                        <p className="text-gray-600 dark:text-gray-300 mt-1">Enter the exact job title you're targeting</p>
-                      </div>
-                      <div className="p-6">
-                        <input
-                          type="text"
-                          value={jobTitle}
-                          onChange={(e) => setJobTitle(e.target.value)}
-                          placeholder="e.g., Senior Software Engineer, Product Manager, Data Scientist"
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Job Description Section (Optional) */}
-                  {(scoringMode === 'general' || scoringMode === 'jd_based') && (
-                  <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
-                    <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
-                      <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
-                        <Target className="w-5 h-5 mr-2 text-green-600 dark:text-neon-blue-400" />
-                        Job Description {scoringMode === 'jd_based' ? '*' : '(Optional)'}
-                      </h2>
-                      <p className="text-gray-600 dark:text-gray-300 mt-1">
-                        {scoringMode === 'jd_based' 
-                          ? 'Paste the complete job description for targeted analysis'
-                          : 'Add a job description for more targeted analysis'
-                        }
-                      </p>
-                    </div>
-                    <div className="p-6">
-                      <textarea
-                        value={jobDescription}
-                        onChange={(e) => setJobDescription(e.target.value)}
-                        placeholder={scoringMode === 'jd_based' 
-                          ? "Paste the complete job description here including requirements, responsibilities, and qualifications..."
-                          : "Paste the job description here for more specific analysis. If left empty, we'll use general industry standards."
-                        }
-                        className="w-full h-32 p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-neon-cyan-500 focus:border-neon-cyan-500 resize-none dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100"
+                      <input
+                        type="text"
+                        value={jobTitle}
+                        onChange={(e) => setJobTitle(e.target.value)}
+                        placeholder="e.g., Senior Software Engineer, Product Manager, Data Scientist"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100"
                       />
                     </div>
                   </div>
+                )}
+
+                {/* Job Description Section (Optional) */}
+                {(scoringMode === 'general' || scoringMode === 'jd_based') && (
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
+                  <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                      <Target className="w-5 h-5 mr-2 text-green-600 dark:text-neon-blue-400" />
+                      Job Description {scoringMode === 'jd_based' ? '*' : '(Optional)'}
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-300 mt-1">
+                      {scoringMode === 'jd_based' 
+                        ? 'Paste the complete job description for targeted analysis'
+                        : 'Add a job description for more targeted analysis'
+                      }
+                    </p>
+                  </div>
+                  <div className="p-6">
+                    <textarea
+                      value={jobDescription}
+                      onChange={(e) => setJobDescription(e.target.value)}
+                      placeholder={scoringMode === 'jd_based' 
+                        ? "Paste the complete job description here including requirements, responsibilities, and qualifications..."
+                        : "Paste the job description here for more specific analysis. If left empty, we'll use general industry standards."
+                      }
+                      className="w-full h-32 p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-neon-cyan-500 focus:border-neon-cyan-500 resize-none dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100"
+                    />
+                  </div>
+                </div>
+                )}
+
+                {/* Analyze Button */}
+                <div className="text-center">
+                  <button
+                    onClick={analyzeResume}
+                    disabled={!extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))}
+                    className={`px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 flex items-center space-x-3 mx-auto shadow-xl hover:shadow-2xl ${
+                      !extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))
+                        ? 'bg-gray-400 cursor-not-allowed text-white'
+                        : 'bg-gradient-to-r from-neon-cyan-500 to-neon-purple-500 hover:from-neon-cyan-400 hover:to-neon-purple-400 text-white hover:shadow-neon-cyan transform hover:scale-105'
+                    }`}
+                  >
+                        <TrendingUp className="w-6 h-6" />
+                        <span>{isAuthenticated ? 'Analyze My Resume' : 'Sign In to Analyze'}</span>
+                  </button>
+
+                  {!isAuthenticated && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
+                      Sign in to access our AI-powered resume analysis
+                    </p>
                   )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
-                  {/* Analyze Button */}
-                  <div className="text-center">
-                    <button
-                      onClick={analyzeResume}
-                      disabled={!extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))}
-                      className={`px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 flex items-center space-x-3 mx-auto shadow-xl hover:shadow-2xl ${
-                        !extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))
-                          ? 'bg-gray-400 cursor-not-allowed text-white'
-                          : 'bg-gradient-to-r from-neon-cyan-500 to-neon-purple-500 hover:from-neon-cyan-400 hover:to-neon-purple-400 text-white hover:shadow-neon-cyan transform hover:scale-105'
-                      }`}
-                    >
-                      <TrendingUp className="w-6 h-6" />
-                      <span>{isAuthenticated ? 'Analyze My Resume' : 'Sign In to Analyze'}</span>
-                    </button>
-
-                    {!isAuthenticated && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
-                        Sign in to access our AI-powered resume analysis
-                      </p>
-                    )}
+        {/* Step 2: Score Results */}
+        {currentStep === 2 && scoreResult && (
+          <div className="container-responsive">
+            <div className="max-w-4xl mx-auto">
+              {/* Cache Notice */}
+              {scoreResult.cached && (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 dark:bg-neon-cyan-500/10 dark:border-neon-cyan-400/50">
+                  <div className="flex items-center">
+                    <Calendar className="w-5 h-5 text-blue-600 dark:text-neon-cyan-400 mr-2" />
+                    <span className="text-blue-800 dark:text-neon-cyan-300 font-medium">
+                      Cached Result - This analysis was free (expires {scoreResult.cache_expires_at ? new Date(scoreResult.cache_expires_at).toLocaleDateString() : 'soon'})
+                    </span>
                   </div>
                 </div>
               )}
 
-              {/* Step 2: Score Results */}
-              {currentStep === 2 && scoreResult && (
-                <div className="space-y-8 max-w-4xl mx-auto">
-                  {/* Cache Notice */}
-                  {scoreResult.cached && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 dark:bg-neon-cyan-500/10 dark:border-neon-cyan-400/50">
-                      <div className="flex items-center">
-                        <Calendar className="w-5 h-5 text-blue-600 dark:text-neon-cyan-400 mr-2" />
-                        <span className="text-blue-800 dark:text-neon-cyan-300 font-medium">
-                          Cached Result - This analysis was free (expires {scoreResult.cache_expires_at ? new Date(scoreResult.cache_expires_at).toLocaleDateString() : 'soon'})
-                        </span>
+              {/* Score Overview */}
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
+                <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                    <Award className="w-5 h-5 mr-2 text-green-600 dark:text-neon-cyan-400" />
+                    Your Resume Score
+                  </h2>
+                  
+                  {/* Extraction Flags */}
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {extractionResult.extraction_mode === 'OCR' && (
+                      <span className="px-3 py-1 bg-orange-100 text-orange-800 text-xs rounded-full font-medium dark:bg-orange-900/20 dark:text-orange-300">
+                        <Eye className="w-3 h-3 inline mr-1" />
+                        OCR Used
+                      </span>
+                    )}
+                    {extractionResult.trimmed && (
+                      <span className="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full font-medium dark:bg-yellow-900/20 dark:text-yellow-300">
+                        <Info className="w-3 h-3 inline mr-1" />
+                        Content Trimmed
+                      </span>
+                    )}
+                    <span className={`px-3 py-1 text-xs rounded-full font-medium ${getConfidenceColor(scoreResult.confidence)}`}>
+                      <Shield className="w-3 h-3 inline mr-1" />
+                      {scoreResult.confidence} Confidence
+                    </span>
+                  </div>
+                </div>
+                <div className="p-8">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-center">
+                    {/* Score Circle */}
+                    <div className="text-center">
+                      <div className="relative w-32 h-32 mx-auto mb-4">
+                        <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
+                          <circle
+                            cx="60"
+                            cy="60"
+                            r="50"
+                            fill="none"
+                            stroke="#e5e7eb"
+                            strokeWidth="8"
+                          />
+                          <circle
+                            cx="60"
+                            cy="60"
+                            r="50"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="8"
+                            strokeDasharray={`${(scoreResult.overall / 100) * 314} 314`}
+                            strokeLinecap="round"
+                            className={`${getScoreColor(scoreResult.overall)} dark:stroke-neon-cyan-400`}
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-center">
+                            <div className={`text-3xl font-bold ${getScoreColor(scoreResult.overall)} dark:text-neon-cyan-400`}>
+                              {scoreResult.overall}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">Score</div>
+                          
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  )}
 
-                  {/* Score Overview */}
-                  <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
-                    <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
-                      <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
-                        <Award className="w-5 h-5 mr-2 text-green-600 dark:text-neon-cyan-400" />
-                        Your Resume Score
-                      </h2>
-                      
-                      {/* Extraction Flags */}
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        {extractionResult.extraction_mode === 'OCR' && (
-                          <span className="px-3 py-1 bg-orange-100 text-orange-800 text-xs rounded-full font-medium dark:bg-orange-900/20 dark:text-orange-300">
-                            <Eye className="w-3 h-3 inline mr-1" />
-                            OCR Used
-                          </span>
-                        )}
-                        {extractionResult.trimmed && (
-                          <span className="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full font-medium dark:bg-yellow-900/20 dark:text-yellow-300">
-                            <Info className="w-3 h-3 inline mr-1" />
-                            Content Trimmed
-                          </span>
-                        )}
-                        <span className={`px-3 py-1 text-xs rounded-full font-medium ${getConfidenceColor(scoreResult.confidence)}`}>
-                          <Shield className="w-3 h-3 inline mr-1" />
-                          {scoreResult.confidence} Confidence
-                        </span>
+                    {/* Match Band */}
+                    <div className="text-center">
+                      <div className="bg-gradient-to-br from-blue-50 to-purple-50 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 dark:from-neon-cyan-500/20 dark:to-neon-blue-500/20 dark:shadow-neon-cyan">
+                        <Award className="w-8 h-8 text-blue-600 dark:text-neon-cyan-400" />
                       </div>
+                      <div className={`text-lg font-bold ${getMatchBandColor(scoreResult.match_band)} mb-2`}>
+                        {scoreResult.match_band}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">Match Quality</div>
                     </div>
-                    <div className="p-8">
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-center">
-                        {/* Score Circle */}
-                        <div className="text-center">
-                          <div className="relative w-32 h-32 mx-auto mb-4">
-                            <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
-                              <circle
-                                cx="60"
-                                cy="60"
-                                r="50"
-                                fill="none"
-                                stroke="#e5e7eb"
-                                strokeWidth="8"
-                              />
-                              <circle
-                                cx="60"
-                                cy="60"
-                                r="50"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="8"
-                                strokeDasharray={`${(scoreResult.overall / 100) * 314} 314`}
-                                strokeLinecap="round"
-                                className={`${getScoreColor(scoreResult.overall)} dark:stroke-neon-cyan-400`}
-                              />
-                            </svg>
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="text-center">
-                                <div className={`text-3xl font-bold ${getScoreColor(scoreResult.overall)} dark:text-neon-cyan-400`}>
-                                  {scoreResult.overall}
-                                </div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400">Score</div>
-                              
-                              </div>
-                            </div>
+
+                    {/* Interview Probability */}
+                    <div className="text-center">
+                      <div className="bg-gradient-to-br from-green-50 to-emerald-50 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 dark:from-neon-blue-500/20 dark:to-neon-purple-500/20 dark:shadow-neon-blue">
+                        <TrendingUp className="w-8 h-8 text-green-600 dark:text-neon-blue-400" />
+                      </div>
+                      <div className="text-lg font-bold text-green-600 dark:text-neon-blue-400 mb-2">
+                        {scoreResult.interview_probability_range}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">Interview Chance</div>
+                    </div>
+
+                    {/* Analysis Summary */}
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Overall Analysis</h3>
+                      <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm mb-4">{scoreResult.analysis}</p>
+
+                      <div className="space-y-2">
+                        <div className="bg-green-50 p-4 rounded-lg border border-green-200 dark:bg-neon-cyan-500/10 dark:border-neon-cyan-400/50">
+                          <h4 className="font-medium text-green-800 dark:text-neon-cyan-300 mb-1 text-xs">Key Strengths</h4>
+                          <div className="text-xs text-green-700 dark:text-gray-300">
+                            {scoreResult.keyStrengths.length} key strengths identified
                           </div>
                         </div>
-
-                        {/* Match Band */}
-                        <div className="text-center">
-                          <div className="bg-gradient-to-br from-blue-50 to-purple-50 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 dark:from-neon-cyan-500/20 dark:to-neon-blue-500/20 dark:shadow-neon-cyan">
-                            <Award className="w-8 h-8 text-blue-600 dark:text-neon-cyan-400" />
-                          </div>
-                          <div className={`text-lg font-bold ${getMatchBandColor(scoreResult.match_band)} mb-2`}>
-                            {scoreResult.match_band}
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">Match Quality</div>
-                        </div>
-
-                        {/* Interview Probability */}
-                        <div className="text-center">
-                          <div className="bg-gradient-to-br from-green-50 to-emerald-50 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 dark:from-neon-blue-500/20 dark:to-neon-purple-500/20 dark:shadow-neon-blue">
-                            <TrendingUp className="w-8 h-8 text-green-600 dark:text-neon-blue-400" />
-                          </div>
-                          <div className="text-lg font-bold text-green-600 dark:text-neon-blue-400 mb-2">
-                            {scoreResult.interview_probability_range}
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">Interview Chance</div>
-                        </div>
-
-                        {/* Analysis Summary */}
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Overall Analysis</h3>
-                          <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm mb-4">{scoreResult.analysis}</p>
-
-                          <div className="space-y-2">
-                            <div className="bg-green-50 p-4 rounded-lg border border-green-200 dark:bg-neon-cyan-500/10 dark:border-neon-cyan-400/50">
-                              <h4 className="font-medium text-green-800 dark:text-neon-cyan-300 mb-1 text-xs">Key Strengths</h4>
-                              <div className="text-xs text-green-700 dark:text-gray-300">
-                                {scoreResult.keyStrengths.length} key strengths identified
-                              </div>
-                            </div>
-                            <div className="bg-orange-50 p-4 rounded-lg border border-orange-200 dark:bg-orange-900/20 dark:border-orange-500/50">
-                              <h4 className="font-medium text-orange-800 dark:text-orange-300 mb-1 text-xs">Areas for Improvement</h4>
-                              <div className="text-xs text-orange-700 dark:text-orange-400">
-                                {scoreResult.improvementAreas.length} areas for improvement
-                              </div>
-                            </div>
+                        <div className="bg-orange-50 p-4 rounded-lg border border-orange-200 dark:bg-orange-900/20 dark:border-orange-500/50">
+                          <h4 className="font-medium text-orange-800 dark:text-orange-300 mb-1 text-xs">Areas for Improvement</h4>
+                          <div className="text-xs text-orange-700 dark:text-orange-400">
+                            {scoreResult.improvementAreas.length} areas for improvement
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  {/* 16-Metric Breakdown */}
+                {/* 16-Metric Breakdown */}
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
+                  <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                      <BarChart3 className="w-5 h-5 mr-2 text-indigo-600 dark:text-neon-purple-400" />
+                      16-Metric Detailed Breakdown
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-300 mt-1">Comprehensive analysis across all scoring criteria</p>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {scoreResult.breakdown.map((metric, index) => (
+                        <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-200 dark:bg-dark-200 dark:border-dark-300">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{metric.name}</h4>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">{metric.weight_pct}%</span>
+                          </div>
+                          <div className="flex items-center mb-2">
+                            <span className={`text-lg font-bold ${getCategoryScoreColor(metric.score, metric.max_score)} dark:text-neon-cyan-400`}>
+                              {metric.score}
+                            </span>
+                            <span className="text-gray-500 dark:text-gray-400">/{metric.max_score}</span>
+                            <div className="ml-auto text-xs text-gray-600 dark:text-gray-400">
+                              +{metric.contribution.toFixed(1)} pts
+                            </div>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2 mb-2 dark:bg-dark-300">
+                            <div
+                              className={`h-2 rounded-full transition-all duration-300 ${
+                                (metric.score / metric.max_score) >= 0.9 ? 'bg-green-500' :
+                                (metric.score / metric.max_score) >= 0.7 ? 'bg-yellow-500' : 'bg-red-500'
+                              }`}
+                              style={{ width: `${(metric.score / metric.max_score) * 100}%` }}
+                            />
+                          </div>
+                          <p className="text-xs text-gray-700 dark:text-gray-300">{metric.details}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Missing Keywords (JD-based only) */}
+                {scoringMode === 'jd_based' && scoreResult.missing_keywords.length > 0 && (
                   <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
-                    <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
+                    <div className="bg-gradient-to-r from-orange-50 to-red-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
                       <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
-                        <BarChart3 className="w-5 h-5 mr-2 text-indigo-600 dark:text-neon-purple-400" />
-                        16-Metric Detailed Breakdown
+                        <Search className="w-5 h-5 mr-2 text-orange-600 dark:text-orange-400" />
+                        Missing Keywords from Job Description
                       </h2>
-                      <p className="text-gray-600 dark:text-gray-300 mt-1">Comprehensive analysis across all scoring criteria</p>
                     </div>
                     <div className="p-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {scoreResult.breakdown.map((metric, index) => (
-                          <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-200 dark:bg-dark-200 dark:border-dark-300">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{metric.name}</h4>
-                              <span className="text-xs text-gray-500 dark:text-gray-400">{metric.weight_pct}%</span>
-                            </div>
-                            <div className="flex items-center mb-2">
-                              <span className={`text-lg font-bold ${getCategoryScoreColor(metric.score, metric.max_score)} dark:text-neon-cyan-400`}>
-                                {metric.score}
-                              </span>
-                              <span className="text-gray-500 dark:text-gray-400">/{metric.max_score}</span>
-                              <div className="ml-auto text-xs text-gray-600 dark:text-gray-400">
-                                +{metric.contribution.toFixed(1)} pts
-                              </div>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2 mb-2 dark:bg-dark-300">
-                              <div
-                                className={`h-2 rounded-full transition-all duration-300 ${
-                                  (metric.score / metric.max_score) >= 0.9 ? 'bg-green-500' :
-                                  (metric.score / metric.max_score) >= 0.7 ? 'bg-yellow-500' : 'bg-red-500'
-                                }`}
-                                style={{ width: `${(metric.score / metric.max_score) * 100}%` }}
-                              />
-                            </div>
-                            <p className="text-xs text-gray-700 dark:text-gray-300">{metric.details}</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {scoreResult.missing_keywords.map((keyword, index) => (
+                          <div key={index} className="bg-orange-50 border border-orange-200 rounded-lg p-3 dark:bg-orange-900/20 dark:border-orange-500/50">
+                            <span className="font-medium text-orange-800 dark:text-orange-300">{keyword}</span>
                           </div>
                         ))}
                       </div>
+                      <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg dark:bg-neon-cyan-500/10 dark:border-neon-cyan-400/50">
+                        <p className="text-blue-800 dark:text-neon-cyan-300 text-sm">
+                          💡 <strong>Tip:</strong> Add these keywords to your skills section, work experience bullets, or project descriptions to improve your ATS score.
+                        </p>
+                      </div>
                     </div>
                   </div>
+                )}
 
-                  {/* Missing Keywords (JD-based only) */}
-                  {scoringMode === 'jd_based' && scoreResult.missing_keywords.length > 0 && (
-                    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
-                      <div className="bg-gradient-to-r from-orange-50 to-red-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
-                          <Search className="w-5 h-5 mr-2 text-orange-600 dark:text-orange-400" />
-                          Missing Keywords from Job Description
-                        </h2>
-                      </div>
-                      <div className="p-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                          {scoreResult.missing_keywords.map((keyword, index) => (
-                            <div key={index} className="bg-orange-50 border border-orange-200 rounded-lg p-3 dark:bg-orange-900/20 dark:border-orange-500/50">
-                              <span className="font-medium text-orange-800 dark:text-orange-300">{keyword}</span>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg dark:bg-neon-cyan-500/10 dark:border-neon-cyan-400/50">
-                          <p className="text-blue-800 dark:text-neon-cyan-300 text-sm">
-                            💡 <strong>Tip:</strong> Add these keywords to your skills section, work experience bullets, or project descriptions to improve your ATS score.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                {/* Actionable Fixes */}
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
+                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                      <Lightbulb className="w-5 h-5 mr-2 text-purple-600 dark:text-neon-purple-400" />
+                      Actionable Fixes
+                    </h2>
+                  </div>
+                  <div className="p-6">
+                    <ul className="space-y-3">
+                      {scoreResult.actions.length > 0 ? (
+                        scoreResult.actions.map((action, index) => (
+                          <li key={index} className="flex items-start">
+                            <ArrowRight className="w-5 h-5 text-purple-500 dark:text-neon-purple-400 mr-3 mt-0.5 flex-shrink-0" />
+                            <span className="text-gray-700 dark:text-gray-300">{action}</span>
+                          </li>
+                        ))
+                      ) : (
+                        <p className="text-gray-600 dark:text-gray-300 italic">No specific recommendations at this time. Your resume looks great!</p>
+                      )}
+                    </ul>
+                  </div>
+                </div>
 
-                  {/* Actionable Fixes */}
+                {/* Example Rewrites */}
+                {(scoreResult.example_rewrites.experience || scoreResult.example_rewrites.projects) && (
                   <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
-                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
+                    <div className="bg-gradient-to-r from-green-50 to-teal-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
                       <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
-                        <Lightbulb className="w-5 h-5 mr-2 text-purple-600 dark:text-neon-purple-400" />
-                        Actionable Fixes
+                        <FileText className="w-5 h-5 mr-2 text-green-600 dark:text-neon-cyan-400" />
+                        Example Rewrites
                       </h2>
                     </div>
-                    <div className="p-6">
-                      <ul className="space-y-3">
-                        {scoreResult.actions.length > 0 ? (
-                          scoreResult.actions.map((action, index) => (
-                            <li key={index} className="flex items-start">
-                              <ArrowRight className="w-5 h-5 text-purple-500 dark:text-neon-purple-400 mr-3 mt-0.5 flex-shrink-0" />
-                              <span className="text-gray-700 dark:text-gray-300">{action}</span>
-                            </li>
-                          ))
-                        ) : (
-                          <p className="text-gray-600 dark:text-gray-300 italic">No specific recommendations at this time. Your resume looks great!</p>
-                        )}
-                      </ul>
-                    </div>
-                  </div>
-
-                  {/* Example Rewrites */}
-                  {(scoreResult.example_rewrites.experience || scoreResult.example_rewrites.projects) && (
-                    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
-                      <div className="bg-gradient-to-r from-green-50 to-teal-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
-                          <FileText className="w-5 h-5 mr-2 text-green-600 dark:text-neon-cyan-400" />
-                          Example Rewrites
-                        </h2>
-                      </div>
-                      <div className="p-6 space-y-6">
-                        {scoreResult.example_rewrites.experience && (
-                          <div>
-                            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
-                              <Briefcase className="w-4 h-4 mr-2 text-blue-600 dark:text-neon-cyan-400" />
-                              Work Experience Improvement
-                            </h3>
-                            <div className="space-y-3">
-                              <div className="bg-red-50 border border-red-200 rounded-lg p-3 dark:bg-red-900/20 dark:border-red-500/50">
-                                <div className="text-xs font-medium text-red-800 dark:text-red-300 mb-1">Before:</div>
-                                <p className="text-sm text-red-700 dark:text-red-400">{scoreResult.example_rewrites.experience.original}</p>
-                              </div>
-                              <div className="bg-green-50 border border-green-200 rounded-lg p-3 dark:bg-neon-cyan-500/10 dark:border-neon-cyan-400/50">
-                                <div className="text-xs font-medium text-green-800 dark:text-neon-cyan-300 mb-1">After:</div>
-                                <p className="text-sm text-green-700 dark:text-neon-cyan-400">{scoreResult.example_rewrites.experience.improved}</p>
-                              </div>
-                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 dark:bg-neon-blue-500/10 dark:border-neon-blue-400/50">
-                                <div className="text-xs font-medium text-blue-800 dark:text-neon-blue-300 mb-1">Why this works:</div>
-                                <p className="text-sm text-blue-700 dark:text-neon-blue-400">{scoreResult.example_rewrites.projects.explanation}</p>
-                              </div>
+                    <div className="p-6 space-y-6">
+                      {scoreResult.example_rewrites.experience && (
+                        <div>
+                          <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                            <Briefcase className="w-4 h-4 mr-2 text-blue-600 dark:text-neon-cyan-400" />
+                            Work Experience Improvement
+                          </h3>
+                          <div className="space-y-3">
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 dark:bg-red-900/20 dark:border-red-500/50">
+                              <div className="text-xs font-medium text-red-800 dark:text-red-300 mb-1">Before:</div>
+                              <p className="text-sm text-red-700 dark:text-red-400">{scoreResult.example_rewrites.experience.original}</p>
+                            </div>
+                            <div className="bg-green-50 border border-green-200 rounded-lg p-3 dark:bg-neon-cyan-500/10 dark:border-neon-cyan-400/50">
+                              <div className="text-xs font-medium text-green-800 dark:text-neon-cyan-300 mb-1">After:</div>
+                              <p className="text-sm text-green-700 dark:text-neon-cyan-400">{scoreResult.example_rewrites.experience.improved}</p>
+                            </div>
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 dark:bg-neon-blue-500/10 dark:border-neon-blue-400/50">
+                              <div className="text-xs font-medium text-blue-800 dark:text-neon-blue-300 mb-1">Why this works:</div>
+                              <p className="text-sm text-blue-700 dark:text-neon-blue-400">{scoreResult.example_rewrites.experience.explanation}</p>
                             </div>
                           </div>
-                        )}
+                        </div>
+                      )}
 
-                        {scoreResult.example_rewrites.projects && (
-                          <div>
-                            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
-                              <Target className="w-4 h-4 mr-2 text-purple-600 dark:text-neon-purple-400" />
-                              Project Description Improvement
-                            </h3>
-                            <div className="space-y-3">
-                              <div className="bg-red-50 border border-red-200 rounded-lg p-3 dark:bg-red-900/20 dark:border-red-500/50">
-                                <div className="text-xs font-medium text-red-800 dark:text-red-300 mb-1">Before:</div>
-                                <p className="text-sm text-red-700 dark:text-red-400">{scoreResult.example_rewrites.projects.original}</p>
-                              </div>
-                              <div className="bg-green-50 border border-green-200 rounded-lg p-3 dark:bg-neon-cyan-500/10 dark:border-neon-cyan-400/50">
-                                <div className="text-xs font-medium text-green-800 dark:text-neon-cyan-300 mb-1">After:</div>
-                                <p className="text-sm text-green-700 dark:text-neon-cyan-400">{scoreResult.example_rewrites.projects.improved}</p>
-                              </div>
-                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 dark:bg-neon-blue-500/10 dark:border-neon-blue-400/50">
-                                <div className="text-xs font-medium text-blue-800 dark:text-neon-blue-300 mb-1">Why this works:</div>
-                                <p className="text-sm text-blue-700 dark:text-neon-blue-400">{scoreResult.example_rewrites.projects.explanation}</p>
-                              </div>
+                      {scoreResult.example_rewrites.projects && (
+                        <div>
+                          <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                            <Target className="w-4 h-4 mr-2 text-purple-600 dark:text-neon-purple-400" />
+                            Project Description Improvement
+                          </h3>
+                          <div className="space-y-3">
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 dark:bg-red-900/20 dark:border-red-500/50">
+                              <div className="text-xs font-medium text-red-800 dark:text-red-300 mb-1">Before:</div>
+                              <p className="text-sm text-red-700 dark:text-red-400">{scoreResult.example_rewrites.projects.original}</p>
+                            </div>
+                            <div className="bg-green-50 border border-green-200 rounded-lg p-3 dark:bg-neon-cyan-500/10 dark:border-neon-cyan-400/50">
+                              <div className="text-xs font-medium text-green-800 dark:text-neon-cyan-300 mb-1">After:</div>
+                              <p className="text-sm text-green-700 dark:text-neon-cyan-400">{scoreResult.example_rewrites.projects.improved}</p>
+                            </div>
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 dark:bg-neon-blue-500/10 dark:border-neon-blue-400/50">
+                              <div className="text-xs font-medium text-blue-800 dark:text-neon-blue-300 mb-1">Why this works:</div>
+                              <p className="text-sm text-blue-700 dark:text-neon-blue-400">{scoreResult.example_rewrites.projects.explanation}</p>
                             </div>
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
@@ -774,11 +779,12 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                     </button>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </>
   );
 };
+
