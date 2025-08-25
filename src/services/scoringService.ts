@@ -20,7 +20,7 @@ const generateCacheKey = async (resumeText: string, jobDescription?: string, job
   
   const resumeHash = await crypto.subtle.digest('SHA-256', resumeData);
   const jdHash = await crypto.subtle.digest('SHA-256', jdData);
-  const titleHash = await crypto.subtle.digest('SHA-256', titleData);
+  const titleHash = await crypto.subtle.digest('SHA-256', titleHashData); // Corrected variable name
   
   const resumeHashArray = Array.from(new Uint8Array(resumeHash));
   const jdHashArray = Array.from(new Uint8Array(jdHash));
@@ -113,7 +113,7 @@ Respond ONLY with valid JSON in this exact structure:
 {
   "overall": 0-100,
   "match_band": "Excellent Match|Very Good Match|Good Match|Fair Match|Below Average|Poor Match|Very Poor|Inadequate|Minimal Match|No Match",
-  "interview_probability_range": "95-100%|85-94%|70-84%|50-69%|30-49%|15-29%|5-14%|1-4%|0.1-1%|0%",
+  "interview_probability_range": "95-100%|85-94%|70-84%|50-69%|30-49%|15-29%|5-14%|0.1-1%|0%",
   "confidence": "High|Medium|Low",
   "rubric_version": "ats_v1.0-weights140",
   "weighting_mode": "${scoringMode === 'jd_based' ? 'JD' : 'GENERAL'}",
@@ -150,62 +150,113 @@ Respond ONLY with valid JSON in this exact structure:
   "keyStrengths": ["strength1", "strength2", "strength3"],
   "improvementAreas": ["area1", "area2", "area3"],
   "recommendations": ["rec1", "rec2", "rec3"]
-}`;
+}
+`;
 
-  try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: 'POST',
-      headers: {
-        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-        "HTTP-Referer": "https://primoboost.ai",
-        "X-Title": "PrimoBoost AI"
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "user",
-            content: prompt
-          }
-        ]
-      }),
-    });
+  const MAX_RETRIES = 3;
+  let retryCount = 0;
+  let delay = 1000; // 1 second
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('OpenRouter API error response:', errorText);
-      throw new Error(`OpenRouter API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const result = data?.choices?.[0]?.message?.content;
-
-    if (!result) {
-      throw new Error('No response content from OpenRouter API');
-    }
-
-    const cleanedResult = result.replace(/```json/g, '').replace(/```/g, '').trim();
-
+  while (retryCount < MAX_RETRIES) {
     try {
-      const parsedResult = JSON.parse(cleanedResult);
-      
-      // Cache the result
-      scoreCache.set(cacheKey, {
-        result: parsedResult,
-        timestamp: Date.now()
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: 'POST',
+        headers: {
+          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          "HTTP-Referer": "https://primoboost.ai",
+          "X-Title": "PrimoBoost AI"
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            {
+              role: "user",
+              content: prompt
+            }
+          ]
+        }),
       });
-      
-      return parsedResult;
-    } catch (parseError) {
-      console.error('JSON parsing error:', parseError);
-      console.error('Raw response:', cleanedResult);
-      throw new Error('Invalid JSON response from OpenRouter API');
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('OpenRouter API error response:', errorText);
+        // Retry for server errors or rate limits
+        if (response.status === 429 || response.status >= 500) {
+          console.warn(`Retrying due to API error: ${response.status}. Attempt ${retryCount + 1}/${MAX_RETRIES}.`);
+          retryCount++;
+          await new Promise(resolve => setTimeout(resolve, delay));
+          delay *= 2; // Exponential backoff
+          continue; // Continue to the next retry
+        } else {
+          // Non-retryable error
+          throw new Error(`OpenRouter API error: ${response.status} - ${errorText}`);
+        }
+      }
+
+      const data = await response.json();
+      const result = data?.choices?.[0]?.message?.content;
+
+      if (!result) {
+        throw new Error('No response content from OpenRouter API');
+      }
+
+      const cleanedResult = result.replace(/```json/g, '').replace(/```/g, '').trim();
+
+      try {
+        const parsedResult = JSON.parse(cleanedResult);
+        
+        // Cache the result
+        scoreCache.set(cacheKey, {
+          result: parsedResult,
+          timestamp: Date.now()
+        });
+        
+        return parsedResult;
+      } catch (parseError) {
+        console.error('JSON parsing error:', parseError);
+        console.error('Raw response that failed to parse:', cleanedResult);
+        // If JSON parsing fails, retry the API call
+        retryCount++;
+        await new Promise(resolve => setTimeout(resolve, delay));
+        delay *= 2; // Exponential backoff
+        continue; // Continue to the next retry
+      }
+    } catch (error) {
+      console.error('Error calling OpenRouter API for comprehensive scoring:', error);
+      // If API call fails (e.g., network error), retry
+      retryCount++;
+      await new Promise(resolve => setTimeout(resolve, delay));
+      delay *= 2; // Exponential backoff
+      continue; // Continue to the next retry
     }
-  } catch (error) {
-    console.error('Error calling OpenRouter API for comprehensive scoring:', error);
-    throw new Error('Failed to analyze resume comprehensively. Please try again.');
   }
+
+  // If all retries fail, return a default error score
+  console.error(`All ${MAX_RETRIES} retries failed. Returning default error score.`);
+  return {
+    overall: 0,
+    match_band: "No Match",
+    interview_probability_range: "0%",
+    confidence: "Low",
+    rubric_version: "ats_v1.0-weights140",
+    weighting_mode: scoringMode === 'jd_based' ? 'JD' : 'GENERAL',
+    extraction_mode: extractionMode,
+    trimmed: trimmed,
+    job_title: jobTitle || "N/A",
+    breakdown: [],
+    missing_keywords: [],
+    actions: ["Failed to get score. Please try again later."],
+    example_rewrites: {
+      experience: { original: "", improved: "", explanation: "" },
+      projects: { original: "", improved: "", explanation: "" }
+    },
+    notes: ["AI response could not be parsed or API call failed repeatedly."],
+    analysis: "Could not generate a comprehensive score due to repeated errors. Please ensure your input is valid and try again.",
+    keyStrengths: [],
+    improvementAreas: [],
+    recommendations: ["Please try analyzing your resume again.", "If the issue persists, contact support."]
+  };
 };
 
 export const applyScoreFloor = (score: number, resumeData: ResumeData): number => {
@@ -437,7 +488,6 @@ Respond ONLY with valid JSON in this exact structure:
       "score": 0,
       "maxScore": 9,
       "details": "Concise explanation (max 10 words) of style score, focusing on professional tone, formatting consistency, and clarity of language. Example: 'Inconsistent use of bolding for job titles and company names. Maintain a consistent formatting style throughout the document.'",
-      "professionalTone": true,
       "consistencyInFormatting": true,
       "clarityOfLanguage": true,
       "overallPolish": true
@@ -603,7 +653,7 @@ export const generateBeforeScore = (resumeText: string): MatchScore => {
   };
 };
 
-export const generateAfterScore = async (
+export const generateAfterScore = (
   resumeData: ResumeData,
   jobDescription: string
 ): Promise<MatchScore> => {
@@ -633,3 +683,4 @@ export const generateAfterScore = async (
     improvementAreas,
   };
 };
+
