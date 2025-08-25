@@ -53,6 +53,9 @@ function App() {
   const [showPlanSelectionModal, setShowPlanSelectionModal] = useState(false);
   const [planSelectionFeatureId, setPlanSelectionFeatureId] = useState<string | undefined>(undefined);
 
+  // NEW: State to control initial expansion of add-ons in SubscriptionPlans modal
+  const [initialExpandAddons, setInitialExpandAddons] = useState(false);
+
   const handleMobileMenuToggle = () => {
     setShowMobileMenu(!showMobileMenu);
   };
@@ -69,7 +72,8 @@ function App() {
       handleShowProfile('wallet');
       setShowMobileMenu(false);
     } else if (path === 'subscription-plans') {
-      handleShowPlanSelection();
+      // When navigating directly to subscription-plans, don't expand add-ons by default
+      handleShowPlanSelection(undefined, false); 
       setShowMobileMenu(false);
     } else {
       navigate(path);
@@ -97,9 +101,11 @@ function App() {
     navigate('/');
   };
 
-  const handleShowPlanSelection = (featureId?: string) => {
-     console.log('App.tsx: handleShowPlanSelection called with featureId:', featureId);
+  // MODIFIED: handleShowPlanSelection now accepts expandAddons parameter
+  const handleShowPlanSelection = (featureId?: string, expandAddons: boolean = false) => {
+     console.log('App.tsx: handleShowPlanSelection called with featureId:', featureId, 'expandAddons:', expandAddons);
     setPlanSelectionFeatureId(featureId);
+    setInitialExpandAddons(expandAddons); // Set the new state
     setShowPlanSelectionModal(true);
   };
 
@@ -253,7 +259,7 @@ function App() {
               onShowAuth={handleShowAuth}
               onShowProfile={handleShowProfile}
               onNavigateBack={handleNavigateHome}
-              onShowSubscriptionPlans={handleShowPlanSelection}
+              onShowPlanSelection={handleShowPlanSelection}
               userSubscription={userSubscription}
               refreshUserSubscription={refreshUserSubscription}
             />
@@ -394,6 +400,7 @@ function App() {
           onNavigateBack={() => setShowSubscriptionPlans(false)}
           onSubscriptionSuccess={handleSubscriptionSuccess}
           onShowAlert={handleShowAlert}
+          initialExpandAddons={initialExpandAddons} {/* NEW PROP */}
         />
       )}
 
@@ -485,3 +492,4 @@ const AuthButtons: React.FC<{
   );
 };
 export default App;
+
