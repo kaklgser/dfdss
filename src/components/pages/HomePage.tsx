@@ -41,7 +41,7 @@ interface HomePageProps {
   // REMOVED: onPageChange: (page: string) => void;
   isAuthenticated: boolean;
   onShowAuth: () => void;
-  onShowSubscriptionPlans: () => void; // MODIFIED: This now calls the PlanSelectionModal
+  onShowSubscriptionPlans: (featureId?: string, expandAddons?: boolean) => void; // MODIFIED: Added expandAddons parameter
   userSubscription: any; // New prop for user's subscription status
 }
 
@@ -104,7 +104,7 @@ export const HomePage: React.FC<HomePageProps> = ({
       return;
     }
 
-    // If authenticated and credits are available, navigate to the page.
+    // If authenticated or feature does not require auth, navigate to the page.
     if (isAuthenticated || !feature.requiresAuth) { // Allow non-auth features to navigate
       console.log('User is authenticated or feature does not require auth. Navigating to page.');
       navigate(feature.id); // Use navigate
@@ -326,7 +326,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                       )}
                       <div className="p-4 border-t border-gray-100 dark:border-dark-300">
                         <button
-                          onClick={onShowSubscriptionPlans}
+                          onClick={() => onShowSubscriptionPlans(undefined, true)} // MODIFIED: Pass true to expandAddons
                           className="w-full btn-primary py-2"
                         >
                           {userSubscription ? 'Upgrade Plan' : 'Choose Your Plan'}
@@ -341,7 +341,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             
             <div className="text-center mt-12">
               <button
-                onClick={onShowSubscriptionPlans}
+                onClick={() => onShowSubscriptionPlans(undefined, true)} // MODIFIED: Pass true to expandAddons
                 className="btn-secondary px-8 py-3"
               >
                 View All Plans & Add-ons
