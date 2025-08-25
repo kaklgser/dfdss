@@ -408,7 +408,7 @@ function App() {
           onNavigateBack={() => setShowSubscriptionPlans(false)}
           onSubscriptionSuccess={handleSubscriptionSuccess}
           onShowAlert={handleShowAlert}
-          initialExpandAddons={initialExpandAddons} {/* NEW PROP */}
+          initialExpandAddons={initialExpandAddons}
         />
       )}
 
