@@ -1,503 +1,403 @@
-// src/App.tsx
+// src/components/pages/HomePage.tsx
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Home, Info, BookOpen, Phone, FileText, LogIn, LogOut, User, Wallet, Sparkles } from 'lucide-react';
-import { useAuth } from './contexts/AuthContext';
-import { Header } from './components/Header';
-import { Navigation } from './components/navigation/Navigation';
-import ResumeOptimizer from './components/ResumeOptimizer';
-import { HomePage } from './components/pages/HomePage';
-import { GuidedResumeBuilder } from './components/GuidedResumeBuilder';
-import { ResumeScoreChecker } from './components/ResumeScoreChecker';
-import { LinkedInMessageGenerator } from './components/LinkedInMessageGenerator';
-import { AboutUs } from './components/pages/AboutUs';
-import { Contact } from './components/pages/Contact';
-import { Tutorials } from './components/pages/Tutorials';
-import { AuthModal } from './components/auth/AuthModal';
-import { UserProfileManagement } from './components/UserProfileManagement';
-import { SubscriptionPlans } from './components/payment/SubscriptionPlans'; // Ensure this import is present
-import { paymentService } from './services/paymentService';
-import { AlertModal } from './components/AlertModal';
-import { ToolsAndPagesNavigation } from './components/pages/ToolsAndPagesNavigation';
-import { Routes, Route, useNavigate } from 'react-router-dom';
-import { PlanSelectionModal } from './components/payment/PlanSelectionModal';
-import { PricingPage } from './components/pages/PricingPage';
+import {
+  FileText,
+  PlusCircle,
+  Target,
+  ArrowRight,
+  Sparkles,
+  CheckCircle,
+  TrendingUp,
+  Star,
+  Users,
+  Zap,
+  Award,
+  Crown,
+  MessageCircle,
+  Check,
+  Plus,
+  ChevronDown,
+  ChevronUp
+} from 'lucide-react';
+// Assuming these imports exist in the user's project
+// import { paymentService } from '../../services/paymentService';
 
-function App() {
-  const { isAuthenticated, user, markProfilePromptSeen, isLoading } = useAuth();
-  const navigate = useNavigate();
+// Mocking the imported functions and types for a self-contained example.
+// In a real application, these would be external.
+const paymentService = {
+  // A mock service for payment-related functions
+};
 
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showProfileManagement, setShowProfileManagement] = useState(false);
-  const [showSubscriptionPlans, setShowSubscriptionPlans] = useState(false); // REINTRODUCED: State for SubscriptionPlans modal
-  const [showSuccessNotification, setShowSuccessNotification] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [profileViewMode, setProfileViewMode] = useState<'profile' | 'wallet'>('profile');
-  const [userSubscription, setUserSubscription] = useState<any>(null);
+// Define the type for a feature object for clarity and type-safety
+interface Feature {
+  id: string;
+  title: string;
+  description: string;
+  icon: JSX.Element;
+  requiresAuth: boolean;
+}
 
-  const [showAlertModal, setShowAlertModal] = useState(false);
-  const [alertTitle, setAlertTitle] = useState('');
-  const [alertMessage, setAlertMessage] = useState('');
-  const [alertType, setAlertType] = useState<'info' | 'success' | 'warning' | 'error'>('info');
-  const [alertActionText, setAlertActionText] = useState<string | undefined>(undefined);
-  const [alertActionCallback, setAlertActionCallback] = useState<(() => void) | undefined>(undefined);
-  
-  const [authModalInitialView, setAuthModalInitialView] = useState<'login' | 'signup' | 'forgot-password' | 'success' | 'postSignupPrompt'>('login');
-  
-  const [isPostSignupProfileFlow, setIsPostSignupProfileFlow] = useState(false);
+interface HomePageProps {
+  // REMOVED: onPageChange: (page: string) => void;
+  isAuthenticated: boolean;
+  onShowAuth: () => void;
+  onShowSubscriptionPlans: (featureId?: string, expandAddons?: boolean) => void;
+  onShowSubscriptionPlansDirectly: () => void; // NEW PROP
+  userSubscription: any; // New prop for user's subscription status
+}
 
-  const [walletRefreshKey, setWalletRefreshKey] = useState(0);
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
-  const [isAuthModalOpenedByHash, setIsAuthModalOpenedByHash] = useState(false);
+export const HomePage: React.FC<HomePageProps> = ({
+  // REMOVED: onPageChange,
+  isAuthenticated,
+  onShowAuth,
+  onShowSubscriptionPlans,
+  onShowSubscriptionPlansDirectly, // NEW PROP
+  userSubscription // Destructure new prop
+}) => {
+  const [showOptimizationDropdown, setShowOptimizationDropdown] = React.useState(false);
+  const [showPlanDetails, setShowPlanDetails] = React.useState(false); // New state for the dropdown
+  const navigate = useNavigate(); // Initialize useNavigate
 
-  const [showPlanSelectionModal, setShowPlanSelectionModal] = useState(false);
-  const [planSelectionFeatureId, setPlanSelectionFeatureId] = useState<string | undefined>(undefined);
-
-  // NEW: State to control initial expansion of add-ons in SubscriptionPlans modal
-  const [initialExpandAddons, setInitialExpandAddons] = useState(false);
-
-  const handleMobileMenuToggle = () => {
-    setShowMobileMenu(!showMobileMenu);
-  };
-
-  const logoImage = "https://res.cloudinary.com/dlkovvlud/image/upload/w_1000,c_fill,ar_1:1,g_auto,r_max,bo_5px_solid_red,b_rgb:262c35/v1751536902/a-modern-logo-design-featuring-primoboos_XhhkS8E_Q5iOwxbAXB4CqQ_HnpCsJn4S1yrhb826jmMDw_nmycqj.jpg";
-
-  const handlePageChange = (path: string) => {
-    if (path === 'menu') {
-      handleMobileMenuToggle();
-    } else if (path === 'profile') {
-      handleShowProfile();
-      setShowMobileMenu(false);
-    } else if (path === 'wallet') {
-      handleShowProfile('wallet');
-      setShowMobileMenu(false);
-    } else if (path === 'subscription-plans') {
-      // When navigating directly to subscription-plans, don't expand add-ons by default
-      handleShowPlanSelection(undefined, false); 
-      setShowMobileMenu(false);
-    } else {
-      navigate(path);
-      setShowMobileMenu(false);
+  // Helper function to get plan icon based on icon string
+  const getPlanIcon = (iconType: string) => {
+    switch (iconType) {
+      case 'crown': return <Crown className="w-6 h-6" />;
+      case 'zap': return <Zap className="w-6 h-6" />;
+      case 'rocket': return <Award className="w-6 h-6" />;
+      default: return <Sparkles className="w-6 h-6" />;
     }
   };
 
-  const handleShowAuth = () => {
-    console.log('handleShowAuth called in App.tsx');
-    setShowAuthModal(true);
-    setAuthModalInitialView('login');
-    console.log('showAuthModal set to true');
-    setShowMobileMenu(false);
-  };
+  // Helper function to check if a feature is available based on subscription
+  const isFeatureAvailable = (featureId: string) => {
+    if (!isAuthenticated) return false; // Must be authenticated to check subscription
+    if (!userSubscription) return false; // No active subscription
 
-  const handleShowProfile = (mode: 'profile' | 'wallet' = 'profile', isPostSignup: boolean = false) => {
-    setProfileViewMode(mode);
-    setShowProfileManagement(true);
-    setShowMobileMenu(false);
-    setIsPostSignupProfileFlow(isPostSignup);
-    console.log('App.tsx: handleShowProfile called. showProfileManagement set to true.');
-  };
-
-  const handleNavigateHome = () => {
-    navigate('/');
-  };
-
-  // MODIFIED: handleShowPlanSelection now accepts expandAddons parameter
-  const handleShowPlanSelection = (featureId?: string, expandAddons: boolean = false) => {
-     console.log('App.tsx: handleShowPlanSelection called with featureId:', featureId, 'expandAddons:', expandAddons);
-    setPlanSelectionFeatureId(featureId);
-    setInitialExpandAddons(expandAddons); // Set the new state
-    setShowPlanSelectionModal(true);
-  };
-
-  // MODIFIED: handleSelectCareerPlans now opens SubscriptionPlans modal
-  const handleSelectCareerPlans = () => {
-    console.log('handleSelectCareerPlans called. Attempting to close PlanSelectionModal and open SubscriptionPlans modal.');
-    setShowPlanSelectionModal(false); // Close PlanSelectionModal
-    setShowSubscriptionPlans(true); // OPEN: SubscriptionPlans modal
-  };
-
-  // NEW: Function to directly show SubscriptionPlans with add-ons expanded
-  const handleShowSubscriptionPlansDirectly = () => {
-    console.log('App.tsx: handleShowSubscriptionPlansDirectly called. Opening SubscriptionPlans modal directly.');
-    setShowSubscriptionPlans(true);
-    setInitialExpandAddons(true); // Ensure add-ons are expanded
-  };
-
-  const handleSubscriptionSuccess = async () => {
-    setShowSubscriptionPlans(false);
-    setSuccessMessage('Subscription activated successfully!');
-    setShowSuccessNotification(true);
-    setTimeout(() => {
-      setShowSuccessNotification(false);
-      setSuccessMessage('');
-    }, 3000);
-    await fetchSubscription();
-    setWalletRefreshKey(prev => prev + 1);
-  };
-
-  const fetchSubscription = async () => {
-    if (isAuthenticated && user) {
-      const sub = await paymentService.getUserSubscription(user.id);
-      setUserSubscription(sub);
-      console.log('App.tsx: fetchSubscription - Fetched subscription:', sub);
-    } else {
-      setUserSubscription(null);
+    switch (featureId) {
+      case 'optimizer':
+        return userSubscription.optimizationsTotal > userSubscription.optimizationsUsed;
+      case 'score-checker':
+        return userSubscription.scoreChecksTotal > userSubscription.scoreChecksUsed;
+      case 'guided-builder':
+        return userSubscription.guidedBuildsTotal > userSubscription.guidedBuildsUsed;
+      case 'linkedin-generator':
+        return userSubscription.linkedinMessagesTotal > userSubscription.linkedinMessagesUsed;
+      default:
+        return false;
     }
   };
 
-  const refreshUserSubscription = async () => {
-    if (isAuthenticated && user) {
-      console.log('App.tsx: Refreshing user subscription...');
-      const sub = await paymentService.getUserSubscription(user.id);
-      setUserSubscription(sub);
-      console.log('App.tsx: refreshUserSubscription - Fetched subscription:', sub);
-    }
-  };
+  const handleFeatureClick = (feature: Feature) => {
+    console.log('Feature clicked:', feature.id);
+    console.log('Feature requiresAuth:', feature.requiresAuth);
+    console.log('User isAuthenticated:', isAuthenticated);
 
-  useEffect(() => {
-    fetchSubscription();
-  }, [isAuthenticated, user]);
-
-  const handleShowAlert = (
-    title: string,
-    message: string,
-    type: 'info' | 'success' | 'warning' | 'error' = 'info',
-    actionText?: string,
-    onAction?: () => void
-  ) => {
-    setAlertTitle(title);
-    setAlertMessage(message);
-    setAlertType(type);
-    setAlertActionText(actionText);
-    setAlertActionCallback(() => {
-      if (onAction) onAction();
-      setShowAlertModal(false);
-    });
-    setShowAlertModal(true);
-  };
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 768) {
-        setShowMobileMenu(false);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (hash.includes('type=recovery')) {
-      console.log('App.tsx: Detected password recovery link in URL hash.');
-      setAuthModalInitialView('reset_password');
-      setShowAuthModal(true);
-      setIsAuthModalOpenedByHash(true);
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
-    }
-  }, []);
-
-  useEffect(() => {
-    console.log('App.tsx useEffect: isAuthenticated:', isAuthenticated, 'user:', user?.id, 'hasSeenProfilePrompt:', user?.hasSeenProfilePrompt, 'isLoadingAuth:', isLoading, 'isAuthModalOpenedByHash:', isAuthModalOpenedByHash);
-
-    if (isLoading) {
-      console.log('App.tsx useEffect: AuthContext is still loading, deferring AuthModal logic.');
+    // If not authenticated, prompt to sign in first
+    if (!isAuthenticated && feature.requiresAuth) {
+      onShowAuth();
       return;
     }
 
-    if (isAuthModalOpenedByHash) {
-      if (isAuthenticated && user && user.hasSeenProfilePrompt === true) {
-        console.log('App.tsx useEffect: Hash-opened modal, user authenticated and profile complete. Closing modal.');
-        setShowAuthModal(false);
-        setIsAuthModalOpenedByHash(false);
-        setAuthModalInitialView('login');
-      }
+    // If authenticated, check if credits are available. If not, show plan selection.
+    if (isAuthenticated && feature.requiresAuth && !isFeatureAvailable(feature.id)) {
+      onShowSubscriptionPlans(feature.id); // Pass feature ID for context-specific modal
       return;
     }
 
-    if (isAuthenticated && user) {
-      if (user.hasSeenProfilePrompt === undefined) {
-        console.log('App.tsx useEffect: user.hasSeenProfilePrompt is undefined, waiting for full profile load.');
-        return;
-      }
-      if (user.hasSeenProfilePrompt === false) {
-        console.log('App.tsx useEffect: User authenticated and profile incomplete, opening AuthModal to prompt.');
-        setAuthModalInitialView('postSignupPrompt');
-        setShowAuthModal(true);
-      } else {
-        console.log('App.tsx useEffect: User authenticated and profile complete, ensuring AuthModal is closed.');
-        setShowAuthModal(false);
-        setAuthModalInitialView('login');
-      }
-    } else {
-      console.log('App.tsx useEffect: User not authenticated, ensuring AuthModal is closed.');
-      setShowAuthModal(false);
-      setAuthModalInitialView('login');
+    // If authenticated or feature does not require auth, navigate to the page.
+    if (isAuthenticated || !feature.requiresAuth) { // Allow non-auth features to navigate
+      console.log('User is authenticated or feature does not require auth. Navigating to page.');
+      navigate(feature.id); // Use navigate
     }
-  }, [isAuthenticated, user, user?.hasSeenProfilePrompt, isLoading, isAuthModalOpenedByHash]);
-
-  const commonPageProps = {
-    isAuthenticated: isAuthenticated,
-    onShowAuth: handleShowAuth,
-    onShowSubscriptionPlans: handleShowPlanSelection,
-    onShowSubscriptionPlansDirectly: handleShowSubscriptionPlansDirectly, // NEW PROP
-    userSubscription: userSubscription,
-    onShowAlert: handleShowAlert,
-    refreshUserSubscription: refreshUserSubscription,
-    onNavigateBack: handleNavigateHome,
   };
+
+
+  const features: Feature[] = [
+    {
+      id: 'optimizer',
+      title: 'JD-Based Optimizer',
+      description: 'Upload your resume and a job description to get a perfectly tailored resume.',
+      icon: <Target className="w-6 h-6" />,
+      requiresAuth: false
+    },
+    {
+      id: 'score-checker',
+      title: 'Resume Score Check',
+      description: 'Get an instant ATS score with detailed analysis and improvement suggestions.',
+      icon: <TrendingUp className="w-6 h-6" />,
+      requiresAuth: false
+    },
+    {
+      id: 'guided-builder',
+      title: 'Guided Resume Builder',
+      description: 'Create a professional resume from scratch with our step-by-step AI-powered builder.',
+      icon: <PlusCircle className="w-6 h-6" />,
+      requiresAuth: false
+    },
+    
+    {
+      id: 'linkedin-generator',
+      title: 'LinkedIn Message Generator',
+      description: 'Generate personalized messages for connection requests and cold outreach.',
+      icon: <MessageCircle className="w-6 h-6" />,
+      requiresAuth: true
+    }
+  ];
+
+  const stats = [
+    { number: '50,000+', label: 'Resumes Created', icon: <FileText className="w-5 h-5" /> },
+    { number: '95%', label: 'Success Rate', icon: <TrendingUp className="w-5 h-5" /> },
+    { number: '4.9/5', label: 'User Rating', icon: <Star className="w-5 h-5" /> },
+    { number: '24/7', label: 'AI Support', icon: <Sparkles className="w-5 h-5" /> }
+  ];
 
   return (
-    <div className="min-h-screen pb-safe-bottom safe-area bg-white dark:bg-dark-50 transition-colors duration-300">
-      {showSuccessNotification && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 p-3 bg-green-500 text-white rounded-lg shadow-lg animate-fade-in-down dark:bg-neon-cyan-500 dark:shadow-neon-cyan">
-          {successMessage}
-        </div>
-      )}
-      <Header onMobileMenuToggle={handleMobileMenuToggle} showMobileMenu={showMobileMenu} onShowProfile={handleShowProfile}>
-        <Navigation onPageChange={handlePageChange} />
-      </Header>
-      
-      <Routes>
-        <Route path="/" element={<HomePage {...commonPageProps} />} />
-        <Route path="/optimizer" element={
-          <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-            <ResumeOptimizer
-              isAuthenticated={isAuthenticated}
-              onShowAuth={handleShowAuth}
-              onShowProfile={handleShowProfile}
-              onNavigateBack={handleNavigateHome}
-              onShowPlanSelection={handleShowPlanSelection}
-              userSubscription={userSubscription}
-              refreshUserSubscription={refreshUserSubscription}
-            />
-          </main>
-        } />
-        <Route path="/score-checker" element={<ResumeScoreChecker {...commonPageProps} />} />
-        <Route path="/guided-builder" element={<GuidedResumeBuilder {...commonPageProps} />} />
-        <Route path="/linkedin-generator" element={<LinkedInMessageGenerator {...commonPageProps} />} />
-        <Route path="/about" element={<AboutUs />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/tutorials" element={<Tutorials />} />
-        <Route path="/all-tools" element={<ToolsAndPagesNavigation {...commonPageProps} />} />
-        <Route path="/pricing" element={<PricingPage onShowAuth={handleShowAuth} onShowSubscriptionPlans={handleShowPlanSelection} />} />
-      </Routes>
-
-      {showMobileMenu && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm dark:bg-black/70"
-            onClick={() => setShowMobileMenu(false)}
-          />
-          <div className="fixed top-0 right-0 h-full w-80 max-w-[90vw] bg-white shadow-2xl overflow-y-auto safe-area dark:bg-dark-100 dark:shadow-dark-xl">
-            <div className="flex flex-col space-y-4 p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 sm:space-x-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl overflow-hidden shadow-lg">
-                    <img
-                      src={logoImage}
-                      alt="PrimoBoost AI Logo"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <h1 className="text-lg sm:text-xl font-bold text-secondary-900 dark:text-gray-100">PrimoBoost AI</h1>
-                </div>
-                <button
-                  onClick={() => setShowMobileMenu(false)}
-                  className="min-w-touch min-h-touch p-2 text-secondary-600 hover:text-secondary-900 hover:bg-secondary-100 rounded-lg transition-colors dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-dark-200"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              <div className="border-t border-secondary-200 pt-4 dark:border-dark-300">
-                <nav className="flex flex-col space-y-4">
-                  {[
-                    { id: '/', label: 'Home', icon: <Home className="w-5 h-5" /> },
-                    { id: '/about', label: 'About Us', icon: <Info className="w-5 h-5" /> },
-                    { id: '/tutorials', label: 'Tutorials', icon: <BookOpen className="w-5 h-5" /> },
-                    { id: '/contact', label: 'Contact', icon: <Phone className="w-5 h-5" /> },
-                    { id: '/all-tools', label: 'All Tools & Pages', icon: <Sparkles className="w-5 h-5" /> },
-                    ...(isAuthenticated ? [{ id: 'wallet', label: 'Referral & Wallet', icon: <Wallet className="w-5 h-5" /> }] : []),
-                  ].map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        handlePageChange(item.id);
-                      }}
-                      className={`flex items-center space-x-3 min-h-touch px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
-                        window.location.pathname === item.id
-                          ? 'bg-primary-100 text-primary-700 shadow-md dark:bg-dark-200 dark:text-neon-cyan-400'
-                          : 'text-secondary-700 hover:text-primary-600 hover:bg-primary-50 dark:text-gray-300 dark:hover:text-neon-cyan-400 dark:hover:bg-dark-200'
-                      }`}
-                    >
-                      {item.icon}
-                      <span>{item.label}</span>
-                    </button>
-                  ))}
-                </nav>
-              </div>
-              <div className="border-t border-secondary-200 pt-4 dark:border-dark-300">
-                <AuthButtons
-                  onPageChange={handlePageChange}
-                  onClose={() => setShowMobileMenu(false)}
-                  onShowAuth={handleShowAuth}
-                  onShowProfile={handleShowProfile}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 font-inter dark:from-dark-50 dark:via-dark-100 dark:to-dark-200 transition-colors duration-300">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-purple-600/5 dark:from-neon-cyan-500/10 dark:to-neon-purple-500/10"></div>
+        <div className="relative container-responsive py-12 sm:py-16 lg:py-20">
+          <div className="text-center max-w-4xl mx-auto">
+            {/* Logo and Brand */}
+            <div className="flex items-center justify-center mb-6">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden shadow-xl mr-4">
+                <img
+                  src="https://res.cloudinary.com/dlkovvlud/image/upload/w_1000,c_fill,ar_1:1,g_auto,r_max,bo_5px_solid_red,b_rgb:262c35/v1751536902/a-modern-logo-design-featuring-primoboos_XhhkS8E_Q5iOwxbAXB4CqQ_HnpCsJn4S1yrhb826jmMDw_nmycqj.jpg"
+                  alt="PrimoBoost AI Logo"
+                  className="w-full h-full object-cover"
                 />
               </div>
-              <div className="mt-auto pt-4 border-t border-secondary-200 dark:border-dark-300">
-                <div className="bg-gradient-to-r from-primary-50 to-accent-50 rounded-xl p-4 dark:from-dark-200 dark:to-dark-300">
-                  <p className="text-sm text-secondary-700 mb-2 dark:text-gray-300">
-                    Need help with your resume?
-                  </p>
-                  <button
-                    onClick={() => {
-                      handlePageChange('/');
-                      setShowMobileMenu(false);
-                    }}
-                    className="w-full btn-primary text-sm flex items-center justify-center space-x-2 shadow-neon-cyan"
-                  >
-                    <FileText className="w-4 h-4" />
-                    <span>Optimize Now</span>
-                  </button>
+              <div className="text-left">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-gray-100">
+                  PrimoBoost AI
+                </h1>
+                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">Resume Intelligence</p>
+              </div>
+            </div>
+
+            {/* Main Headline */}
+            <h2 className="text-3xl sm:text-4xl lg:text-6xl font-bold text-gray-900 dark:text-gray-100 mb-6 leading-tight">
+              Your Dream Job Starts with a
+              <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-neon-cyan-400 dark:to-neon-blue-400">
+                Perfect Resume
+              </span>
+            </h2>
+
+            <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed max-w-3xl mx-auto">
+              Choose your path to success. Whether you're building from scratch, optimizing for specific jobs, or just want to check your current resume score - we've got you covered.
+            </p>
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-12">
+              {stats.map((stat, index) => (
+                <div
+                  key={index}
+                  className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-white/50 dark:bg-dark-100/80 dark:border-dark-300/50 dark:hover:shadow-neon-cyan/20"
+                >
+                  <div className="flex items-center justify-center mb-3">
+                    <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white p-2 sm:p-3 rounded-full dark:from-neon-cyan-500 dark:to-neon-blue-500 dark:shadow-neon-cyan">
+                      {stat.icon}
+                    </div>
+                  </div>
+                  <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">
+                    {stat.number}
+                  </div>
+                  <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium">
+                    {stat.label}
+                  </div>
                 </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Features Section - Now with a consolidated frame */}
+      <div className="container-responsive py-12 sm:py-16 bg-primary-50 dark:bg-dark-100">
+        <div className="mb-12">
+          <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4 text-center">
+            Choose Your Resume Journey
+          </h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {features.map((feature) => {
+            let remainingCount: number | null = null;
+            if (isAuthenticated && userSubscription) {
+              switch (feature.id) {
+                case 'optimizer':
+                  remainingCount = userSubscription.optimizationsTotal - userSubscription.optimizationsUsed;
+                  break;
+                case 'score-checker':
+                  remainingCount = userSubscription.scoreChecksTotal - userSubscription.scoreChecksUsed;
+                  break;
+                case 'guided-builder':
+                  remainingCount = userSubscription.guidedBuildsTotal - userSubscription.guidedBuildsUsed;
+                  break;
+                case 'linkedin-generator':
+                  remainingCount = userSubscription.linkedinMessagesTotal - userSubscription.linkedinMessagesUsed;
+                  break;
+                default:
+                  remainingCount = null;
+              }
+            }
+
+            return (
+              <button
+                key={feature.id}
+                onClick={() => handleFeatureClick(feature)} // Pass the full feature object
+                className={`card-hover p-6 flex flex-col items-start sm:flex-row sm:items-center justify-between transition-all duration-300 bg-gradient-to-br from-white to-primary-50 border border-secondary-100 shadow-lg hover:shadow-xl group rounded-2xl dark:from-dark-100 dark:to-dark-200 dark:border-dark-300 dark:hover:shadow-neon-cyan/20 ${feature.requiresAuth && !isAuthenticated ? 'opacity-70 cursor-not-allowed' : ''}`}
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="bg-primary-100 rounded-xl p-3 group-hover:bg-gradient-to-r group-hover:from-neon-cyan-500 group-hover:to-neon-blue-500 group-hover:text-white transition-all duration-300 shadow-sm flex-shrink-0 group-hover:scale-110 dark:bg-dark-200 dark:group-hover:shadow-neon-cyan">
+                    {React.cloneElement(feature.icon, { className: "w-8 h-8" })}
+                  </div>
+                  <div>
+                    <span className="text-lg font-bold text-secondary-900 dark:text-gray-100">{feature.title}</span>
+                    <p className="text-sm text-secondary-700 dark:text-gray-300">{feature.description}</p>
+                    {isAuthenticated && userSubscription && remainingCount !== null && remainingCount > 0 && (
+                      <p className="text-xs font-medium text-green-600 dark:text-neon-cyan-400 mt-1">
+                        {remainingCount} remaining
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <ArrowRight className={`w-6 h-6 text-secondary-400 group-hover:text-neon-cyan-400 group-hover:translate-x-1 transition-transform duration-300 flex-shrink-0 dark:text-gray-500 dark:group-hover:text-neon-cyan-400 ${feature.requiresAuth && !isAuthenticated ? 'opacity-50' : ''}`} />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Minimalist Plans Section */}
+      {isAuthenticated && (
+        <div className="bg-white py-16 dark:bg-dark-100">
+          <div className="container-responsive">
+            {/* New Dropdown for User's Plan Status */}
+            <div className="max-w-2xl mx-auto mb-10">
+              <div className="relative inline-block text-left w-full">
+                <button
+                  onClick={() => setShowPlanDetails(!showPlanDetails)}
+                  className="w-full bg-slate-100 text-slate-800 font-semibold py-3 px-6 rounded-xl flex items-center justify-between shadow-sm hover:bg-slate-200 transition-colors dark:bg-dark-200 dark:text-gray-100 dark:hover:bg-dark-300"
+                >
+                  <span className="flex items-center">
+                    <Sparkles className="w-5 h-5 text-indigo-500 mr-2 dark:text-neon-cyan-400" />
+                    {userSubscription ? (
+                      <span>
+                        Optimizations Left:{' '}
+                        <span className="font-bold">
+                          {userSubscription.optimizationsTotal - userSubscription.optimizationsUsed}
+                        </span>
+                      </span>
+                    ) : (
+                      <span>No Active Plan. Upgrade to use all features.</span>
+                    )}
+                  </span>
+                  {showPlanDetails ? <ChevronUp className="w-5 h-5 ml-2" /> : <ChevronDown className="w-5 h-5 ml-2" />}
+                </button>
+                {showPlanDetails && (
+                  <div className="absolute z-10 mt-2 w-full origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-dark-100 dark:ring-dark-300 dark:shadow-dark-xl">
+                    <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+                      {userSubscription ? (
+                        <>
+                          <div className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
+                            <p className="font-semibold">{userSubscription.name} Plan</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Details for your current subscription.</p>
+                          </div>
+                          <hr className="my-1 border-gray-100 dark:border-dark-300" />
+                          <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                            <div className="flex justify-between items-center">
+                              <span>Optimizations:</span>
+                              <span className="font-medium">{userSubscription.optimizationsTotal - userSubscription.optimizationsUsed} / {userSubscription.optimizationsTotal}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span>Score Checks:</span>
+                              <span className="font-medium">{userSubscription.scoreChecksTotal - userSubscription.scoreChecksUsed} / {userSubscription.scoreChecksTotal}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span>Guided Builds:</span>
+                              <span className="font-medium">{userSubscription.guidedBuildsTotal - userSubscription.guidedBuildsUsed} / {userSubscription.guidedBuildsTotal}</span>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
+                          You currently don't have an active subscription.
+                        </div>
+                      )}
+                      <div className="p-4 border-t border-gray-100 dark:border-dark-300">
+                        <button
+                          onClick={() => onShowSubscriptionPlans(undefined, true)}
+                          className="w-full btn-primary py-2"
+                        >
+                          {userSubscription ? 'Upgrade Plan' : 'Choose Your Plan'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            
+            <div className="text-center mt-12">
+              <button
+                onClick={onShowSubscriptionPlansDirectly} // MODIFIED: Call the new direct function
+                className="btn-secondary px-8 py-3"
+              >
+                View All Plans & Add-ons
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Additional Features Teaser */}
+    <div className="bg-gradient-to-r from-gray-900 via-purple-900 to-blue-900 text-white py-16 px-4 sm:px-0 dark:from-dark-50 dark:via-dark-100 dark:to-dark-200" >
+
+        
+
+        <div className="container-responsive text-left">
+          <div className="max-w-3xl mx-auto">
+            <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-pink-500 dark:text-neon-pink-400">
+              Powered by Advanced AI Technology
+            </h3>
+            <p className="text-lg text-blue-100 dark:text-gray-300 mb-8">
+              Our intelligent system understands ATS requirements, job market trends, and recruiter preferences to give you the competitive edge.
+            </p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mt-12">
+              <div className="text-center">
+                <div className="bg-blue-500/20 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 dark:bg-neon-cyan-500/20 dark:shadow-neon-cyan">
+                  <Zap className="w-8 h-8 text-yellow-400 dark:text-neon-cyan-400" />
+                </div>
+                <h4 className="font-semibold mb-3 text-lg text-yellow-300 dark:text-neon-cyan-400">AI-Powered Analysis</h4>
+                <p className="text-blue-200 dark:text-gray-300 leading-relaxed">Advanced algorithms analyze and optimize your resume</p>
+              </div>
+              
+              <div className="text-center">
+                <div className="bg-blue-500/20 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 dark:bg-neon-blue-500/20 dark:shadow-neon-blue">
+                  <Award className="w-8 h-8 text-green-400 dark:text-neon-blue-400" />
+                </div>
+                <h4 className="font-semibold mb-3 text-lg text-yellow-300 dark:text-neon-blue-400">ATS Optimization</h4>
+                <p className="text-blue-200 dark:text-gray-300 leading-relaxed">Ensure your resume passes all screening systems</p>
+              </div>
+              
+              <div className="text-center">
+                <div className="bg-blue-500/20 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 dark:bg-neon-purple-500/20 dark:shadow-neon-purple">
+                  <Users className="w-8 h-8 text-purple-400 dark:text-neon-purple-400" />
+                </div>
+                <h4 className="font-semibold mb-3 text-lg text-yellow-300 dark:text-neon-purple-400">Expert Approved</h4>
+                <p className="text-blue-200 dark:text-gray-300 leading-relaxed">Formats trusted by recruiters worldwide</p>
               </div>
             </div>
           </div>
         </div>
-      )}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => {
-          setShowAuthModal(false);
-          setAuthModalInitialView('login');
-          setIsAuthModalOpenedByHash(false);
-          console.log('AuthModal closed, showAuthModal set to false');
-        }}
-        onProfileFillRequest={() => handleShowProfile('profile', true)}
-        initialView={authModalInitialView}
-        onPromptDismissed={() => {
-          if (user) {
-            markProfilePromptSeen();
-          }
-          setShowAuthModal(false);
-          setAuthModalInitialView('login');
-          setIsAuthModalOpenedByHash(false);
-        }}
-      />
-      <UserProfileManagement
-        isOpen={showProfileManagement}
-        onClose={() => setShowProfileManagement(false)}
-        viewMode={profileViewMode}
-        walletRefreshKey={walletRefreshKey}
-        setWalletRefreshKey={setWalletRefreshKey}
-      />
-      
-      <PlanSelectionModal
-        isOpen={showPlanSelectionModal}
-        onClose={() => setShowPlanSelectionModal(false)}
-        onSelectCareerPlans={handleSelectCareerPlans}
-        onSubscriptionSuccess={handleSubscriptionSuccess}
-        onShowAlert={handleShowAlert}
-        triggeredByFeatureId={planSelectionFeatureId}
-      />
+      </div>
 
-      {/* REINTRODUCED: SubscriptionPlans modal rendering */}
-      {showSubscriptionPlans && (
-        <SubscriptionPlans
-          isOpen={showSubscriptionPlans}
-          onNavigateBack={() => setShowSubscriptionPlans(false)}
-          onSubscriptionSuccess={handleSubscriptionSuccess}
-          onShowAlert={handleShowAlert}
-          initialExpandAddons={initialExpandAddons} {/* NEW PROP */}
-        />
-      )}
-
-      <AlertModal
-        isOpen={showAlertModal}
-        onClose={() => setShowAlertModal(false)}
-        title={alertTitle}
-        message={alertMessage}
-        type={alertType}
-        actionText={alertActionText}
-        onAction={alertActionCallback}
-      />
-    </div>
-  );
-}
-const AuthButtons: React.FC<{
-  onPageChange: (path: string) => void;
-  onClose: () => void;
-  onShowAuth: () => void;
-  onShowProfile: (mode?: 'profile' | 'wallet') => void;
-}> = ({ onPageChange, onClose, onShowAuth, onShowProfile }) => {
-  const { user, isAuthenticated, logout } = useAuth();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await logout();
-      onClose();
-    } catch (error) {
-      console.error('Logout failed:', error);
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
-  const handleLogin = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('Sign in button clicked - calling onShowAuth');
-    onShowAuth();
-  };
-  return (
-    <div>
-      <h3 className="text-sm font-semibold text-secondary-500 mb-3">Account</h3>
-      {isAuthenticated && user ? (
-        <div className="space-y-3">
-          <div className="flex items-center space-x-3 px-4 py-3 bg-primary-50 rounded-xl dark:bg-dark-200">
-            <div className="bg-gradient-to-br from-neon-cyan-500 to-neon-blue-500 w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold">
-              {user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
-            </div>
-            <div className="overflow-hidden">
-              <p className="font-medium text-secondary-900 dark:text-gray-100 truncate">{user.name}</p>
-              <p className="text-xs text-secondary-500 dark:text-gray-400 truncate">{user.email}</p>
-            </div>
-          </div>
-          <button
-            onClick={() => onShowProfile('profile')}
-            className="w-full flex items-center space-x-3 min-h-touch px-4 py-3 rounded-xl font-medium transition-all duration-200 text-secondary-700 hover:text-primary-600 hover:bg-primary-50 dark:text-gray-300 dark:hover:text-neon-cyan-400 dark:hover:bg-dark-200"
-          >
-            <User className="w-5 h-5" />
-            <span>Profile Settings</span>
-          </button>
-          <button
-            onClick={() => onShowProfile('wallet')}
-            className="w-full flex items-center space-x-3 min-h-touch px-4 py-3 rounded-xl font-medium transition-all duration-200 text-secondary-700 hover:text-primary-600 hover:bg-primary-50 dark:text-gray-300 dark:hover:text-neon-cyan-400 dark:hover:bg-dark-200"
-          >
-            <Wallet className="w-5 h-5" />
-            <span>My Wallet</span>
-          </button>
-          <button
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            className="w-full flex items-center space-x-3 min-h-touch px-4 py-3 rounded-xl font-medium transition-all duration-200 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
-          >
-            <LogOut className="w-5 h-5" />
-            <span>{isLoggingOut ? 'Signing Out...' : 'Sign Out'}</span>
-          </button>
-        </div>
-      ) : (
-        <button
-          onClick={handleLogin}
-          className="w-full flex items-center space-x-3 min-h-touch px-4 py-3 rounded-xl font-medium transition-all duration-200 btn-primary shadow-neon-cyan"
-          type="button"
-        >
-          <LogIn className="w-5 h-5" />
-          <span>Sign In</span>
-        </button>
-      )}
+      {/* CTA Section */}
     </div>
   );
 };
-export default App;
 
