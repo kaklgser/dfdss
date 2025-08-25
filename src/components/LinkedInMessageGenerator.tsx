@@ -20,18 +20,29 @@ import {
   Zap,
   Heart,
   ArrowRight,
-  Briefcase
+  Briefcase,
+  Share2 // Added for referral icon
 } from 'lucide-react';
 // Mocking the imported functions and types for a self-contained example.
 // In a real application, these would be external.
 const generateLinkedInMessage = async (formData: any) => {
   console.log('Generating message with data:', formData);
   await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call delay
-  return [
-    `Hi ${formData.recipientFirstName}, I hope you're having a great week! I came across your profile and was impressed by your work at ${formData.recipientCompany}. I'm reaching out because I'm very interested in ${formData.messagePurpose}. I would love to connect and learn more about your experience in the ${formData.industry} industry.`,
-    `Hello ${formData.recipientFirstName}, I saw your role as ${formData.recipientJobTitle} at ${formData.recipientCompany} and was very impressed. My background is in a similar area, and I believe we share common interests. I'd love to connect on LinkedIn to expand my network and follow your journey. Best, ${formData.senderName}.`,
-    `Hey ${formData.recipientFirstName}, I’m connecting with you because of ${formData.personalizedContext}. Your work at ${formData.recipientCompany} is really impressive, and I especially admire your approach to ${formData.messagePurpose}. Would love to connect and exchange ideas. Cheers, ${formData.senderName}.`
-  ];
+
+  // Dynamic message generation based on messageType
+  if (formData.messageType === 'referral') {
+    return [
+      `Hi ${formData.recipientFirstName}, I hope you're doing well! I'm reaching out because I know ${formData.senderName} and they suggested I connect with you regarding the ${formData.recipientJobTitle} role (Job ID: ${formData.jobId || 'N/A'}) at ${formData.recipientCompany}. ${formData.referralContext} I'd love to learn more about this opportunity.`,
+      `Hello ${formData.recipientFirstName}, ${formData.senderName} recommended I get in touch with you about the ${formData.recipientJobTitle} position (Job ID: ${formData.jobId || 'N/A'}) at ${formData.recipientCompany}. ${formData.referralContext} I'm very interested in this role and would appreciate the chance to discuss it further.`,
+      `Hi ${formData.recipientFirstName}, I'm connecting at the suggestion of ${formData.senderName} regarding the ${formData.recipientJobTitle} role (Job ID: ${formData.jobId || 'N/A'}) at ${formData.recipientCompany}. ${formData.referralContext} I'm eager to explore how my skills align with your team's needs.`
+    ];
+  } else {
+    return [
+      `Hi ${formData.recipientFirstName}, I hope you're having a great week! I came across your profile and was impressed by your work at ${formData.recipientCompany}. I'm reaching out because I'm very interested in ${formData.messagePurpose}. I would love to connect and learn more about your experience in the ${formData.industry} industry.`,
+      `Hello ${formData.recipientFirstName}, I saw your role as ${formData.recipientJobTitle} at ${formData.recipientCompany} and was very impressed. My background is in a similar area, and I believe we share common interests. I'd love to connect on LinkedIn to expand my network and follow your journey. Best, ${formData.senderName}.`,
+      `Hey ${formData.recipientFirstName}, I’m connecting with you because of ${formData.personalizedContext}. Your work at ${formData.recipientCompany} is really impressive, and I especially admire your approach to ${formData.messagePurpose}. Would love to connect and exchange ideas. Cheers, ${formData.senderName}.`
+    ];
+  }
 };
 
 // Removed mock useAuth and Subscription, using actual imports
@@ -40,17 +51,7 @@ import { useAuth } from "../contexts/AuthContext"; // Import useAuth
 import { Subscription } from '../types/payment'; // Assuming this path is correct
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
-interface LinkedInMessageGeneratorProps {
-  onNavigateBack: () => void;
-  isAuthenticated: boolean;
-  onShowAuth: () => void;
-  userSubscription: Subscription | null;
-  onShowSubscriptionPlans: (featureId?: string) => void; // MODIFIED: Changed prop name
-  onShowAlert: (title: string, message: string, type?: 'info' | 'success' | 'warning' | 'error', actionText?: string, onAction?: () => void) => void;
-  refreshUserSubscription: () => Promise<void>; // ADD THIS PROP
-}
-
-type MessageType = 'connection' | 'cold-outreach' | 'follow-up' | 'job-inquiry';
+type MessageType = 'connection' | 'cold-outreach' | 'follow-up' | 'job-inquiry' | 'referral'; // MODIFIED: Added 'referral'
 type MessageTone = 'professional' | 'casual' | 'friendly';
 
 interface MessageForm {
@@ -60,10 +61,14 @@ interface MessageForm {
   recipientCompany: string;
   recipientJobTitle: string;
   senderName: string;
+  senderCompany: string; // Assuming senderCompany and senderRole might be used
+  senderRole: string;    // Assuming senderCompany and senderRole might be used
   messagePurpose: string;
   tone: MessageTone;
   personalizedContext: string;
   industry: string;
+  jobId?: string; // NEW: Added jobId
+  referralContext?: string; // NEW: Added referralContext
 }
 
 export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> = ({
@@ -71,7 +76,7 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
   isAuthenticated,
   onShowAuth,
   userSubscription,
-  onShowSubscriptionPlans, // MODIFIED: Destructure the new prop
+  onShowSubscriptionPlans, // MODIFIED: Changed prop name
   onShowAlert,
   refreshUserSubscription, // DESTRUCTURE THE NEW PROP
 }) => {
@@ -83,10 +88,14 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
     recipientCompany: '',
     recipientJobTitle: '',
     senderName: '',
+    senderCompany: '', // Initialize
+    senderRole: '',    // Initialize
     messagePurpose: '',
     tone: 'professional',
     personalizedContext: '',
-    industry: ''
+    industry: '',
+    jobId: '', // Initialize
+    referralContext: '', // Initialize
   });
 
   const [generatedMessages, setGeneratedMessages] = useState<string[]>([]);
@@ -131,6 +140,13 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
       description: 'Inquire about job opportunities or express interest',
       icon: <Briefcase className="w-6 h-6" />,
       color: 'from-orange-500 to-red-500'
+    },
+    { // NEW MESSAGE TYPE
+      id: 'referral' as MessageType,
+      title: 'Referral',
+      description: 'Connect with someone based on a referral or recommendation',
+      icon: <Share2 className="w-6 h-6" />,
+      color: 'from-yellow-500 to-amber-500'
     }
   ];
 
@@ -160,10 +176,20 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
       return;
     }
 
-    if (!formData.recipientFirstName || !formData.messagePurpose) {
-      onShowAlert('Missing Information', 'Please fill in the recipient name and message purpose.', 'warning');
+    // Basic validation before generating
+    if (!formData.recipientFirstName || !formData.recipientCompany || !formData.recipientJobTitle) {
+      onShowAlert('Missing Recipient Information', 'Please fill in all required recipient details.', 'warning');
       return;
     }
+    if (formData.messageType !== 'referral' && !formData.messagePurpose) {
+      onShowAlert('Missing Message Purpose', 'Please describe the purpose of your message.', 'warning');
+      return;
+    }
+    if (formData.messageType === 'referral' && !formData.referralContext) {
+      onShowAlert('Missing Referral Context', 'Please provide context for the referral.', 'warning');
+      return;
+    }
+
 
     setIsGenerating(true);
     try {
@@ -181,9 +207,9 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
         }
       }
 
-    } catch (error) {
+    } catch (error: any) { // Catch error as 'any' to access .message
       console.error('Error generating LinkedIn message:', error);
-      onShowAlert('Generation Failed', `Failed to generate message: ${error.message || 'Unknown error'}. Please try again.`, 'error');
+      onShowAlert('Generation Failed', `Failed to generate message: ${error.message || 'Unknown error'}. Please try again.', 'error');
     } finally {
       setIsGenerating(false);
     }
@@ -212,14 +238,24 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
     switch (currentStep) {
       case 0: // Message Type selection
         return !!formData.messageType;
-      case 1: // Recipient Details
-        return (
+      case 1: // Recipient Details (dynamic based on messageType)
+        const commonRecipientFieldsValid =
           !!formData.recipientFirstName.trim() &&
+          !!formData.recipientLastName.trim() &&
           !!formData.recipientCompany.trim() &&
-          !!formData.recipientJobTitle.trim()
-        );
-      case 2: // Message Details
-        return !!formData.messagePurpose.trim();
+          !!formData.recipientJobTitle.trim();
+
+        if (formData.messageType === 'referral') {
+          return commonRecipientFieldsValid && !!formData.referralContext?.trim(); // NEW: Validate referralContext
+        } else {
+          return commonRecipientFieldsValid;
+        }
+      case 2: // Message Details (dynamic based on messageType)
+        if (formData.messageType === 'referral') {
+          return true; // Referral type's specific context is validated in step 1
+        } else {
+          return !!formData.messagePurpose.trim();
+        }
       default:
         return false;
     }
@@ -263,8 +299,14 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
       component: (
         <div className="space-y-6">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Recipient Information</h2>
-            <p className="text-gray-600 dark:text-gray-300">Tell us about the person you're reaching out to</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+              Tell us about the person you’re reaching out to
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300">
+              {formData.messageType === 'referral'
+                ? 'Provide details about the recipient and the referral context.'
+                : 'Provide details about the recipient.'}
+            </p>
           </div>
 
           {/* Two-column responsive layout for input fields */}
@@ -284,7 +326,7 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Last Name
+                Last Name *
               </label>
               <input
                 type="text"
@@ -321,7 +363,23 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
               />
             </div>
 
-            <div className="md:col-span-2">
+            {/* NEW: Job ID field, only for 'referral' message type */}
+            {formData.messageType === 'referral' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Job ID (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={formData.jobId || ''}
+                  onChange={(e) => handleInputChange('jobId', e.target.value)}
+                  placeholder="12345"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:border-neon-cyan-400"
+                />
+              </div>
+            )}
+
+            <div className={formData.messageType === 'referral' ? '' : 'md:col-span-2'}>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Industry
               </label>
@@ -333,6 +391,21 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:border-neon-cyan-400"
               />
             </div>
+
+            {/* NEW: Referral Context field, only for 'referral' message type */}
+            {formData.messageType === 'referral' && (
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Referral Context *
+                </label>
+                <textarea
+                  value={formData.referralContext || ''}
+                  onChange={(e) => handleInputChange('referralContext', e.target.value)}
+                  placeholder="How do you know this person or why are you referring them? E.g., 'I saw your post about X', 'Our mutual connection Y suggested I reach out'."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-24 resize-none transition-all dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:border-neon-cyan-400"
+                />
+              </div>
+            )}
           </div>
         </div>
       )
@@ -347,17 +420,20 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
           </div>
 
           <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Message Purpose *
-              </label>
-              <textarea
-                value={formData.messagePurpose}
-                onChange={(e) => handleInputChange('messagePurpose', e.target.value)}
-                placeholder="Why are you reaching out? What do you want to achieve?"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-24 resize-none transition-all dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:border-neon-cyan-400"
-              />
-            </div>
+            {/* Message Purpose is NOT shown for 'referral' type as context is handled in previous step */}
+            {formData.messageType !== 'referral' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Message Purpose *
+                </label>
+                <textarea
+                  value={formData.messagePurpose}
+                  onChange={(e) => handleInputChange('messagePurpose', e.target.value)}
+                  placeholder="Why are you reaching out? What do you want to achieve?"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-24 resize-none transition-all dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:border-neon-cyan-400"
+                />
+              </div>
+            )}
 
             {/* Redesigned Tone Selection as a segmented control */}
             <div>
@@ -382,17 +458,20 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Personalized Context
-              </label>
-              <textarea
-                value={formData.personalizedContext}
-                onChange={(e) => handleInputChange('personalizedContext', e.target.value)}
-                placeholder="Any specific details about them or shared connections/interests..."
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-24 resize-none transition-all dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:border-neon-cyan-400"
-              />
-            </div>
+            {/* Personalized Context is NOT shown for 'referral' type as context is handled in previous step */}
+            {formData.messageType !== 'referral' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Personalized Context
+                </label>
+                <textarea
+                  value={formData.personalizedContext}
+                  onChange={(e) => handleInputChange('personalizedContext', e.target.value)}
+                  placeholder="Any specific details about them or shared connections/interests..."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-24 resize-none transition-all dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:border-neon-cyan-400"
+                />
+              </div>
+            )}
           </div>
         </div>
       )
@@ -627,9 +706,9 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
               ) : (
                 <button
                   onClick={handleGenerateMessage}
-                  disabled={!formData.recipientFirstName || !formData.messagePurpose || isGenerating}
+                  disabled={!validateCurrentStep() || isGenerating} // MODIFIED: Use validateCurrentStep()
                   className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg ${
-                    !formData.recipientFirstName || !formData.messagePurpose || isGenerating
+                    !validateCurrentStep() || isGenerating
                       ? 'bg-gray-400 cursor-not-allowed text-white'
                       : 'bg-gradient-to-r from-neon-cyan-500 to-neon-purple-500 hover:from-neon-cyan-400 hover:to-neon-purple-400 text-white hover:shadow-neon-cyan transform hover:-translate-y-0.5'
                   }`}
@@ -654,3 +733,4 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
     </div>
   );
 };
+
