@@ -752,7 +752,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
           </div>
         </div>
       </div>
-    </>
+    
   );
 };
 
