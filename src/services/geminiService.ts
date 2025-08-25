@@ -119,7 +119,7 @@ SKILLS REQUIREMENTS:
 3. Each category should have 5-8 specific skills
 4. Match skills to job requirements and industry standards
 5. Include both technical and soft skills relevant to the role
-6.NO NEED TO GENERATE SOFT SKILLS
+6.TO GENERATE SOFT SKILLS according jd
 CERTIFICATIONS REQUIREMENTS:
 1. For each certification, provide a concise 15 words description in the 'description' field.
 
