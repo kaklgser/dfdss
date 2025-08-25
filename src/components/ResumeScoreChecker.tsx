@@ -32,6 +32,7 @@ import { LoadingAnimation } from './LoadingAnimation';
 import { ComprehensiveScore, ScoringMode, ExtractionResult, ConfidenceLevel, MatchBand, DetailedScore } from '../types/resume';
 import { Subscription } from '../types/payment';
 import { paymentService } from '../services/paymentService';
+import { useNavigate } from 'react-router-dom'; // MODIFIED: Import useNavigate hook
 
 interface ResumeScoreCheckerProps {
   onNavigateBack: () => void;
@@ -52,11 +53,13 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   onShowAlert,
   refreshUserSubscription,
 }) => {
+  const navigate = useNavigate(); // MODIFIED: Initialize useNavigate hook
+
   console.log('ResumeScoreChecker: Component rendered. userSubscription:', userSubscription);
   const [extractionResult, setExtractionResult] = useState<ExtractionResult>({ text: '', extraction_mode: 'TEXT', trimmed: false });
   const [jobDescription, setJobDescription] = useState('');
   const [jobTitle, setJobTitle] = useState('');
-  const [scoringMode, setScoringMode] = useState<ScoringMode | null>(null); // MODIFIED: Initial state is now null
+  const [scoringMode, setScoringMode] = useState<ScoringMode | null>(null);
   const [autoScoreOnUpload, setAutoScoreOnUpload] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [loadingStep, setLoadingStep] = useState('');
@@ -66,14 +69,12 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   const handleFileUpload = (result: ExtractionResult) => {
     setExtractionResult(result);
     
-    // Only auto-score if in general mode and the flag is true
     if (scoringMode === 'general' && autoScoreOnUpload && result.text.trim()) {
       setTimeout(() => analyzeResume(), 500);
     }
   };
 
   const analyzeResume = async () => {
-    // MODIFIED: Add a check for scoringMode at the beginning
     if (scoringMode === null) {
       onShowAlert('Choose a Scoring Method', 'Please select either "Score Against a Job" or "General Score" to continue.', 'warning');
       return;
@@ -356,7 +357,6 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                     <div className="text-center">
                       <button
                         onClick={analyzeResume}
-                        // MODIFIED: Added check for scoringMode
                         disabled={scoringMode === null || !extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))}
                         className={`px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 flex items-center space-x-3 mx-auto shadow-xl hover:shadow-2xl ${
                           scoringMode === null || !extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))
@@ -581,62 +581,32 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                       </ul>
                     </div>
                   </div>
-                  {(scoreResult.example_rewrites.experience || scoreResult.example_rewrites.projects) && (
+
+                  {/* MODIFIED: Replaced Example Rewrites with JD-based Optimizer CTA */}
+                  {scoringMode === 'jd_based' && (
                     <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl mt-6">
-                      <div className="bg-gradient-to-r from-green-50 to-teal-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
+                      <div className="bg-gradient-to-r from-neon-cyan-50 to-neon-blue-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
                         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
-                          <FileText className="w-5 h-5 mr-2 text-green-600 dark:text-neon-cyan-400" />
-                          Example Rewrites
+                          <FileText className="w-5 h-5 mr-2 text-neon-cyan-600 dark:text-neon-cyan-400" />
+                          Ready to Optimize?
                         </h2>
                       </div>
-                      <div className="p-6 space-y-6">
-                        {scoreResult.example_rewrites.experience && (
-                          <div>
-                            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
-                              <Briefcase className="w-4 h-4 mr-2 text-blue-600 dark:text-neon-cyan-400" />
-                              Work Experience Improvement
-                            </h3>
-                            <div className="space-y-3">
-                              <div className="bg-red-50 border border-red-200 rounded-lg p-3 dark:bg-red-900/20 dark:border-red-500/50">
-                                <div className="text-xs font-medium text-red-800 dark:text-red-300 mb-1">Before:</div>
-                                <p className="text-sm text-red-700 dark:text-red-400">{scoreResult.example_rewrites.experience.original}</p>
-                              </div>
-                              <div className="bg-green-50 border border-green-200 rounded-lg p-3 dark:bg-neon-cyan-500/10 dark:border-neon-cyan-400/50">
-                                <div className="text-xs font-medium text-green-800 dark:text-neon-cyan-300 mb-1">After:</div>
-                                <p className="text-sm text-green-700 dark:text-neon-cyan-400">{scoreResult.example_rewrites.experience.improved}</p>
-                              </div>
-                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 dark:bg-neon-blue-500/10 dark:border-neon-blue-400/50">
-                                <div className="text-xs font-medium text-blue-800 dark:text-neon-blue-300 mb-1">Why this works:</div>
-                                <p className="text-sm text-blue-700 dark:text-neon-blue-400">{scoreResult.example_rewrites.experience.explanation}</p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        {scoreResult.example_rewrites.projects && (
-                          <div>
-                            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
-                              <Target className="w-4 h-4 mr-2 text-purple-600 dark:text-neon-purple-400" />
-                              Project Description Improvement
-                            </h3>
-                            <div className="space-y-3">
-                              <div className="bg-red-50 border border-red-200 rounded-lg p-3 dark:bg-red-900/20 dark:border-red-500/50">
-                                <div className="text-xs font-medium text-red-800 dark:text-red-300 mb-1">Before:</div>
-                                <p className="text-sm text-red-700 dark:text-red-400">{scoreResult.example_rewrites.projects.original}</p>
-                              </div>
-                              <div className="bg-green-50 border border-green-200 rounded-lg p-3 dark:bg-neon-cyan-500/10 dark:border-neon-cyan-400/50">
-                                <div className="text-xs font-medium text-green-800 dark:text-neon-cyan-300 mb-1">After:</div>
-                                <p className="text-sm text-green-700 dark:text-neon-cyan-400">{scoreResult.example_rewrites.projects.improved}</p>
-                              </div>
-                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 dark:bg-neon-blue-500/10 dark:border-neon-blue-400/50">
-                                <div className="text-xs font-medium text-blue-800 dark:text-neon-blue-300 mb-1">Why this works:</div>
-                                <p className="text-sm text-blue-700 dark:text-neon-blue-400">{scoreResult.example_rewrites.projects.explanation}</p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                      <div className="p-6">
+                        <p className="text-gray-700 dark:text-gray-300 mb-4">
+                          Your resume score is a great first step. Now, let's use the full power of our JD-based optimizer to generate tailored resume bullets based on your job description.
+                        </p>
+                        <button
+                          onClick={() => navigate('/optimizer')}
+                          className="w-full bg-gradient-to-r from-neon-cyan-500 to-neon-blue-500 hover:from-neon-cyan-400 hover:to-neon-blue-400 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-neon-cyan flex items-center justify-center space-x-2"
+                        >
+                          <span>Go to JD-Based Resume Optimizer</span>
+                          <ArrowRight className="w-5 h-5" />
+                        </button>
                       </div>
                     </div>
                   )}
+                  {/* END MODIFIED SECTION */}
+
 
                   <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl mt-6">
                     <div className="bg-gradient-to-r from-blue-50 to-teal-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
