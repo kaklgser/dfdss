@@ -605,15 +605,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                   </div>
 
                   <div className="text-center space-y-4 bg-white rounded-2xl shadow-lg border border-gray-200 p-6 dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl mt-6">
-                    <button
-                      onClick={() => {
-                        setScoreResult(null);
-                      }}
-                      className="w-full bg-gradient-to-r from-neon-cyan-500 to-neon-blue-500 hover:from-neon-cyan-400 hover:to-neon-blue-400 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-neon-cyan mb-4"
-                    >
-                      <RefreshCw className="w-5 h-5 inline mr-2" />
-                      Apply these fixes → Re-score free within 24h
-                    </button>
+                   
                     <button
                       onClick={handleCheckAnotherResume}
                       className="bg-gradient-to-r from-neon-cyan-500 to-neon-blue-500 hover:from-neon-cyan-400 hover:to-neon-blue-400 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 mr-4 shadow-neon-cyan"
