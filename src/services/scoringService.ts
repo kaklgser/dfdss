@@ -20,7 +20,7 @@ const generateCacheKey = async (resumeText: string, jobDescription?: string, job
   
   const resumeHash = await crypto.subtle.digest('SHA-256', resumeData);
   const jdHash = await crypto.subtle.digest('SHA-256', jdData);
-  const titleHash = await crypto.subtle.digest('SHA-256', titleHashData); // Corrected variable name
+  const titleHash = await crypto.subtle.digest('SHA-256', titleData); // Corrected variable name
   
   const resumeHashArray = Array.from(new Uint8Array(resumeHash));
   const jdHashArray = Array.from(new Uint8Array(jdHash));
@@ -181,15 +181,13 @@ Respond ONLY with valid JSON in this exact structure:
       if (!response.ok) {
         const errorText = await response.text();
         console.error('OpenRouter API error response:', errorText);
-        // Retry for server errors or rate limits
         if (response.status === 429 || response.status >= 500) {
           console.warn(`Retrying due to API error: ${response.status}. Attempt ${retryCount + 1}/${MAX_RETRIES}.`);
           retryCount++;
           await new Promise(resolve => setTimeout(resolve, delay));
-          delay *= 2; // Exponential backoff
-          continue; // Continue to the next retry
+          delay *= 2;
+          continue;
         } else {
-          // Non-retryable error
           throw new Error(`OpenRouter API error: ${response.status} - ${errorText}`);
         }
       }
@@ -206,7 +204,6 @@ Respond ONLY with valid JSON in this exact structure:
       try {
         const parsedResult = JSON.parse(cleanedResult);
         
-        // Cache the result
         scoreCache.set(cacheKey, {
           result: parsedResult,
           timestamp: Date.now()
@@ -216,23 +213,20 @@ Respond ONLY with valid JSON in this exact structure:
       } catch (parseError) {
         console.error('JSON parsing error:', parseError);
         console.error('Raw response that failed to parse:', cleanedResult);
-        // If JSON parsing fails, retry the API call
         retryCount++;
         await new Promise(resolve => setTimeout(resolve, delay));
-        delay *= 2; // Exponential backoff
-        continue; // Continue to the next retry
+        delay *= 2;
+        continue;
       }
     } catch (error) {
       console.error('Error calling OpenRouter API for comprehensive scoring:', error);
-      // If API call fails (e.g., network error), retry
       retryCount++;
       await new Promise(resolve => setTimeout(resolve, delay));
-      delay *= 2; // Exponential backoff
-      continue; // Continue to the next retry
+      delay *= 2;
+      continue;
     }
   }
 
-  // If all retries fail, return a default error score
   console.error(`All ${MAX_RETRIES} retries failed. Returning default error score.`);
   return {
     overall: 0,
@@ -416,7 +410,7 @@ ANALYSIS REQUIREMENTS:
 - Identify specific actionable recommendations for overall improvement in the 'recommendations' array, especially for scores below 70% in any *individual category* (not just totalScore). These recommendations should be concrete and directly related to the issues found.
 - Assign a letter grade (A+ 95-100, A 90-94, B+ 85-89, B 80-84, C+ 75-79, C 70-74, D 60-69, F <60).
 
--section order summary education and work experience and  project and skill certifications any not this flow -10 points per section unders and miss section -20 if any section miss 
+-section order summary education and work experience and  project and skill certifications any not this flow -10 points per section unders and miss section -20 if any section miss 
 
 Respond ONLY with valid JSON in this exact structure:
 
@@ -540,7 +534,7 @@ Respond ONLY with valid JSON in this exact structure:
     }
 
     const data = await response.json();
-    const result =data?.choices?.[0]?.message?.content;
+    const result = data?.choices?.[0]?.message?.content;
 
     if (!result) {
       throw new Error('No response content from OpenRouter API');
@@ -649,11 +643,12 @@ export const generateBeforeScore = (resumeText: string): MatchScore => {
       "Some technical skills mentioned",
       "Basic work experience listed"
     ],
-   
+    improvementAreas: [],
   };
 };
 
-export const generateAfterScore = (
+// MODIFIED: Added async keyword to the function declaration
+export const generateAfterScore = async (
   resumeData: ResumeData,
   jobDescription: string
 ): Promise<MatchScore> => {
@@ -683,4 +678,3 @@ export const generateAfterScore = (
     improvementAreas,
   };
 };
-
