@@ -600,13 +600,7 @@ export const generateBeforeScore = (resumeText: string): MatchScore => {
       "Some technical skills mentioned",
       "Basic work experience listed"
     ],
-    improvementAreas: [
-      "Lacks industry-specific keywords",
-      "Bullet points need quantifiable achievements",
-      "Missing relevant technical skills",
-      "Poor ATS optimization",
-      "Weak project descriptions"
-    ]
+   
   };
 };
 
