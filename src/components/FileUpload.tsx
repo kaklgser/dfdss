@@ -3,7 +3,7 @@ import { Upload, FileText, AlertCircle, CheckCircle, X } from 'lucide-react';
 import { parseFile } from '../utils/fileParser'; // Make sure this path is correct
 
 interface FileUploadProps {
-  onFileUpload: (text: string) => void;
+  onFileUpload: (result: ExtractionResult) => void;
 }
 
 export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload }) => {
@@ -25,15 +25,15 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload }) => {
     setIsUploading(true);
     setUploadError(null); // Clear error at the start of processing
     try {
-      const text = await parseFile(file);
-      onFileUpload(text);
+      const result = await parseFile(file);
+      onFileUpload(result);
       setUploadedFile(file.name);
     } catch (error: any) { // Catch the error to display to the user
       console.error('Error parsing file:', error);
       // Set the specific error message from parsePDF if it exists, otherwise a generic one
       setUploadError(error.message || 'Failed to parse file. Please try again or use a different file.');
       setUploadedFile(null); // Clear uploaded file name on error
-      onFileUpload(''); // Clear previous text content on error
+      onFileUpload({ text: '', extraction_mode: 'TEXT', trimmed: false }); // Clear previous content on error
     } finally {
       setIsUploading(false);
     }
@@ -63,7 +63,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload }) => {
   const clearFile = () => {
     setUploadedFile(null);
     setUploadError(null); // Also clear error when file is removed manually
-    onFileUpload('');
+    onFileUpload({ text: '', extraction_mode: 'TEXT', trimmed: false });
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }

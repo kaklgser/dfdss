@@ -5,27 +5,58 @@ import { createWorker } from 'tesseract.js';
 // Set the worker source for PDF.js
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
-export const parseFile = async (file: File): Promise<string> => {
+export const parseFile = async (file: File): Promise<ExtractionResult> => {
   const fileName = file.name.toLowerCase();
+  const MAX_CONTENT_LENGTH = 50000; // Maximum characters for token budgeting
+  let extractionMode: ExtractionMode = 'TEXT';
+  let text = '';
+  let pages = 1;
+  let charsPreTrim = 0;
+  let charsPostTrim = 0;
 
   if (fileName.endsWith('.pdf')) {
-    return await parsePDF(file);
+    const result = await parsePDF(file);
+    text = result.text;
+    extractionMode = result.extraction_mode;
+    pages = result.pages || 1;
   } else if (fileName.endsWith('.docx')) {
-    return await parseDocx(file);
+    text = await parseDocx(file);
   } else if (fileName.endsWith('.txt')) {
-    return await parseText(file);
+    text = await parseText(file);
   } else {
     throw new Error('Unsupported file format. Please use PDF, DOCX, or TXT files.');
   }
+
+  charsPreTrim = text.length;
+  
+  // Apply trimming if content exceeds maximum length
+  let trimmed = false;
+  if (text.length > MAX_CONTENT_LENGTH) {
+    text = text.substring(0, MAX_CONTENT_LENGTH) + '...';
+    trimmed = true;
+  }
+  
+  charsPostTrim = text.length;
+
+  return {
+    text,
+    extraction_mode: extractionMode,
+    trimmed,
+    pages,
+    chars_pre: charsPreTrim,
+    chars_post: charsPostTrim
+  };
 };
 
-const parsePDF = async (file: File): Promise<string> => {
+const parsePDF = async (file: File): Promise<{ text: string; extraction_mode: ExtractionMode; pages?: number }> => {
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
   let text = '';
+  let extractionMode: ExtractionMode = 'TEXT';
+  const totalPages = pdf.numPages;
 
   // Step 1: Try to extract text directly from the PDF (for searchable PDFs)
-  for (let i = 1; i <= pdf.numPages; i++) {
+  for (let i = 1; i <= totalPages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
     const strings = content.items.map((item: any) => item.str);
@@ -40,6 +71,7 @@ const parsePDF = async (file: File): Promise<string> => {
   if (initialTextContent.length < MIN_TEXT_LENGTH_THRESHOLD) {
     console.log('Detected potentially image-based PDF or sparse text. Attempting OCR...');
     let ocrWorker: Tesseract.Worker | null = null;
+    extractionMode = 'OCR';
     try {
       ocrWorker = await createWorker('eng'); // 'eng' for English language
       let ocrText = '';
@@ -71,7 +103,7 @@ const parsePDF = async (file: File): Promise<string> => {
         throw new Error("Failed to recognize text from image-based PDF. Please upload a searchable PDF or a DOCX/TXT file.");
       }
 
-      return ocrText.trim();
+      return { text: ocrText.trim(), extraction_mode: extractionMode, pages: totalPages };
 
     } catch (ocrError: any) {
       console.error('OCR attempt failed or yielded minimal text:', ocrError);
@@ -87,7 +119,7 @@ const parsePDF = async (file: File): Promise<string> => {
         }
       }
       // If initial text had content (was >= 50 chars), but OCR failed, we can still return initial text.
-      return initialTextContent;
+      return { text: initialTextContent, extraction_mode: 'TEXT', pages: totalPages };
 
     } finally {
       if (ocrWorker) {
@@ -96,7 +128,7 @@ const parsePDF = async (file: File): Promise<string> => {
     }
   }
 
-  return initialTextContent; // Return initial text if it was sufficient
+  return { text: initialTextContent, extraction_mode: extractionMode, pages: totalPages };
 };
 
 const parseDocx = async (file: File): Promise<string> => {

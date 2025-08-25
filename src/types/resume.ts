@@ -48,6 +48,61 @@ export interface ResumeData {
 }
 
 export type UserType = 'fresher' | 'experienced' | 'student';
+export type ScoringMode = 'jd_based' | 'general';
+export type ExtractionMode = 'TEXT' | 'OCR';
+export type MatchBand = 'Excellent Match' | 'Very Good Match' | 'Good Match' | 'Fair Match' | 'Below Average' | 'Poor Match' | 'Very Poor' | 'Inadequate' | 'Minimal Match' | 'No Match';
+export type ConfidenceLevel = 'High' | 'Medium' | 'Low';
+
+export interface ExtractionResult {
+  text: string;
+  extraction_mode: ExtractionMode;
+  trimmed: boolean;
+  pages?: number;
+  chars_pre?: number;
+  chars_post?: number;
+}
+
+export interface MetricScore {
+  key: string;
+  name: string;
+  weight_pct: number;
+  score: number;
+  max_score: number;
+  contribution: number;
+  details: string;
+}
+
+export interface ExampleRewrite {
+  original: string;
+  improved: string;
+  explanation: string;
+}
+
+export interface ComprehensiveScore {
+  overall: number;
+  match_band: MatchBand;
+  interview_probability_range: string;
+  confidence: ConfidenceLevel;
+  rubric_version: string;
+  weighting_mode: 'JD' | 'GENERAL';
+  extraction_mode: ExtractionMode;
+  trimmed: boolean;
+  job_title?: string;
+  breakdown: MetricScore[];
+  missing_keywords: string[];
+  actions: string[];
+  example_rewrites: {
+    experience?: ExampleRewrite;
+    projects?: ExampleRewrite;
+  };
+  notes: string[];
+  analysis: string;
+  keyStrengths: string[];
+  improvementAreas: string[];
+  recommendations: string[];
+  cached?: boolean;
+  cache_expires_at?: string;
+}
 
 export interface MatchScore {
   score: number;
