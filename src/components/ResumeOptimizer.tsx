@@ -62,10 +62,12 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
 
   // --- State Variables ---
   // Input data state
-  const [resumeText, setResumeText] = useState('');
+  const [extractionResult, setExtractionResult] = useState<ExtractionResult>({ text: '', extraction_mode: 'TEXT', trimmed: false });
   const [jobDescription, setJobDescription] = useState('');
   const [targetRole, setTargetRole] = useState('');
   const [userType, setUserType] = useState<UserType>('fresher');
+  const [scoringMode, setScoringMode] = useState<ScoringMode>('general');
+  const [autoScoreOnUpload, setAutoScoreOnUpload] = useState(true);
 
   // Optimization process state
   const [optimizedResume, setOptimizedResume] = useState<ResumeData | null>(null);
@@ -127,7 +129,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
    */
   const handleStartNewResume = () => {
     setOptimizedResume(null);
-    setResumeText('');
+    setExtractionResult({ text: '', extraction_mode: 'TEXT', trimmed: false });
     setJobDescription('');
     setTargetRole('');
     setUserType('fresher');
@@ -177,10 +179,10 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
    * Effect to auto-advance the wizard step after a resume is uploaded.
    */
   useEffect(() => {
-    if (resumeText.trim().length > 0 && currentStep === 0) { // Changed from 1 to 0 for initial step
+    if (extractionResult.text.trim().length > 0 && currentStep === 0) { // Changed from 1 to 0 for initial step
       setCurrentStep(1); // Advance to next step after upload
     }
-  }, [resumeText, currentStep]);
+  }, [extractionResult.text, currentStep]);
 
   /**
    * Main function to handle the entire resume optimization process.
@@ -189,7 +191,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
   const handleOptimize = async () => {
     console.log('handleOptimize: Function called.');
 
-    if (!resumeText.trim() || !jobDescription.trim()) {
+    if (!extractionResult.text.trim() || !jobDescription.trim()) {
       alert('Please provide both resume content and job description');
       return;
     }
@@ -229,7 +231,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
       setIsOptimizing(true);
       try {
         const parsedResume = await optimizeResume(
-          resumeText,
+          extractionResult.text,
           jobDescription,
           userType,
           user.name,
@@ -689,8 +691,12 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
             )}
             <div className="max-w-7xl mx-auto space-y-6">
               <InputWizard
-                resumeText={resumeText}
-                setResumeText={setResumeText}
+                extractionResult={extractionResult}
+                setExtractionResult={setExtractionResult}
+                scoringMode={scoringMode}
+                setScoringMode={setScoringMode}
+                autoScoreOnUpload={autoScoreOnUpload}
+                setAutoScoreOnUpload={setAutoScoreOnUpload}
                 jobDescription={jobDescription}
                 setJobDescription={setJobDescription}
                 targetRole={targetRole}

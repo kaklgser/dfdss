@@ -17,14 +17,18 @@ import { UserType } from '../types/resume';
 import { User as AuthUser } from '../types/auth';
 
 interface InputWizardProps {
-  resumeText: string;
-  setResumeText: (value: string) => void;
+  extractionResult: ExtractionResult;
+  setExtractionResult: (value: ExtractionResult) => void;
   jobDescription: string;
   setJobDescription: (value: string) => void;
   targetRole: string;
   setTargetRole: (value: string) => void;
   userType: UserType;
   setUserType: (value: UserType) => void;
+  scoringMode: ScoringMode;
+  setScoringMode: (value: ScoringMode) => void;
+  autoScoreOnUpload: boolean;
+  setAutoScoreOnUpload: (value: boolean) => void;
   handleOptimize: () => void;
   isAuthenticated: boolean;
   onShowAuth: () => void;
@@ -33,14 +37,18 @@ interface InputWizardProps {
 }
 
 export const InputWizard: React.FC<InputWizardProps> = ({
-  resumeText,
-  setResumeText,
+  extractionResult,
+  setExtractionResult,
   jobDescription,
   setJobDescription,
   targetRole,
   setTargetRole,
   userType,
   setUserType,
+  scoringMode,
+  setScoringMode,
+  autoScoreOnUpload,
+  setAutoScoreOnUpload,
   handleOptimize,
   isAuthenticated,
   onShowAuth,
@@ -60,10 +68,10 @@ export const InputWizard: React.FC<InputWizardProps> = ({
             <Upload className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
             Upload Resume
           </h2>
-          <FileUpload onFileUpload={setResumeText} />
+          <FileUpload onFileUpload={setExtractionResult} />
         </div>
       ),
-      isValid: resumeText.trim().length > 0
+      isValid: extractionResult.text.trim().length > 0
     },
     {
       id: 'details',
@@ -76,14 +84,14 @@ export const InputWizard: React.FC<InputWizardProps> = ({
             Resume & Job Details
           </h2>
           <InputSection
-            resumeText={resumeText}
+            resumeText={extractionResult.text}
             jobDescription={jobDescription}
-            onResumeChange={setResumeText}
+            onResumeChange={(text) => setExtractionResult({ ...extractionResult, text })}
             onJobDescriptionChange={setJobDescription}
           />
         </div>
       ),
-      isValid: resumeText.trim().length > 0 && jobDescription.trim().length > 0
+      isValid: extractionResult.text.trim().length > 0 && (scoringMode === 'general' || jobDescription.trim().length > 0)
     },
     {
       id: 'social',
@@ -196,7 +204,7 @@ export const InputWizard: React.FC<InputWizardProps> = ({
                     <CheckCircle className="w-4 h-4 text-green-600 mr-2 dark:text-green-400" />
                     <span className="font-medium text-gray-900 dark:text-gray-100">Resume Uploaded</span>
                   </div>
-                  <p className="text-gray-600 dark:text-gray-300">{resumeText.length} characters</p>
+                  <p className="text-gray-600 dark:text-gray-300">{extractionResult.text.length} characters</p>
                 </div>
                 <div className="bg-white rounded-lg p-4 border border-gray-200 dark:bg-dark-200 dark:border-dark-300">
                   <div className="flex items-center mb-2">
@@ -234,9 +242,9 @@ export const InputWizard: React.FC<InputWizardProps> = ({
                   onShowAuth();
                 }
               }}
-              disabled={!resumeText.trim() || !jobDescription.trim()}
+              disabled={!extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !targetRole.trim()))}
               className={`w-full py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center space-x-3 ${
-                !resumeText.trim() || !jobDescription.trim()
+                !extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !targetRole.trim()))
                   ? 'bg-gray-400 cursor-not-allowed text-white'
                   : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-xl hover:shadow-2xl cursor-pointer'
               }`}
@@ -255,7 +263,7 @@ export const InputWizard: React.FC<InputWizardProps> = ({
           </div>
         </div>
       ),
-      isValid: resumeText.trim().length > 0 && jobDescription.trim().length > 0
+      isValid: extractionResult.text.trim().length > 0 && (scoringMode === 'general' || (jobDescription.trim().length > 0 && targetRole.trim().length > 0))
     }
   ];
 
