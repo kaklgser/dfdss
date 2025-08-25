@@ -56,30 +56,35 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   const [extractionResult, setExtractionResult] = useState<ExtractionResult>({ text: '', extraction_mode: 'TEXT', trimmed: false });
   const [jobDescription, setJobDescription] = useState('');
   const [jobTitle, setJobTitle] = useState('');
-  const [scoringMode, setScoringMode] = useState<ScoringMode>('general');
+  const [scoringMode, setScoringMode] = useState<ScoringMode | null>(null); // MODIFIED: Initial state is now null
   const [autoScoreOnUpload, setAutoScoreOnUpload] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [loadingStep, setLoadingStep] = useState('');
   const [scoreResult, setScoreResult] = useState<ComprehensiveScore | null>(null);
-  const [currentStep, setCurrentStep] = useState(0); // 0: Choose method, 1: Input, 2: Results
+  const [currentStep, setCurrentStep] = useState(0);
 
   const handleFileUpload = (result: ExtractionResult) => {
     setExtractionResult(result);
     
-    // Auto-score on upload if enabled and in general mode
-    if (autoScoreOnUpload && scoringMode === 'general' && result.text.trim()) {
-      setTimeout(() => analyzeResume(), 500); // Small delay for better UX
+    // Only auto-score if in general mode and the flag is true
+    if (scoringMode === 'general' && autoScoreOnUpload && result.text.trim()) {
+      setTimeout(() => analyzeResume(), 500);
     }
   };
 
   const analyzeResume = async () => {
+    // MODIFIED: Add a check for scoringMode at the beginning
+    if (scoringMode === null) {
+      onShowAlert('Choose a Scoring Method', 'Please select either "Score Against a Job" or "General Score" to continue.', 'warning');
+      return;
+    }
+
     if (!isAuthenticated) {
       console.log('ResumeScoreChecker: analyzeResume called. userSubscription at call time:', userSubscription);
       onShowAlert('Authentication Required', 'Please sign in to get your resume score.', 'error', 'Sign In', onShowAuth);
       return;
     }
 
-    // Check subscription and score check credits
     if (!userSubscription || (userSubscription.scoreChecksTotal - userSubscription.scoreChecksUsed) <= 0) {
       const planDetails = paymentService.getPlanById(userSubscription?.planId);
       const planName = planDetails?.name || 'your current plan';
@@ -100,7 +105,6 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
       return;
     }
 
-    // Validate required fields based on scoring mode
     if (scoringMode === 'jd_based') {
       if (!jobDescription.trim()) {
         onShowAlert('Missing Job Description', 'Job description is required for JD-based scoring.', 'warning');
@@ -112,8 +116,8 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
       }
     }
 
-    setScoreResult(null); // Clear previous result before new analysis
-    setIsAnalyzing(true); // Set loading state
+    setScoreResult(null);
+    setIsAnalyzing(true);
     setLoadingStep('Extracting & cleaning your resume...');
 
     try {
@@ -133,9 +137,8 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
       );
 
       setScoreResult(result);
-      setCurrentStep(2); // Transition to results step
+      setCurrentStep(2);
 
-      // Decrement usage count and refresh subscription
       if (userSubscription) {
         const usageResult = await paymentService.useScoreCheck(userSubscription.userId);
         if (usageResult.success) {
@@ -353,9 +356,10 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                     <div className="text-center">
                       <button
                         onClick={analyzeResume}
-                        disabled={!extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))}
+                        // MODIFIED: Added check for scoringMode
+                        disabled={scoringMode === null || !extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))}
                         className={`px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 flex items-center space-x-3 mx-auto shadow-xl hover:shadow-2xl ${
-                          !extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))
+                          scoringMode === null || !extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))
                             ? 'bg-gray-400 cursor-not-allowed text-white'
                             : 'bg-gradient-to-r from-neon-cyan-500 to-neon-purple-500 hover:from-neon-cyan-400 hover:to-neon-purple-400 text-white hover:shadow-neon-cyan transform hover:scale-105'
                         }`}
