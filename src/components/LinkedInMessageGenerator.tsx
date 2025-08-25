@@ -24,27 +24,8 @@ import {
   Share2
 } from 'lucide-react';
 
-const generateLinkedInMessage = async (formData: any) => {
-  console.log('Generating message with data:', formData);
-  await new Promise(resolve => setTimeout(resolve, 2000));
-
-  if (formData.messageType === 'referral') {
-    return [
-      `Hi ${formData.recipientFirstName}, I hope you're doing well! I'm reaching out because I know ${formData.senderName} and they suggested I connect with you regarding the ${formData.recipientJobTitle} role (Job ID: ${formData.jobId || 'N/A'}) at ${formData.recipientCompany}. ${formData.referralContext} I'd love to learn more about this opportunity.`,
-      `Hello ${formData.recipientFirstName}, ${formData.senderName} recommended I get in touch with you about the ${formData.recipientJobTitle} position (Job ID: ${formData.jobId || 'N/A'}) at ${formData.recipientCompany}. ${formData.referralContext} I'm very interested in this role and would appreciate the chance to discuss it further.`,
-      `Hi ${formData.recipientFirstName}, I'm connecting at the suggestion of ${formData.senderName} regarding the ${formData.recipientJobTitle} role (Job ID: ${formData.jobId || 'N/A'}) at ${formData.recipientCompany}. ${formData.referralContext} I'm eager to explore how my skills align with your team's needs.`
-    ];
-  } else {
-    return [
-      `Hi ${formData.recipientFirstName}, I hope you're having a great week! I came across your profile and was impressed by your work at ${formData.recipientCompany}. I'm reaching out because I'm very interested in ${formData.messagePurpose}. I would love to connect and learn more about your experience in the ${formData.industry} industry.`,
-      `Hello ${formData.recipientFirstName}, I saw your role as ${formData.recipientJobTitle} at ${formData.recipientCompany} and was very impressed. My background is in a similar area, and I believe we share common interests. I'd love to connect on LinkedIn to expand my network and follow your journey. Best, ${formData.senderName}.`,
-      `Hey ${formData.recipientFirstName}, I’m connecting with you because of ${formData.personalizedContext}. Your work at ${formData.recipientCompany} is really impressive, and I especially admire your approach to ${formData.messagePurpose}. Would love to connect and exchange ideas. Cheers, ${formData.senderName}.`
-    ];
-  }
-};
-
 import { paymentService } from '../services/paymentService';
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from '../contexts/AuthContext';
 import { Subscription } from '../types/payment';
 import { useNavigate } from 'react-router-dom';
 
@@ -74,9 +55,41 @@ interface LinkedInMessageGeneratorProps {
   onShowAuth: () => void;
   userSubscription: Subscription | null;
   onShowSubscriptionPlans: (featureId?: string) => void;
-  onShowAlert: (title: string, message: string, type?: 'info' | 'success' | 'warning' | 'error', actionText?: string, onAction?: () => void) => void;
+  onShowAlert: (
+    title: string,
+    message: string,
+    type?: 'info' | 'success' | 'warning' | 'error',
+    actionText?: string,
+    onAction?: () => void
+  ) => void;
   refreshUserSubscription: () => Promise<void>;
 }
+
+/**
+ * Placeholder local generator (kept to avoid backend dependency here).
+ * Replace with your real API call when wiring to OpenRouter.
+ */
+const generateLinkedInMessage = async (formData: MessageForm): Promise<string[]> => {
+  // Simulate latency
+  await new Promise((resolve) => setTimeout(resolve, 1200));
+
+  if (formData.messageType === 'referral') {
+    const jobInfo = formData.jobId ? ` (Job ID: ${formData.jobId})` : '';
+    return [
+      `Hi ${formData.recipientFirstName}, hope you're doing well! ${formData.senderName} suggested I reach out regarding the ${formData.recipientJobTitle}${jobInfo} at ${formData.recipientCompany}. ${formData.referralContext} I'd value a quick chat or a referral if appropriate—happy to share a tailored resume too. Thanks!`,
+      `Hello ${formData.recipientFirstName}, I'm contacting you on ${formData.senderName}'s recommendation about the ${formData.recipientJobTitle}${jobInfo} role at ${formData.recipientCompany}. ${formData.referralContext} My background aligns with ${formData.industry || 'this area'} and I’d appreciate your guidance or a referral if possible.`,
+      `Hi ${formData.recipientFirstName}, ${formData.senderName} pointed me to you for the ${formData.recipientJobTitle}${jobInfo} opening at ${formData.recipientCompany}. ${formData.referralContext} If there's a referral path, I’d be grateful—open to a 5–10 min chat at your convenience.`
+    ];
+  }
+
+  // Non‑referral types
+  const purpose = formData.messagePurpose || 'connecting further';
+  return [
+    `Hi ${formData.recipientFirstName}, I came across your work at ${formData.recipientCompany} as ${formData.recipientJobTitle} and was impressed. I'm interested in ${purpose}. Would love to connect and learn from your experience in ${formData.industry || 'this space'}.`,
+    `Hello ${formData.recipientFirstName}, your role (${formData.recipientJobTitle} at ${formData.recipientCompany}) overlaps with my background. I’m exploring ${purpose} and think we share common interests. Open to connecting? — ${formData.senderName}`,
+    `Hey ${formData.recipientFirstName}, noticing your impact at ${formData.recipientCompany}, especially around ${formData.personalizedContext || 'recent projects'}. I’m reaching out about ${purpose}. Would love to connect and exchange notes. — ${formData.senderName}`
+  ];
+};
 
 export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> = ({
   onNavigateBack,
@@ -85,9 +98,11 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
   userSubscription,
   onShowSubscriptionPlans,
   onShowAlert,
-  refreshUserSubscription,
+  refreshUserSubscription
 }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState<MessageForm>({
     messageType: 'connection',
     recipientFirstName: '',
@@ -102,7 +117,7 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
     personalizedContext: '',
     industry: '',
     jobId: '',
-    referralContext: '',
+    referralContext: ''
   });
 
   const [generatedMessages, setGeneratedMessages] = useState<string[]>([]);
@@ -110,45 +125,49 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
   const [copySuccess, setCopySuccess] = useState<number | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
 
-  const navigate = useNavigate();
-
   useEffect(() => {
     if (user?.name) {
-      setFormData(prev => ({ ...prev, senderName: user.name }));
+      setFormData((prev) => ({ ...prev, senderName: user.name || prev.senderName }));
     }
   }, [user]);
 
-  const messageTypes = [
+  const messageTypes: Array<{
+    id: MessageType;
+    title: string;
+    description: string;
+    icon: React.ReactNode;
+    color: string;
+  }> = [
     {
-      id: 'connection' as MessageType,
+      id: 'connection',
       title: 'Connection Request',
       description: 'Send a personalized connection request to expand your network',
       icon: <Users className="w-6 h-6" />,
       color: 'from-blue-500 to-cyan-500'
     },
     {
-      id: 'cold-outreach' as MessageType,
+      id: 'cold-outreach',
       title: 'Cold Outreach',
       description: 'Reach out to prospects or potential collaborators',
       icon: <Mail className="w-6 h-6" />,
       color: 'from-green-500 to-emerald-500'
     },
     {
-      id: 'follow-up' as MessageType,
+      id: 'follow-up',
       title: 'Follow-up Message',
       description: 'Follow up on previous conversations or meetings',
       icon: <RefreshCw className="w-6 h-6" />,
       color: 'from-purple-500 to-pink-500'
     },
     {
-      id: 'job-inquiry' as MessageType,
+      id: 'job-inquiry',
       title: 'Job Inquiry',
       description: 'Inquire about job opportunities or express interest',
       icon: <Briefcase className="w-6 h-6" />,
       color: 'from-orange-500 to-red-500'
     },
     {
-      id: 'referral' as MessageType,
+      id: 'referral',
       title: 'Referral',
       description: 'Connect with someone based on a referral or recommendation',
       icon: <Share2 className="w-6 h-6" />,
@@ -156,17 +175,56 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
     }
   ];
 
-  const handleInputChange = (field: keyof MessageForm, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = <K extends keyof MessageForm>(field: K, value: MessageForm[K]) => {
+    setFormData((prev) => ({ ...prev, [field]: value as string }));
+  };
+
+  const validateCurrentStep = (): boolean => {
+    switch (currentStep) {
+      // Step 0 – picked a type
+      case 0:
+        return !!formData.messageType;
+
+      // Step 1 – recipient details
+      case 1: {
+        const basicsValid =
+          !!formData.recipientFirstName.trim() &&
+          !!formData.recipientLastName.trim() &&
+          !!formData.recipientCompany.trim() &&
+          !!formData.recipientJobTitle.trim();
+
+        if (formData.messageType === 'referral') {
+          return basicsValid && !!formData.referralContext?.trim();
+        }
+        return basicsValid;
+      }
+
+      // Step 2 – message details
+      case 2:
+        if (formData.messageType === 'referral') return true;
+        return !!formData.messagePurpose.trim();
+
+      default:
+        return false;
+    }
   };
 
   const handleGenerateMessage = async () => {
     if (!isAuthenticated) {
-      onShowAlert('Authentication Required', 'Please sign in to generate LinkedIn messages.', 'error', 'Sign In', onShowAuth);
+      onShowAlert(
+        'Authentication Required',
+        'Please sign in to generate LinkedIn messages.',
+        'error',
+        'Sign In',
+        onShowAuth
+      );
       return;
     }
 
-    if (!userSubscription || (userSubscription.linkedinMessagesTotal - userSubscription.linkedinMessagesUsed) <= 0) {
+    const creditsLeft =
+      (userSubscription?.linkedinMessagesTotal || 0) - (userSubscription?.linkedinMessagesUsed || 0);
+
+    if (!userSubscription || creditsLeft <= 0) {
       const planDetails = paymentService.getPlanById(userSubscription?.planId);
       const planName = planDetails?.name || 'your current plan';
       const linkedinMessagesTotal = planDetails?.linkedinMessages || 0;
@@ -181,6 +239,7 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
       return;
     }
 
+    // Final guard (should already be green due to validateCurrentStep)
     if (!formData.recipientFirstName || !formData.recipientCompany || !formData.recipientJobTitle) {
       onShowAlert('Missing Recipient Information', 'Please fill in all required recipient details.', 'warning');
       return;
@@ -205,12 +264,20 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
           await refreshUserSubscription();
         } else {
           console.error('Failed to decrement LinkedIn message usage:', usageResult.error);
-          onShowAlert('Usage Update Failed', 'Failed to record LinkedIn message usage. Please contact support.', 'error');
+          onShowAlert(
+            'Usage Update Failed',
+            'Failed to record LinkedIn message usage. Please contact support.',
+            'error'
+          );
         }
       }
     } catch (error: any) {
       console.error('Error generating LinkedIn message:', error);
-      onShowAlert('Generation Failed', `Failed to generate message: ${error.message || 'Unknown error'}. Please try again.', 'error');
+      onShowAlert(
+        'Generation Failed',
+        `Failed to generate message: ${error?.message || 'Unknown error'}. Please try again.`,
+        'error'
+      );
     } finally {
       setIsGenerating(false);
     }
@@ -218,44 +285,21 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
 
   const handleCopyMessage = async (message: string, index: number) => {
     try {
-      const el = document.createElement('textarea');
-      el.value = message;
-      document.body.appendChild(el);
-      el.select();
-      document.execCommand('copy');
-      document.body.removeChild(el);
-
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(message);
+      } else {
+        // Fallback for older browsers
+        const el = document.createElement('textarea');
+        el.value = message;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+      }
       setCopySuccess(index);
       setTimeout(() => setCopySuccess(null), 2000);
     } catch (err) {
       console.error('Failed to copy message:', err);
-    }
-  };
-
-  const validateCurrentStep = (): boolean => {
-    switch (currentStep) {
-      case 0:
-        return !!formData.messageType;
-      case 1:
-        const commonRecipientFieldsValid =
-          !!formData.recipientFirstName.trim() &&
-          !!formData.recipientLastName.trim() &&
-          !!formData.recipientCompany.trim() &&
-          !!formData.recipientJobTitle.trim();
-
-        if (formData.messageType === 'referral') {
-          return commonRecipientFieldsValid && !!formData.referralContext?.trim();
-        } else {
-          return commonRecipientFieldsValid;
-        }
-      case 2:
-        if (formData.messageType === 'referral') {
-          return true;
-        } else {
-          return !!formData.messagePurpose.trim();
-        }
-      default:
-        return false;
     }
   };
 
@@ -304,11 +348,10 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
                 : 'Provide details about the recipient.'}
             </p>
           </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                First Name *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">First Name *</label>
               <input
                 type="text"
                 value={formData.recipientFirstName}
@@ -318,9 +361,7 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Last Name *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Last Name *</label>
               <input
                 type="text"
                 value={formData.recipientLastName}
@@ -330,9 +371,7 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Company *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Company *</label>
               <input
                 type="text"
                 value={formData.recipientCompany}
@@ -342,9 +381,7 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Job Title *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Job Title *</label>
               <input
                 type="text"
                 value={formData.recipientJobTitle}
@@ -353,11 +390,10 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:border-neon-cyan-400"
               />
             </div>
+
             {formData.messageType === 'referral' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Job ID (Optional)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Job ID (Optional)</label>
                 <input
                   type="text"
                   value={formData.jobId || ''}
@@ -367,10 +403,9 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
                 />
               </div>
             )}
+
             <div className={formData.messageType === 'referral' ? '' : 'md:col-span-2'}>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Industry
-              </label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Industry</label>
               <input
                 type="text"
                 value={formData.industry}
@@ -379,15 +414,14 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:border-neon-cyan-400"
               />
             </div>
+
             {formData.messageType === 'referral' && (
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Referral Context *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Referral Context *</label>
                 <textarea
                   value={formData.referralContext || ''}
                   onChange={(e) => handleInputChange('referralContext', e.target.value)}
-                  placeholder="How do you know this person or why are you referring them? E.g., 'I saw your post about X', 'Our mutual connection Y suggested I reach out'."
+                  placeholder="How do you know this person or why are you referring them? E.g., 'Our mutual connection Y suggested I reach out'."
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-24 resize-none transition-all dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:border-neon-cyan-400"
                 />
               </div>
@@ -404,12 +438,11 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
             <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Message Configuration</h2>
             <p className="text-gray-600 dark:text-gray-300">Customize your message tone and purpose</p>
           </div>
+
           <div className="space-y-6">
             {formData.messageType !== 'referral' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Message Purpose *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message Purpose *</label>
                 <textarea
                   value={formData.messagePurpose}
                   onChange={(e) => handleInputChange('messagePurpose', e.target.value)}
@@ -418,10 +451,9 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
                 />
               </div>
             )}
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Tone
-              </label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tone</label>
               <div className="flex rounded-xl gap-1 bg-gray-100 border border-gray-200 shadow-inner dark:bg-dark-200 dark:border-dark-300">
                 {(['professional', 'casual', 'friendly'] as MessageTone[]).map((tone) => (
                   <button
@@ -438,11 +470,10 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
                 ))}
               </div>
             </div>
+
             {formData.messageType !== 'referral' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Personalized Context
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Personalized Context</label>
                 <textarea
                   value={formData.personalizedContext}
                   onChange={(e) => handleInputChange('personalizedContext', e.target.value)}
@@ -459,43 +490,57 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 text-gray-900 font-sans dark:from-dark-50 dark:to-dark-200 dark:text-gray-100 transition-colors duration-300">
+      {/* Top Bar */}
       <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40 dark:bg-dark-50 dark:border-dark-300">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <button
-              onClick={() => navigate('/')}
+              onClick={() => {
+                // prefer prop if provided
+                if (onNavigateBack) onNavigateBack();
+                else navigate('/');
+              }}
               className="mb-6 mt-5 bg-gradient-to-r from-neon-cyan-500 to-neon-blue-500 text-white hover:from-neon-cyan-400 hover:to-neon-blue-400 active:from-neon-cyan-600 active:to-neon-blue-600 shadow-md hover:shadow-neon-cyan py-3 px-5 rounded-xl inline-flex items-center space-x-2 transition-all duration-200"
             >
               <ArrowLeft className="w-5 h-5" />
               <span className="hidden sm:block">Back to Home</span>
             </button>
             <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">LinkedIn Message Generator</h1>
-            <div className="w-16"></div>
+            <div className="w-16" />
           </div>
         </div>
       </div>
 
+      {/* Body */}
       <div className="flex-1 overflow-y-auto pb-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Hero */}
           <div className="text-center mb-8">
             <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-200 dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
               <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 dark:bg-neon-cyan-500/20 dark:shadow-neon-cyan">
                 <Linkedin className="w-8 h-8 text-blue-600 dark:text-neon-cyan-400" />
               </div>
               <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4 leading-tight">
-                Craft Perfect <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-neon-cyan-400 dark:to-neon-blue-400">LinkedIn Messages</span>
+                Craft Perfect{' '}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-neon-cyan-400 dark:to-neon-blue-400">
+                  LinkedIn Messages
+                </span>
               </h1>
               <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-                Generate personalized LinkedIn messages that get responses. Perfect for networking, job hunting, and business outreach.
+                Generate personalized LinkedIn messages that get responses. Perfect for networking, job hunting, and
+                business outreach.
               </p>
             </div>
           </div>
 
           {!generatedMessages.length ? (
             <div className="space-y-8">
+              {/* Stepper */}
               <div className="bg-white rounded-3xl shadow-xl p-6 border border-gray-200 dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Step {currentStep + 1}: {steps[currentStep].title}</h2>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                    Step {currentStep + 1}: {steps[currentStep].title}
+                  </h2>
                   <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
                     Progress: {currentStep + 1} of {steps.length}
                   </div>
@@ -514,40 +559,40 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
                               : 'bg-white text-gray-500 border-gray-300 dark:bg-dark-200 dark:text-gray-400 dark:border-dark-300'
                           }`}
                         >
-                          {index < currentStep ? (
-                            <CheckCircle className="w-6 h-6" />
-                          ) : (
-                            <span className="text-lg font-bold">{index + 1}</span>
-                          )}
+                          {index < currentStep ? <CheckCircle className="w-6 h-6" /> : <span className="text-lg font-bold">{index + 1}</span>}
                         </div>
-                        <span className={`text-xs mt-2 font-medium text-center ${
-                          index <= currentStep ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'
-                        }`}>
+                        <span
+                          className={`text-xs mt-2 font-medium text-center ${
+                            index <= currentStep ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'
+                          }`}
+                        >
                           {step.title}
                         </span>
                       </div>
                       {index < steps.length - 1 && (
-                        <div className={`flex-1 h-1 rounded-full mx-2 transition-all duration-300 ${
-                          index < currentStep ? 'bg-green-500 dark:bg-neon-cyan-500' : 'bg-gray-200 dark:bg-dark-300'
-                        }`} />
+                        <div
+                          className={`flex-1 h-1 rounded-full mx-2 transition-all duration-300 ${
+                            index < currentStep ? 'bg-green-500 dark:bg-neon-cyan-500' : 'bg-gray-200 dark:bg-dark-300'
+                          }`}
+                        />
                       )}
                     </React.Fragment>
                   ))}
                 </div>
               </div>
 
+              {/* Step content */}
               <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-200 dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
                 {steps[currentStep].component}
               </div>
             </div>
           ) : (
             <div className="space-y-8">
+              {/* Header after generation */}
               <div className="bg-white rounded-3xl shadow-xl p-6 border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-2xl dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
                   <div className="flex items-center justify-between flex-wrap gap-4">
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                      Messages Generated!
-                    </h3>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Messages Generated!</h3>
                     <button
                       onClick={() => {
                         setGeneratedMessages([]);
@@ -560,54 +605,59 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
                   </div>
                 </div>
                 <div className="p-6">
-                  <p className="text-gray-600 dark:text-gray-300">Choose the message that best fits your style, and feel free to edit it before sending.</p>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    Choose the message that best fits your style, and feel free to edit it before sending.
+                  </p>
                 </div>
               </div>
 
+              {/* Message cards */}
               <div className="space-y-6">
                 {generatedMessages.map((message, index) => (
-                  <div key={index} className="bg-white rounded-3xl shadow-xl border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
+                  <div
+                    key={index}
+                    className="bg-white rounded-3xl shadow-xl border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl"
+                  >
                     <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                        Option {index + 1}
-                      </h3>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-600 dark:text-gray-400 hidden sm:block">
-                          {message.length} characters
-                        </span>
-                        <button
-                          onClick={() => handleCopyMessage(message, index)}
-                          className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg ${
-                            copySuccess === index
-                              ? 'bg-green-600 text-white shadow-md dark:bg-neon-cyan-500 dark:shadow-neon-cyan'
-                              : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md dark:bg-neon-blue-500 dark:hover:bg-neon-blue-400 dark:shadow-neon-blue'
-                          }`}
-                        >
-                          {copySuccess === index ? (
-                            <>
-                              <CheckCircle className="w-4 h-4" />
-                              <span>Copied!</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-4 h-4" />
-                              <span>Copy</span>
-                            </>
-                          )}
-                        </button>
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Option {index + 1}</h3>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm text-gray-600 dark:text-gray-400 hidden sm:block">
+                            {message.length} characters
+                          </span>
+                          <button
+                            onClick={() => handleCopyMessage(message, index)}
+                            className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg ${
+                              copySuccess === index
+                                ? 'bg-green-600 text-white shadow-md dark:bg-neon-cyan-500 dark:shadow-neon-cyan'
+                                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md dark:bg-neon-blue-500 dark:hover:bg-neon-blue-400 dark:shadow-neon-blue'
+                            }`}
+                          >
+                            {copySuccess === index ? (
+                              <>
+                                <CheckCircle className="w-4 h-4" />
+                                <span>Copied!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-4 h-4" />
+                                <span>Copy</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
                     <div className="p-6">
                       <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200 dark:bg-dark-200 dark:border-dark-300">
-                        <p className="text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
-                          {message}
-                        </p>
+                        <p className="text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">{message}</p>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
 
+              {/* Tips */}
               <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-3xl p-6 border border-blue-200 dark:from-dark-200 dark:to-dark-300 dark:border-neon-cyan-400/50">
                 <div className="flex items-start space-x-3">
                   <div className="bg-blue-100 p-2 rounded-full dark:bg-neon-cyan-500/20">
@@ -616,11 +666,10 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
                   <div>
                     <h4 className="font-semibold text-blue-900 dark:text-neon-cyan-300 mb-2">💡 Tips for Better Results</h4>
                     <ul className="text-blue-800 dark:text-gray-300 text-sm space-y-1">
-                      <li>• Personalize with specific details about their work or company</li>
-                      <li>• Keep messages concise and focused on value</li>
-                      <li>• Always include a clear call-to-action</li>
-                      <li>• Follow up if you don't get a response within a week</li>
-                      <li>• Follow up if you don't get a response within a week</li>
+                      <li>• Personalize with specific details about their work or company.</li>
+                      <li>• Keep messages concise and focused on value.</li>
+                      <li>• Always include a clear call-to-action.</li>
+                      <li>• Follow up if you don't get a response within a week.</li>
                     </ul>
                   </div>
                 </div>
@@ -630,6 +679,7 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
         </div>
       </div>
 
+      {/* Bottom action bar */}
       {!generatedMessages.length && (
         <div className="sticky bottom-0 z-50 bg-white border-t border-gray-200 shadow-2xl dark:bg-dark-50 dark:border-dark-300">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
