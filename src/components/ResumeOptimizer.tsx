@@ -85,8 +85,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [isCalculatingScore, setIsCalculatingScore] = useState(false);
   const [isProcessingMissingSections, setIsProcessingMissingSections] = useState(false);
-  const [activeTab, setActiveTab] = useState<'resume' | 'analysis'>('resume');
-  const [showOptimizationDropdown, setShowOptimizationDropdown] = useState(false);
+  const [activeTab, setActiveTab] = useState<'resume'>('resume'); // Removed 'analysis' option
   const [currentStep, setCurrentStep] = useState(0); // Changed initial step to 0 for InputWizard
 
   // Modal-specific state
@@ -144,7 +143,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     setChangedSections([]);
     setCurrentStep(0); // Reset to first step of wizard
     setActiveTab('resume');
-    setShowOptimizationDropdown(false);
+    // Removed setShowOptimizationDropdown(false); as it's no longer needed
     setShowMobileInterface(false);
   };
 
@@ -220,10 +219,10 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
       }
       console.log('handleOptimize: Session refreshed successfully. Session is now:', session);
 
-      console.log('handleOptimize: Current subscription (before useOptimization check):', subscription); // ADDED LOG
-      console.log('handleOptimize: Optimizations remaining (before useOptimization check):', subscription ? (subscription.optimizationsTotal - subscription.optimizationsUsed) : 'N/A'); // ADDED LOG
+      console.log('handleOptimize: Current subscription (before useOptimization check):', userSubscription); // ADDED LOG
+      console.log('handleOptimize: Optimizations remaining (before useOptimization check):', userSubscription ? (userSubscription.optimizationsTotal - userSubscription.optimizationsUsed) : 'N/A'); // ADDED LOG
 
-      if (!subscription || (subscription.optimizationsTotal - subscription.optimizationsUsed) <= 0) {
+      if (!userSubscription || (userSubscription.optimizationsTotal - userSubscription.optimizationsUsed) <= 0) {
         onShowPlanSelection('optimizer'); // Pass feature ID for context-specific modal
         return;
       }
@@ -349,7 +348,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
       setMissingSections([]);
       setPendingResumeData(null);
       setIsOptimizing(false);
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } = { data: { session: null } } } = supabase.auth.getSession(); // Default to null session
       await handleInitialResumeProcessing(updatedResume, session?.access_token || '');
     } catch (error) {
       console.error('Error processing missing sections:', error);
@@ -406,7 +405,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
       if (window.innerWidth < 768) {
         setShowMobileInterface(true);
       }
-      setActiveTab('resume');
+      setActiveTab('resume'); // Always set to resume tab
       setOptimizedResume(finalOptimizedResume);
     } catch (error) {
       console.error('Error in final optimization pass:', error);
@@ -498,7 +497,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
       const updatedResume = { ...parsedResumeData, projects: [...(parsedResumeData.projects || []), newProject] };
 
       setShowManualProjectAdd(false);
-      const { data: { session } = { data: { session: null } } } = await supabase.auth.getSession(); // Default to null session
+      const { data: { session } = { data: { session: null } } } = supabase.auth.getSession(); // Default to null session
       if (initialResumeScore) {
         await proceedWithFinalOptimization(updatedResume, initialResumeScore, session?.access_token || '');
       } else {
@@ -583,23 +582,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
         ),
         resumeData: optimizedResume
       },
-      {
-        id: 'analysis',
-        title: 'Resume Analysis',
-        icon: <BarChart3 className="w-5 h-5" />,
-        component: beforeScore && afterScore && optimizedResume && jobDescription && targetRole ? (
-          <ComprehensiveAnalysis
-            beforeScore={beforeScore}
-            afterScore={afterScore}
-            changedSections={changedSections}
-            resumeData={optimizedResume}
-            jobDescription={jobDescription}
-            targetRole={targetRole || "Target Role"}
-            initialDetailedScore={initialResumeScore}
-            finalDetailedScore={finalResumeScore}
-          />
-        ) : null
-      }
+      // Removed 'analysis' section for mobile interface as well
     ];
     return <MobileOptimizedInterface sections={mobileSections} onStartNewResume={handleStartNewResume} />;
   }
@@ -645,48 +628,18 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
             {isAuthenticated && !loadingSubscription && (
               <div className="relative text-center mb-8 z-10">
                 <button
-                  onClick={() => setShowOptimizationDropdown(!showOptimizationDropdown)}
+                  // Removed setShowOptimizationDropdown(!showOptimizationDropdown)
                   className="inline-flex items-center space-x-2 px-6 py-3 rounded-full transition-all duration-200 font-semibold text-sm bg-gradient-to-r from-neon-purple-500 to-neon-blue-600 text-white shadow-md hover:shadow-neon-purple focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neon-cyan-500 max-w-[300px] mx-auto justify-center dark:shadow-neon-purple"
                 >
                   <span>
-                    {subscription
-                      ? `Optimizations Left: ${subscription.optimizationsTotal - subscription.optimizationsUsed}`
+                    {userSubscription
+                      ? `Optimizations Left: ${userSubscription.optimizationsTotal - userSubscription.optimizationsUsed}`
                       : 'No Active Plan'}
                   </span>
-                  {showOptimizationDropdown ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  {/* Removed ChevronUp/Down as dropdown is removed */}
                 </button>
 
-                {showOptimizationDropdown && (
-                  <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-72 bg-white rounded-xl shadow-xl border border-secondary-200 py-3 z-20 dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
-                    {subscription ? (
-                      <div className="text-center px-4">
-                        <p className="text-sm text-secondary-700 dark:text-gray-300 mb-3">
-                          You have **{subscription.optimizationsTotal - subscription.optimizationsUsed}** optimizations remaining.
-                        </p>
-                        <button
-                          onClick={() => { onShowPlanSelection(); setShowOptimizationDropdown(false); }} // MODIFIED: Call the new plan selection handler
-                          className="w-full btn-secondary py-2 px-4 rounded-lg text-sm flex items-center justify-center space-x-2 dark:hover:shadow-neon-cyan/20"
-                        >
-                          <Zap className="w-4 h-4" />
-                          <span>Upgrade Plan</span>
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="text-center px-4">
-                        <p className="text-sm text-secondary-700 dark:text-gray-300 mb-3">
-                          You currently do not have an active subscription plan.
-                        </p>
-                        <button
-                          onClick={() => { onShowPlanSelection(); setShowOptimizationDropdown(false); }} // MODIFIED: Call the new plan selection handler
-                          className="w-full btn-primary py-2 px-4 rounded-lg text-sm flex items-center justify-center space-x-2"
-                        >
-                          <Crown className="w-4 h-4" />
-                          <span>Choose Your Plan</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                {/* Removed dropdown content */}
               </div>
             )}
             <div className="max-w-7xl mx-auto space-y-6">
@@ -716,31 +669,19 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
         ) : (
           <div className="max-w-7xl mx-auto space-y-6">
             <div className="text-center flex flex-col items-center gap-4">
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setActiveTab('resume')}
-                  className={`inline-flex items-center space-x-2 px-4 py-2 rounded-xl transition-colors font-medium text-sm shadow-lg ${
-                    activeTab === 'resume'
-                      ? 'bg-gradient-to-r from-neon-cyan-500 to-neon-blue-500 text-white shadow-neon-cyan'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-dark-200 dark:text-gray-300 dark:hover:bg-dark-300'
-                  }`}
-                >
-                  <FileText className="w-4 h-4" />
-                  <span>Resume Preview</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('analysis')}
-                  className={`inline-flex items-center space-x-2 px-4 py-2 rounded-xl transition-colors font-medium text-sm shadow-lg ${
-                    activeTab === 'analysis'
-                      ? 'bg-gradient-to-r from-neon-purple-500 to-neon-pink-500 text-white shadow-neon-purple'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-dark-200 dark:text-gray-300 dark:hover:bg-dark-300'
-                  }`}
-                >
-                  <BarChart3 className="w-4 h-4" />
-                  <span>Score Analysis</span>
-                </button>
-              </div>
-
+              {/* Removed Score Analysis tab button */}
+              <button
+                onClick={() => setActiveTab('resume')} // Only option is 'resume'
+                className={`inline-flex items-center space-x-2 px-4 py-2 rounded-xl transition-colors font-medium text-sm shadow-lg ${
+                  activeTab === 'resume'
+                    ? 'bg-gradient-to-r from-neon-cyan-500 to-neon-blue-500 text-white shadow-neon-cyan'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-dark-200 dark:text-gray-300 dark:hover:bg-dark-300'
+                }`}
+              >
+                <FileText className="w-4 h-4" />
+                <span>Resume Preview</span>
+              </button>
+              
               <button
                 onClick={handleStartNewResume}
                 className="inline-flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-xl shadow transition-colors dark:bg-dark-300 dark:hover:bg-dark-400"
@@ -771,20 +712,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
               </>
             )}
 
-            {optimizedResume && activeTab === 'analysis' && beforeScore && afterScore && (
-              <>
-                <ComprehensiveAnalysis
-                  beforeScore={beforeScore}
-                  afterScore={afterScore}
-                  changedSections={changedSections}
-                  resumeData={optimizedResume}
-                  jobDescription={jobDescription}
-                  targetRole={targetRole || "Target Role"}
-                  initialDetailedScore={initialResumeScore}
-                  finalDetailedScore={finalResumeScore}
-                />
-              </>
-            )}
+            {/* Removed optimizedResume && activeTab === 'analysis' conditional block */}
           </div>
         )}
       </div>
@@ -1008,7 +936,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
       {/* {showSubscriptionPlans && (
         <SubscriptionPlans
           isOpen={showSubscriptionPlans}
-          onNavigateBack={() => onShowSubscriptionPlans()}
+          onNavigateBack={() => onShowPlanSelection()}
           onSubscriptionSuccess={handleSubscriptionSuccess}
         />
       )} */}
@@ -1029,4 +957,3 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
 };
 
 export default ResumeOptimizer;
-
