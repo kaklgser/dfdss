@@ -568,35 +568,33 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
                 {generatedMessages.map((message, index) => (
                   <div key={index} className="bg-white rounded-3xl shadow-xl border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
                     <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                          Option {index + 1}
-                        </h3>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-gray-600 dark:text-gray-400 hidden sm:block">
-                            {message.length} characters
-                          </span>
-                          <button
-                            onClick={() => handleCopyMessage(message, index)}
-                            className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg ${
-                              copySuccess === index
-                                ? 'bg-green-600 text-white shadow-md dark:bg-neon-cyan-500 dark:shadow-neon-cyan'
-                                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md dark:bg-neon-blue-500 dark:hover:bg-neon-blue-400 dark:shadow-neon-blue'
-                            }`}
-                          >
-                            {copySuccess === index ? (
-                              <>
-                                <CheckCircle className="w-4 h-4" />
-                                <span>Copied!</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-4 h-4" />
-                                <span>Copy</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        Option {index + 1}
+                      </h3>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-600 dark:text-gray-400 hidden sm:block">
+                          {message.length} characters
+                        </span>
+                        <button
+                          onClick={() => handleCopyMessage(message, index)}
+                          className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg ${
+                            copySuccess === index
+                              ? 'bg-green-600 text-white shadow-md dark:bg-neon-cyan-500 dark:shadow-neon-cyan'
+                              : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md dark:bg-neon-blue-500 dark:hover:bg-neon-blue-400 dark:shadow-neon-blue'
+                          }`}
+                        >
+                          {copySuccess === index ? (
+                            <>
+                              <CheckCircle className="w-4 h-4" />
+                              <span>Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-4 h-4" />
+                              <span>Copy</span>
+                            </>
+                          )}
+                        </button>
                       </div>
                     </div>
                     <div className="p-6">
