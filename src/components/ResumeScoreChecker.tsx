@@ -703,7 +703,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                         )}
                       </div>
                     </div>
-                  </div>
+                  
 
                   {/* Detailed Breakdown Section */}
                   <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
