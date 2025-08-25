@@ -167,9 +167,43 @@ export const GuidedResumeBuilder: React.FC<GuidedResumeBuilderProps> = ({
     }
   }
 
+  // New validation function for the current step
+  const validateCurrentStep = (): boolean => {
+    switch (currentStep) {
+      case 0: // Personal Information
+        return !!resumeData.name.trim() && !!resumeData.email.trim() && !!resumeData.phone.trim();
+      case 1: // Experience Level
+        return !!userType;
+      case 2: // Education
+        return resumeData.education.some(edu => 
+          !!edu.degree.trim() && !!edu.school.trim() && !!edu.year.trim()
+        );
+      case 3: // Work Experience
+        return resumeData.workExperience.some(work => 
+          !!work.role.trim() && !!work.company.trim() && !!work.year.trim()
+        );
+      case 4: // Projects
+        return resumeData.projects.some(project => 
+          !!project.title.trim() && project.bullets.some(bullet => !!bullet.trim())
+        );
+      case 5: // Skills
+        return resumeData.skills.some(skillCategory => 
+          !!skillCategory.category.trim() && skillCategory.list.some(skill => !!skill.trim())
+        );
+      case 6: // Review & Generate (valid if basic info is there)
+        return !!resumeData.name.trim() && !!resumeData.email.trim();
+      default:
+        return false;
+    }
+  };
+
   const handleNext = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
+    if (validateCurrentStep()) { // Only proceed if current step is valid
+      if (currentStep < steps.length - 1) {
+        setCurrentStep(currentStep + 1);
+      }
+    } else {
+      onShowAlert('Missing Information', 'Please fill in all required fields before proceeding.', 'warning');
     }
   };
 
@@ -302,7 +336,12 @@ export const GuidedResumeBuilder: React.FC<GuidedResumeBuilderProps> = ({
           {currentStep < steps.length - 1 ? (
             <button
               onClick={handleNext}
-              className="flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl"
+              disabled={!validateCurrentStep()} // Disable if current step is not valid
+              className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                !validateCurrentStep()
+                  ? 'bg-gray-400 text-white cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
+              }`}
             >
               <span>Next</span>
               <ArrowRight className="w-5 h-5" />
@@ -921,9 +960,10 @@ const SkillsStep: React.FC<{ resumeData: ResumeData; setResumeData: React.Dispat
 
   const removeSkillFromCategory = (categoryIndex: number, skillIndex: number) => {
     const updated = [...resumeData.skills];
-    updated[categoryIndex].list.splice(skillIndex, 1);
-    updated[categoryIndex].count = updated[categoryIndex].list.length;
-    setResumeData(prev => ({ ...prev, skills: updated }));
+    if (updated[categoryIndex].list.length > 1) {
+      updated[categoryIndex].list.splice(skillIndex, 1);
+      setResumeData(prev => ({ ...prev, skills: updated }));
+    }
   };
 
   return (
