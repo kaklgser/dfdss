@@ -116,6 +116,13 @@ function App() {
     setShowSubscriptionPlans(true); // OPEN: SubscriptionPlans modal
   };
 
+  // NEW: Function to directly show SubscriptionPlans with add-ons expanded
+  const handleShowSubscriptionPlansDirectly = () => {
+    console.log('App.tsx: handleShowSubscriptionPlansDirectly called. Opening SubscriptionPlans modal directly.');
+    setShowSubscriptionPlans(true);
+    setInitialExpandAddons(true); // Ensure add-ons are expanded
+  };
+
   const handleSubscriptionSuccess = async () => {
     setShowSubscriptionPlans(false);
     setSuccessMessage('Subscription activated successfully!');
@@ -233,6 +240,7 @@ function App() {
     isAuthenticated: isAuthenticated,
     onShowAuth: handleShowAuth,
     onShowSubscriptionPlans: handleShowPlanSelection,
+    onShowSubscriptionPlansDirectly: handleShowSubscriptionPlansDirectly, // NEW PROP
     userSubscription: userSubscription,
     onShowAlert: handleShowAlert,
     refreshUserSubscription: refreshUserSubscription,
