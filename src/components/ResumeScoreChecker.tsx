@@ -532,20 +532,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                       </div>
                     </div>
                   </div>
-                  {scoringMode === 'jd_based' && scoreResult.missing_keywords.length > 0 && (
-                    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl mt-6">
-                      
-                      <div className="p-6">
-                        
-                        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg dark:bg-neon-cyan-500/10 dark:border-neon-cyan-400/50">
-                          <p className="text-blue-800 dark:text-neon-cyan-300 text-sm">
-                            💡 <strong>Tip:</strong> Add these keywords to your skills section, work experience bullets, or project descriptions to improve your ATS score.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
+                  
                   <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl mt-6">
                     <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
                       <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
