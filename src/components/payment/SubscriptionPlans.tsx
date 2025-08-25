@@ -38,6 +38,7 @@ interface SubscriptionPlansProps {
   onSubscriptionSuccess: () => void;
   // ADDED: onShowAlert prop
   onShowAlert: (title: string, message: string, type?: 'info' | 'success' | 'warning' | 'error', actionText?: string, onAction?: () => void) => void;
+  initialExpandAddons?: boolean; // NEW PROP
 }
 
 type AddOn = {
@@ -57,6 +58,7 @@ export const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
   onNavigateBack,
   onSubscriptionSuccess,
   onShowAlert, // ADDED: Destructure onShowAlert
+  initialExpandAddons, // NEW: Destructure initialExpandAddons
 }) => {
   const { user } = useAuth();
   // MODIFIED: Change initial state to 'career_boost_plus'
@@ -71,7 +73,7 @@ export const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
   const [walletBalance, setWalletBalance] = useState<number>(0); // Stored in paise
   const [useWalletBalance, setUseWalletBalance] = useState<boolean>(false);
   const [loadingWallet, setLoadingWallet] = useState<boolean>(true);
-  const [showAddOns, setShowAddOns] = useState<boolean>(false);
+  const [showAddOns, setShowAddOns] = useState<boolean>(initialExpandAddons || false); // MODIFIED: Initialize with new prop
   const [selectedAddOns, setSelectedAddOns] = useState<{ [key: string]: number }>({});
   const carouselRef = useRef<HTMLDivElement>(null);
 
@@ -338,7 +340,7 @@ export const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
 
           <div className="text-center max-w-4xl mx-auto px-8">
             <div className="bg-gradient-to-r from-neon-cyan-500 to-neon-purple-500 w-12 h-12 sm:w-20 sm:h-20 rounded-xl sm:rounded-3xl flex items-center justify-center mx-auto mb-3 sm:mb-6 shadow-lg dark:shadow-neon-cyan">
-              <Sparkles className="w-6 h-6 sm:w-10 sm:h-10 text-white" />
+              <Sparkles className="w-6 h-6 sm:w-10 h-10 text-white" />
             </div>
             <h1 className="text-lg sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2 sm:mb-3">
               🏆 Ultimate Resume & Job Prep Plans
