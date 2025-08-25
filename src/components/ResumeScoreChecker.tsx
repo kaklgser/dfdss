@@ -579,21 +579,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                     </div>
                   )}
 
-                  <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl mt-6">
-                    <div className="bg-gradient-to-r from-blue-50 to-teal-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
-                      <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
-                        <FileText className="w-5 h-5 mr-2 text-blue-600 dark:text-neon-cyan-400" />
-                        Legacy Score Breakdown
-                      </h2>
-                      <p className="text-gray-600 dark:text-gray-300 mt-1 text-sm">Previous 9-category analysis for reference</p>
-                    </div>
-                    <div className="p-6">
-                      <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-                        <Info className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                        <p>Legacy breakdown will be shown here for backward compatibility</p>
-                      </div>
-                    </div>
-                  </div>
+                  
 
                   <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl mt-6">
                     <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
