@@ -81,10 +81,9 @@ SCORING RUBRIC (16 metrics, weights sum = 140, normalized to 0-100):
 10. career_progression (6 points): Evidence of professional growth
 11. certifications (5 points): Relevant certifications and credentials
 12. formatting_quality (5 points): Professional formatting and ATS compatibility
-13. soft_skills (4 points): Communication, leadership, and interpersonal skills
-14. content_quality (4 points): Writing quality and professional presentation
-15. grammar_spelling (3 points): Language accuracy and professionalism
-16. resume_length (2 points): Appropriate length for experience level
+13. content_quality (4 points): Writing quality and professional presentation
+14. grammar_spelling (3 points): Language accuracy and professionalism
+15. resume_length (2 points): Appropriate length for experience level
 
 CALCULATION:
 - Calculate weighted sum: Σ(score_i × weight_i)
