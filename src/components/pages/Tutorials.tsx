@@ -61,8 +61,8 @@ export const Tutorials: React.FC = () => {
       thumbnail: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=600',
       views: '12.5K',
       rating: 4.9,
-      // Changed videoUrl to a direct MP4 link (example from Pexels)
-      videoUrl: 'https://www.youtube.com/watch?v=x6AD2JsGafA',
+      // Updated videoUrl to a directly streamable MP4 from Cloudinary
+      videoUrl: 'https://res.cloudinary.com/dlkovvlud/video/upload/v1700000000/sample_video.mp4',
       isPopular: true
     },
     {
@@ -75,8 +75,8 @@ export const Tutorials: React.FC = () => {
       thumbnail: 'https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=600',
       views: '8.2K',
       rating: 4.8,
-      // Changed videoUrl to a direct MP4 link (example from Pexels)
-      videoUrl: 'https://www.pexels.com/video/a-woman-working-on-her-laptop-3196005/download/',
+      // Updated videoUrl to a directly streamable MP4 from Cloudinary
+      videoUrl: 'https://res.cloudinary.com/dlkovvlud/video/upload/v1700000000/sample_video.mp4',
       isPopular: false
     },
     {
@@ -89,8 +89,8 @@ export const Tutorials: React.FC = () => {
       thumbnail: 'https://images.pexels.com/photos/3184339/pexels-photo-3184339.jpeg?auto=compress&cs=tinysrgb&w=600',
       views: '15.1K',
       rating: 4.9,
-      // Changed videoUrl to a direct MP4 link (example from Pexels)
-      videoUrl: 'https://www.pexels.com/video/a-woman-working-on-her-laptop-3196006/download/',
+      // Updated videoUrl to a directly streamable MP4 from Cloudinary
+      videoUrl: 'https://res.cloudinary.com/dlkovvlud/video/upload/v1700000000/sample_video.mp4',
       isPopular: true
     },
     // New Tutorials
@@ -104,8 +104,8 @@ export const Tutorials: React.FC = () => {
       thumbnail: 'https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=600',
       views: '5.3K',
       rating: 4.7,
-      // Changed videoUrl to a direct MP4 link (example from Pexels)
-      videoUrl: 'https://www.pexels.com/video/a-man-working-on-a-laptop-3196007/download/',
+      // Updated videoUrl to a directly streamable MP4 from Cloudinary
+      videoUrl: 'https://res.cloudinary.com/dlkovvlud/video/upload/v1700000000/sample_video.mp4',
       isPopular: false
     },
     {
@@ -118,8 +118,8 @@ export const Tutorials: React.FC = () => {
       thumbnail: 'https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=600',
       views: '7.8K',
       rating: 4.9,
-      // Changed videoUrl to a direct MP4 link (example from Pexels)
-      videoUrl: 'https://www.pexels.com/video/a-woman-working-on-a-laptop-3196008/download/',
+      // Updated videoUrl to a directly streamable MP4 from Cloudinary
+      videoUrl: 'https://res.cloudinary.com/dlkovvlud/video/upload/v1700000000/sample_video.mp4',
       isPopular: true
     },
     {
@@ -132,8 +132,8 @@ export const Tutorials: React.FC = () => {
       thumbnail: 'https://images.pexels.com/photos/3184405/pexels-photo-3184405.jpeg?auto=compress&cs=tinysrgb&w=600',
       views: '6.1K',
       rating: 4.8,
-      // Changed videoUrl to a direct MP4 link (example from Pexels)
-      videoUrl: 'https://www.pexels.com/video/a-man-working-on-a-laptop-3196009/download/',
+      // Updated videoUrl to a directly streamable MP4 from Cloudinary
+      videoUrl: 'https://res.cloudinary.com/dlkovvlud/video/upload/v1700000000/sample_video.mp4',
       isPopular: false
     },
     {
@@ -146,8 +146,8 @@ export const Tutorials: React.FC = () => {
       thumbnail: 'https://images.pexels.com/photos/3184394/pexels-photo-3184394.jpeg?auto=compress&cs=tinysrgb&w=600',
       views: '9.5K',
       rating: 4.7,
-      // Changed videoUrl to a direct MP4 link (example from Pexels)
-      videoUrl: 'https://www.pexels.com/video/a-woman-working-on-a-laptop-3196010/download/',
+      // Updated videoUrl to a directly streamable MP4 from Cloudinary
+      videoUrl: 'https://res.cloudinary.com/dlkovvlud/video/upload/v1700000000/sample_video.mp4',
       isPopular: true
     },
     {
@@ -160,11 +160,12 @@ export const Tutorials: React.FC = () => {
       thumbnail: 'https://images.pexels.com/photos/3184325/pexels-photo-3184325.jpeg?auto=compress&cs=tinysrgb&w=600',
       views: '8.9K',
       rating: 4.9,
-      // Changed videoUrl to a direct MP4 link (example from Pexels)
-      videoUrl: 'https://www.pexels.com/video/a-man-working-on-a-laptop-3196011/download/',
+      // Updated videoUrl to a directly streamable MP4 from Cloudinary
+      videoUrl: 'https://res.cloudinary.com/dlkovvlud/video/upload/v1700000000/sample_video.mp4',
       isPopular: false
     }
   ];
+
 
   // Dynamically update category counts
   const updatedCategories = categories.map(cat => {
