@@ -106,7 +106,8 @@ function App() {
      console.log('App.tsx: handleShowPlanSelection called with featureId:', featureId, 'expandAddons:', expandAddons);
     setPlanSelectionFeatureId(featureId);
     setInitialExpandAddons(expandAddons); // Set the new state
-    setShowPlanSelectionModal(false);
+    setShowPlanSelectionModal(true); // Changed to true
+    console.log('App.tsx: showPlanSelectionModal state set to true.'); // New log
   };
 
   // MODIFIED: handleSelectCareerPlans now opens SubscriptionPlans modal
@@ -247,6 +248,7 @@ function App() {
     onNavigateBack: handleNavigateHome,
   };
 
+  console.log('App.tsx: showPlanSelectionModal state before PlanSelectionModal render:', showPlanSelectionModal); // New log
   return (
     <div className="min-h-screen pb-safe-bottom safe-area bg-white dark:bg-dark-50 transition-colors duration-300">
       {showSuccessNotification && (
@@ -500,4 +502,3 @@ const AuthButtons: React.FC<{
   );
 };
 export default App;
-
