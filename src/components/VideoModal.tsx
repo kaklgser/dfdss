@@ -5,7 +5,7 @@ import { X } from 'lucide-react';
 interface VideoModalProps {
   isOpen: boolean;
   onClose: () => void;
-  videoUrl: string; // Now expects an embeddable URL (e.g., YouTube embed or direct MP4)
+  videoUrl: string; // Now expects a direct video file URL (e.g., .mp4)
   title: string;
 }
 
@@ -32,15 +32,16 @@ export const VideoModal: React.FC<VideoModalProps> = ({ isOpen, onClose, videoUr
 
         {/* Video Player */}
         <div className="aspect-w-16 aspect-h-9 bg-black">
-          {/* Changed from <video> back to <iframe> for YouTube embeds */}
-          <iframe
+          {/* Changed from iframe back to video tag */}
+          <video
+            controls
+            autoPlay
             src={videoUrl}
             title={title}
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
             className="w-full h-full"
-          ></iframe>
+          >
+            Your browser does not support the video tag.
+          </video>
         </div>
 
         {/* Optional: Video Title/Description below player */}
