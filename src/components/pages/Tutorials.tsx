@@ -24,7 +24,7 @@ import {
   Briefcase, // Added for job strategy
   User, // Added for general user
   ChevronDown, // Added for select dropdown
-    Sparkles,
+  Sparkles, // Corrected import
   BarChart3,
 } from 'lucide-react';
 
@@ -271,38 +271,6 @@ export const Tutorials: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 relative dark:from-dark-50 dark:to-dark-200 transition-colors duration-300">
-      {/* Main Content - Removed blur effect */}
-      <div>
-        {/* Hero Section */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-purple-600 to-blue-700 text-white dark:from-neon-purple-500 dark:to-neon-blue-500">
-          <div className="absolute inset-0 bg-black/20 dark:bg-black/40"></div>
-          <div className="relative container mx-auto px-4 py-20 sm:py-32">
-            <div className="text-center max-w-4xl mx-auto">
-              <div className="bg-white/10 backdrop-blur-sm w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-lg dark:bg-neon-cyan-500/20 dark:shadow-neon-cyan">
-                <Video className="w-10 h-10 text-white" />
-              </div>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-                Learn & Master
-                <span className="block bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent dark:from-neon-cyan-300 dark:to-neon-blue-300">
-                  Resume Optimization
-                </span>
-              </h1>
-              <p className="text-xl sm:text-2xl text-purple-100 dark:text-gray-200 mb-8 leading-relaxed">
-                Watch our tutorial videos to learn how to create the perfect resume and land your dream job.
-              </p>
-              <div className="flex flex-wrap justify-center gap-4">
-                <div className="bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full border border-white/20 dark:bg-neon-cyan-500/20 dark:border-neon-cyan-400/30">
-                  <span className="text-lg font-semibold">🎥 Video Tutorials</span>
-                </div>
-                <div className="bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full border border-white/20 dark:bg-neon-blue-500/20 dark:border-neon-blue-400/30">
-                  <span className="text-lg font-semibold">📚 Free Resources</span>
-                </div>
-              </div>
-
-  
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 relative dark:from-dark-50 dark:to-dark-200 transition-colors duration-300">
       {/* Hero Section */}
       <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
         {/* Gradient Background */}
@@ -347,89 +315,74 @@ export const Tutorials: React.FC = () => {
       </section>
 
       {/* Video Tutorial */}
-       {/* Video Tutorial */}
       <div className="py-20 bg-white dark:bg-dark-100">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                Video Tutorial
-              </h2>
-              <p className="text-xl text-gray-600 dark:text-gray-300">
-                Learn how to use PrimoBoost AI to optimize your resume
-              </p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">Featured Tutorial</h2>
+              <p className="text-xl text-gray-600 dark:text-gray-300">Watch our top recommended guide to get started</p>
             </div>
 
-        {/* Main Video Tutorial Section */}
-        <div className="py-20 bg-white dark:bg-dark-100">
-          <div className="container mx-auto px-4">
-            <div className="max-w-6xl mx-auto">
-              <div className="text-center mb-12">
-                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">Featured Tutorial</h2>
-                <p className="text-xl text-gray-600 dark:text-gray-300">Watch our top recommended guide to get started</p>
-              </div>
+            {mainVideoTutorial && (
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
+                <div className="aspect-w-16 aspect-h-9 relative">
+                  {/* Placeholder for embedded video */}
+                  <iframe
+                    src={mainVideoTutorial.videoUrl.replace("watch?v=", "embed/")}
+                    title={mainVideoTutorial.title}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="absolute top-0 left-0 w-full h-full"
+                  ></iframe>
+                </div>
 
-              {mainVideoTutorial && (
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
-                  <div className="aspect-w-16 aspect-h-9 relative">
-                    {/* Placeholder for embedded video */}
-                    <iframe
-                      src={mainVideoTutorial.videoUrl.replace("watch?v=", "embed/")}
-                      title={mainVideoTutorial.title}
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="absolute top-0 left-0 w-full h-full"
-                    ></iframe>
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getDifficultyColor(mainVideoTutorial.difficulty)}`}>
+                        {mainVideoTutorial.difficulty}
+                      </span>
+                      <span className="text-gray-500 dark:text-gray-400 text-sm flex items-center">
+                        <Clock className="w-4 h-4 mr-1" />
+                        {mainVideoTutorial.duration}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-1 text-yellow-500">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className={`w-5 h-5 ${i < mainVideoTutorial.rating ? 'fill-current' : ''}`} />
+                      ))}
+                      <span className="ml-1 text-gray-700 dark:text-gray-300 font-medium">{mainVideoTutorial.rating}</span>
+                    </div>
                   </div>
 
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getDifficultyColor(mainVideoTutorial.difficulty)}`}>
-                          {mainVideoTutorial.difficulty}
-                        </span>
-                        <span className="text-gray-500 dark:text-gray-400 text-sm flex items-center">
-                          <Clock className="w-4 h-4 mr-1" />
-                          {mainVideoTutorial.duration}
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-1 text-yellow-500">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} className={`w-5 h-5 ${i < mainVideoTutorial.rating ? 'fill-current' : ''}`} />
-                        ))}
-                        <span className="ml-1 text-gray-700 dark:text-gray-300 font-medium">{mainVideoTutorial.rating}</span>
-                      </div>
-                    </div>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+                    {mainVideoTutorial.title}
+                  </h3>
+                  <p className="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
+                    {mainVideoTutorial.description}
+                  </p>
 
-                    <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">
-                      {mainVideoTutorial.title}
-                    </h3>
-                    <p className="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
-                      {mainVideoTutorial.description}
-                    </p>
-
-                    <div className="flex flex-wrap gap-4">
-                      <div className="bg-blue-50 px-4 py-2 rounded-lg text-blue-800 text-sm font-medium flex items-center dark:bg-neon-cyan-500/10 dark:text-neon-cyan-300">
-                        <Users className="w-4 h-4 mr-2" />
-                        {mainVideoTutorial.views} views
-                      </div>
-                      <div className="bg-purple-50 px-4 py-2 rounded-lg text-purple-800 text-sm font-medium flex items-center dark:bg-neon-purple-500/10 dark:text-neon-purple-300">
-                        <BookOpen className="w-4 h-4 mr-2" />
-                        {mainVideoTutorial.category.replace('-', ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                      </div>
-                      <button // Changed from <a> to <button>
-                        onClick={() => window.open(mainVideoTutorial.videoUrl, '_blank')} // MODIFIED: Direct redirect
-                        className="bg-green-50 px-4 py-2 rounded-lg text-green-800 text-sm font-medium flex items-center dark:bg-neon-cyan-500/10 dark:text-neon-cyan-300 hover:bg-green-100 transition-colors"
-                      >
-                        <Play className="w-4 h-4 mr-2" />
-                        Watch Now
-                      </button>
+                  <div className="flex flex-wrap gap-4">
+                    <div className="bg-blue-50 px-4 py-2 rounded-lg text-blue-800 text-sm font-medium flex items-center dark:bg-neon-cyan-500/10 dark:text-neon-cyan-300">
+                      <Users className="w-4 h-4 mr-2" />
+                      {mainVideoTutorial.views} views
                     </div>
+                    <div className="bg-purple-50 px-4 py-2 rounded-lg text-purple-800 text-sm font-medium flex items-center dark:bg-neon-purple-500/10 dark:text-neon-purple-300">
+                      <BookOpen className="w-4 h-4 mr-2" />
+                      {mainVideoTutorial.category.replace('-', ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                    </div>
+                    <button
+                      onClick={() => window.open(mainVideoTutorial.videoUrl, '_blank')}
+                      className="bg-green-50 px-4 py-2 rounded-lg text-green-800 text-sm font-medium flex items-center dark:bg-neon-cyan-500/10 dark:text-neon-cyan-300 hover:bg-green-100 transition-colors"
+                    >
+                      <Play className="w-4 h-4 mr-2" />
+                      Watch Now
+                    </button>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -510,8 +463,8 @@ export const Tutorials: React.FC = () => {
                             ))}
                             <span className="ml-1 text-gray-700 text-sm font-medium dark:text-gray-300">{tutorial.rating}</span>
                           </div>
-                          <button // Changed from <a> to <button>
-                            // REMOVED onClick={() => window.open(tutorial.videoUrl, '_blank')}
+                          <button
+                            onClick={() => openVideoModal(tutorial.videoUrl, tutorial.title)}
                             className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center space-x-1 dark:text-neon-cyan-400 dark:hover:text-neon-cyan-300"
                           >
                             <span>Watch Video</span>
@@ -549,8 +502,12 @@ export const Tutorials: React.FC = () => {
                           {guide.icon}
                         </div>
 
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">{guide.title}</h3>
-                        <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">{guide.description}</p>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+                          {guide.title}
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
+                          {guide.description}
+                        </p>
 
                         <div className="flex justify-center space-x-6 mb-6 text-sm text-gray-500 dark:text-gray-400">
                           <div className="flex items-center space-x-1">
@@ -640,260 +597,13 @@ export const Tutorials: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                </div>
-
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">
-                  Getting Started with PrimoBoost AI
-                </h3>
-                <p className="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
-                  In this comprehensive tutorial, you'll learn how to upload your resume, optimize it
-                  for specific job descriptions, and export it in various formats. We'll cover all
-                  the essential features of PrimoBoost AI to help you create a resume that stands
-                  out to both ATS systems and human recruiters.
-                </p>
-
-                <div className="flex flex-wrap gap-4">
-                  <div className="bg-blue-50 px-4 py-2 rounded-lg text-blue-800 text-sm font-medium flex items-center dark:bg-neon-cyan-500/10 dark:text-neon-cyan-300">
-                    <Users className="w-4 h-4 mr-2" />
-                    12.5K views
-                  </div>
-                  <div className="bg-purple-50 px-4 py-2 rounded-lg text-purple-800 text-sm font-medium flex items-center dark:bg-neon-purple-500/10 dark:text-neon-purple-300">
-                    <BookOpen className="w-4 h-4 mr-2" />
-                    Beginner friendly
-                  </div>
-                  <div className="bg-green-50 px-4 py-2 rounded-lg text-green-800 text-sm font-medium flex items-center dark:bg-neon-cyan-500/10 dark:text-neon-cyan-300">
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Updated for 2025
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* NEW: VideoModal component */}
-      <VideoModal
-        isOpen={isVideoModalOpen}
-        onClose={closeVideoModal}
-        videoUrl={currentVideoUrl}
-        title={currentVideoTitle}
-      />
-      {/* Free Resources */}
-      <div className="py-20 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-dark-200 dark:to-dark-300">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                Free Resources
-              </h2>
-              <p className="text-xl text-gray-600 dark:text-gray-300">
-                Download our comprehensive guide
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-1 gap-8 max-w-2xl mx-auto">
-              {guides.map((guide, index) => (
-                <div key={index} className="group">
-                  <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-gray-100 p-8 dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl dark:hover:shadow-neon-cyan/20">
-                    <div className="text-center">
-                      <div className="bg-gradient-to-br from-purple-50 to-blue-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 text-purple-600 dark:from-neon-purple-500/20 dark:to-neon-blue-500/20 dark:text-neon-purple-400 dark:shadow-neon-purple">
-                        {guide.icon}
-                      </div>
-
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">
-                        {guide.title}
-                      </h3>
-                      <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-                        {guide.description}
-                      </p>
-
-                      <div className="flex justify-center space-x-6 mb-6 text-sm text-gray-500 dark:text-gray-400">
-                        <div className="flex items-center space-x-1">
-                          <BookOpen className="w-4 h-4" />
-                          <span>{guide.pages} pages</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Download className="w-4 h-4" />
-                          <span>{guide.downloads}</span>
-                        </div>
-                      </div>
-
-                      <button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl dark:from-neon-purple-500 dark:to-neon-blue-500 dark:hover:from-neon-purple-400 dark:hover:to-neon-blue-400 dark:shadow-neon-purple">
-                        <Download className="w-5 h-5" />
-                        <span>Download Free</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ✅ Learning Path */}
-      <section className="py-20 px-6 bg-white dark:bg-dark-100">
-        {(() => {
-          const PinContainer = ({ children, containerClassName = "" }) => {
-            return (
-              <motion.div
-                whileHover={{ rotateX: 6, rotateY: 6 }}
-                transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                style={{ perspective: "1000px" }} // ✅ FIXED: inline style for perspective
-                className={`relative ${containerClassName}`}
-              >
-                {children}
-              </motion.div>
-            );
-          };
-
-          const steps = [
-            {
-              number: 1,
-              title: "Start with Basics",
-              description: "Learn how to upload your resume and understand the optimization process",
-              duration: "15 minutes",
-              icon: <CheckCircle className="w-8 h-8 text-white" />,
-              color: "primary",
-              glow: "from-purple-500/30 to-blue-500/30",
-            },
-            {
-              number: 2,
-              title: "Master ATS Optimization",
-              description: "Understand how ATS systems work and optimize your resume accordingly",
-              duration: "30 minutes",
-              icon: <BarChart3 className="w-8 h-8 text-white" />,
-              color: "accent-aqua",
-              glow: "from-cyan-400/30 to-teal-400/30",
-            },
-            {
-              number: 3,
-              title: "Advanced Techniques",
-              description: "Learn keyword optimization, formatting, and industry-specific tips",
-              duration: "25 minutes",
-              icon: <Zap className="w-8 h-8 text-foreground" />,
-              color: "accent-yellow",
-              glow: "from-yellow-400/30 to-orange-400/30",
-            },
-            {
-              number: 4,
-              title: "Practice & Perfect",
-              description: "Apply your knowledge and create multiple optimized versions",
-              duration: "45 minutes",
-              icon: <Award className="w-8 h-8 text-white" />,
-              color: "primary",
-              glow: "from-purple-500/30 to-pink-500/30",
-            },
-          ];
-
-          return (
-            <div className="max-w-6xl mx-auto">
-              <div className="text-center mb-16">
-                <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-6 font-poppins">
-                  Recommended Learning Path
-                </h2>
-                <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto font-inter">
-                  Follow this structured path for best results
-                </p>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
-                {steps.map((step, index) => {
-                  const isEven = index % 2 === 1;
-                  return (
-                    <motion.div
-                      key={step.number}
-                      initial={{ opacity: 0, y: 50 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: index * 0.2 }}
-                      viewport={{ once: true }}
-                      animate={{ y: [0, -8, 0] }}
-                      // ✅ FIXED: only 1 transition prop
-                      transition={{
-                        duration: 4,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: index * 0.5,
-                      }}
-                      className={`${isEven ? "md:translate-y-8" : ""} flex justify-center relative`}
-                    >
-                      {/* Glow Aura */}
-                      <motion.div
-                        className={`absolute inset-0 blur-3xl rounded-full bg-gradient-to-r ${step.glow} opacity-50`}
-                        animate={{ opacity: [0.3, 0.7, 0.3], scale: [0.95, 1.05, 0.95] }}
-                        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                      />
-
-                      {/* Card */}
-                      <PinContainer containerClassName="w-[20rem] h-[20rem] relative z-10">
-                        <div className="flex flex-col p-6 w-[18rem] h-[18rem] bg-gradient-to-b from-white to-gray-50 dark:from-dark-200 dark:to-dark-300 border rounded-2xl shadow-lg">
-                          
-                          {/* Header */}
-                          <div className="flex items-center justify-between mb-4">
-                            <div
-                              className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shadow-md
-                              ${step.color === "primary"
-                                ? "bg-purple-600 text-white"
-                                : step.color === "accent-aqua"
-                                ? "bg-cyan-500 text-white"
-                                : step.color === "accent-yellow"
-                                ? "bg-yellow-400 text-gray-900"
-                                : "bg-purple-600 text-white"}`}
-                            >
-                              {step.number}
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                              <Clock className="w-3 h-3" />
-                              <span>{step.duration}</span>
-                            </div>
-                          </div>
-
-                          {/* Icon */}
-                          <div className="flex justify-center mb-6">
-                            <div
-                              className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-md
-                              ${step.color === "primary"
-                                ? "bg-gradient-to-r from-purple-500 to-blue-500"
-                                : step.color === "accent-aqua"
-                                ? "bg-cyan-500"
-                                : step.color === "accent-yellow"
-                                ? "bg-yellow-400"
-                                : "bg-gradient-to-r from-purple-500 to-blue-500"}`}
-                            >
-                              {step.icon}
-                            </div>
-                          </div>
-
-                          {/* Content */}
-                          <div className="flex-1 text-center space-y-3">
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 font-poppins">
-                              {step.title}
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-inter">
-                              {step.description}
-                            </p>
-                          </div>
-
-                          {/* Footer */}
-                          <div className="flex justify-center items-center mt-4">
-                            <div className="text-purple-600 dark:text-neon-purple-400 text-sm font-medium flex items-center gap-2">
-                              Learn More
-                              <ArrowRight className="w-4 h-4" />
-                            </div>
-                          </div>
-                        </div>
-                      </PinContainer>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })()}
-      </section>
-
-      {/* CTA Section */}
+        {/* CTA Section */}
            <section className="py-20 px-6 bg-gradient-to-br from-purple-600 via-blue-600 to-purple-600 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-96 h-96 bg-cyan-400/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-yellow-400/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
@@ -936,3 +646,4 @@ export const Tutorials: React.FC = () => {
     </div>
   );
 };
+
