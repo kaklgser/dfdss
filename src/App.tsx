@@ -106,7 +106,7 @@ function App() {
      console.log('App.tsx: handleShowPlanSelection called with featureId:', featureId, 'expandAddons:', expandAddons);
     setPlanSelectionFeatureId(featureId);
     setInitialExpandAddons(expandAddons); // Set the new state
-    setShowPlanSelectionModal(true);
+    setShowPlanSelectionModal(false);
   };
 
   // MODIFIED: handleSelectCareerPlans now opens SubscriptionPlans modal
