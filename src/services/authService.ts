@@ -119,32 +119,7 @@ private isValidGmail(email: string): boolean {
     console.log('AuthService: User signed up with Supabase. User ID:', data.user.id);
 
     // Register device for new user
-    try {
-      console.log('AuthService: Attempting device registration for new user...');
-      const deviceId = await deviceTrackingService.registerDevice(data.user.id);
-      if (deviceId) {
-        await deviceTrackingService.logActivity(data.user.id, 'signup', {
-          signupMethod: 'email_password',
-          success: true
-        }, deviceId);
-        AuthService.lastDeviceActivityLog = Date.now(); // Update last log time
-        console.log('AuthService: Device tracking for signup successful.');
-      } else {
-        console.warn('AuthService: Device ID not obtained for signup tracking.');
-      }
-    } catch (deviceError) {
-      console.warn('AuthService: Device tracking failed during signup:', deviceError);
-      // Don't fail signup if device tracking fails
-    }
-
-    // Activate free trial for new users (Note: This might be removed based on plan changes)
-    try {
-      console.log('AuthService: Attempting to activate free trial...');
-      await paymentService.activateFreeTrial(data.user.id);
-      console.log('AuthService: Free trial activation attempted for new user:', data.user.id);
-    } catch (trialError) {
-      console.error('AuthService: Failed to activate free trial for new user:', trialError);
-    }
+    
 
     const signupResult = {
       needsVerification: !data.session,
