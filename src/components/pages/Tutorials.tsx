@@ -58,7 +58,7 @@ export const Tutorials: React.FC = () => {
       duration: '5:30',
       difficulty: 'Beginner',
       category: 'getting-started',
-      thumbnail: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=600',
+      thumbnail: 'https://www.youtube.com/watch?v=x6AD2JsGafA',
       views: '12.5K',
       rating: 4.9,
       // Changed videoUrl to a direct MP4 link (example from Pexels)
