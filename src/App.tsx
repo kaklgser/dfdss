@@ -446,9 +446,9 @@ function App() {
 
       {/* NEW: Animated Offer Banner */}
       {!showOfferOverlay && (
-        <div
+         <div
           onClick={() => setShowOfferOverlay(true)}
-          className="fixed bottom-0 left-0 w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-2 px-4 z-40 cursor-pointer overflow-hidden shadow-lg"
+          className="fixed bottom-0 left-0 w-full bg-gradient-to-r from-secondary-700 to-secondary-900 text-white py-2 px-4 z-40 cursor-pointer overflow-hidden shadow-lg dark:from-dark-100 dark:to-dark-200"
           aria-label="Special Offer Banner"
         >
           <div className="flex items-center justify-center">
