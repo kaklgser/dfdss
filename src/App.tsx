@@ -21,7 +21,6 @@ import { ToolsAndPagesNavigation } from './components/pages/ToolsAndPagesNavigat
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { PlanSelectionModal } from './components/payment/PlanSelectionModal';
 import { PricingPage } from './components/pages/PricingPage';
-import { OfferOverlay } from './components/OfferOverlay'; // Import the new OfferOverlay
 
 function App() {
   const { isAuthenticated, user, markProfilePromptSeen, isLoading } = useAuth();
@@ -55,12 +54,7 @@ function App() {
   const [planSelectionFeatureId, setPlanSelectionFeatureId] = useState<string | undefined>(undefined);
 
   // NEW: State to control initial expansion of add-ons in SubscriptionPlans modal
-  const [initialExpandAddons, setInitialExpandAddons] = useState(true);
-
-  // NEW: State for the OfferOverlay
-  const [showOfferOverlay, setShowOfferOverlay] = useState(false);
-  // REMOVED: State for the floating offer button (showFloatingOfferButton)
-
+  const [initialExpandAddons, setInitialExpandAddons] = useState(false);
 
   const handleMobileMenuToggle = () => {
     setShowMobileMenu(!showMobileMenu);
@@ -112,8 +106,7 @@ function App() {
      console.log('App.tsx: handleShowPlanSelection called with featureId:', featureId, 'expandAddons:', expandAddons);
     setPlanSelectionFeatureId(featureId);
     setInitialExpandAddons(expandAddons); // Set the new state
-    setShowPlanSelectionModal(true); // Changed to true
-    console.log('App.tsx: showPlanSelectionModal state set to true.'); // New log
+    setShowPlanSelectionModal(true);
   };
 
   // MODIFIED: handleSelectCareerPlans now opens SubscriptionPlans modal
@@ -127,7 +120,7 @@ function App() {
   const handleShowSubscriptionPlansDirectly = () => {
     console.log('App.tsx: handleShowSubscriptionPlansDirectly called. Opening SubscriptionPlans modal directly.');
     setShowSubscriptionPlans(true);
-    setInitialExpandAddons(false); // Ensure add-ons are expanded
+    setInitialExpandAddons(true); // Ensure add-ons are expanded
   };
 
   const handleSubscriptionSuccess = async () => {
@@ -254,7 +247,6 @@ function App() {
     onNavigateBack: handleNavigateHome,
   };
 
-  console.log('App.tsx: showPlanSelectionModal state before PlanSelectionModal render:', showPlanSelectionModal); // New log
   return (
     <div className="min-h-screen pb-safe-bottom safe-area bg-white dark:bg-dark-50 transition-colors duration-300">
       {showSuccessNotification && (
@@ -324,7 +316,7 @@ function App() {
                     { id: '/about', label: 'About Us', icon: <Info className="w-5 h-5" /> },
                     { id: '/tutorials', label: 'Tutorials', icon: <BookOpen className="w-5 h-5" /> },
                     { id: '/contact', label: 'Contact', icon: <Phone className="w-5 h-5" /> },
-                   
+                    { id: '/all-tools', label: 'All Tools & Pages', icon: <Sparkles className="w-5 h-5" /> },
                     ...(isAuthenticated ? [{ id: 'wallet', label: 'Referral & Wallet', icon: <Wallet className="w-5 h-5" /> }] : []),
                   ].map((item) => (
                     <button
@@ -429,39 +421,6 @@ function App() {
         actionText={alertActionText}
         onAction={alertActionCallback}
       />
-
-      {/* NEW: Render the OfferOverlay */}
-      <OfferOverlay
-        isOpen={showOfferOverlay}
-        onClose={() => {
-          setShowOfferOverlay(false);
-          // When the overlay is closed, you might want to hide the banner too,
-          // or let it reappear after a delay. For now, it will reappear.
-        }}
-        onAction={() => {
-          setShowOfferOverlay(false); // Close overlay
-          navigate('/pricing'); // Navigate to pricing page
-        }}
-      />
-
-      {/* NEW: Animated Offer Banner */}
-      {!showOfferOverlay && (
-         <div
-          onClick={() => setShowOfferOverlay(true)}
-          className="fixed bottom-0 left-0 w-full bg-gradient-to-r from-secondary-700 to-secondary-900 text-white py-2 px-4 z-40 cursor-pointer overflow-hidden shadow-lg dark:from-dark-100 dark:to-dark-200"
-          aria-label="Special Offer Banner"
-        >
-          <div className="flex items-center justify-center">
-            <Sparkles className="w-5 h-5 mr-2 flex-shrink-0" />
-            <div className="relative flex overflow-x-hidden">
-              <p className="animate-marquee-continuous text-sm font-semibold">
-                Exclusive Launch Offer! Get 15% off all plans! Use code PRIMOBOOST - Limited Time! &nbsp;&nbsp;&nbsp; Exclusive Launch Offer! Get 15% off all plans! Use code PRIMOBOOST - Limited Time!
-              </p>
-            </div>
-            <Sparkles className="w-5 h-5 ml-2 flex-shrink-0" />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -541,3 +500,4 @@ const AuthButtons: React.FC<{
   );
 };
 export default App;
+
