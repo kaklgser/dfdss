@@ -135,17 +135,20 @@ export const GuidedResumeBuilder: React.FC<GuidedResumeBuilderProps> = ({
   ];
 
   async function handleGenerate() {
+    console.log('GuidedResumeBuilder: handleGenerate called.'); // New log
     if (!isAuthenticated) {
+      console.log('GuidedResumeBuilder: User not authenticated. Showing auth alert.'); // New log
       onShowAlert('Authentication Required', 'Please sign in to generate your resume.', 'error', 'Sign In', onShowAuth);
       return;
     }
 
     // Check subscription and guided build credits
     if (!userSubscription || (userSubscription.guidedBuildsTotal - userSubscription.guidedBuildsUsed) <= 0) {
-      onShowSubscriptionPlans('guided-builder');
+      console.log('GuidedResumeBuilder: Guided build credits exhausted or no subscription. Calling onShowSubscriptionPlans.'); // New log
+      onShowSubscriptionPlans('guided-builder'); // This should trigger the modal
       return;
     }
-
+    console.log('GuidedResumeBuilder: Credits available. Proceeding with generation.'); // New log
     setIsGenerating(true);
     try {
       // Simulate AI generation
@@ -1153,3 +1156,4 @@ const ReviewStep: React.FC<{
     </div>
   );
 };
+
