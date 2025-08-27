@@ -54,7 +54,7 @@ function App() {
   const [planSelectionFeatureId, setPlanSelectionFeatureId] = useState<string | undefined>(undefined);
 
   // NEW: State to control initial expansion of add-ons in SubscriptionPlans modal
-  const [initialExpandAddons, setInitialExpandAddons] = useState(false);
+  const [initialExpandAddons, setInitialExpandAddons] = useState(true);
 
   const handleMobileMenuToggle = () => {
     setShowMobileMenu(!showMobileMenu);
