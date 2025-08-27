@@ -20,80 +20,167 @@ interface PlanConfig {
   id: string;
   name: string;
   price: number; // In Rupees
+  mrp: number; // New: Manufacturer's Recommended Price
+  discountPercentage: number; // New: Calculated discount percentage
   duration: string;
   optimizations: number;
   scoreChecks: number;
-  linkedinMessages: number | typeof Infinity; // Corrected to allow Infinity
+  linkedinMessages: number; // Corrected to number
   guidedBuilds: number;
   durationInHours: number;
 }
 
+// UPDATED PLANS ARRAY - MUST MATCH src/services/paymentService.ts
 const plans: PlanConfig[] = [
   {
     id: 'career_pro_max',
     name: 'Career Pro Max',
-    price: 1999,
+    price: 2299, // Offer Price
+    mrp: 10000, // MRP
+    discountPercentage: 77.01, // (10000 - 2299) / 10000 * 100
     duration: 'One-time Purchase',
     optimizations: 50,
     scoreChecks: 50,
-    linkedinMessages: Infinity,
+    linkedinMessages: 500, // Fixed count
     guidedBuilds: 5,
-    durationInHours: 24 * 365 * 10,
+    tag: 'Ultimate Value',
+    tagColor: 'text-purple-800 bg-purple-100',
+    gradient: 'from-purple-500 to-indigo-500',
+    icon: 'crown',
+    features: [
+      '✅ 50 Resume Optimizations',
+      '✅ 50 Score Checks',
+      '✅ 500 LinkedIn Messages',
+      '✅ 5 Guided Resume Builds',
+      '✅ Priority Support',
+    ],
+    popular: false, // Will be "Best Value"
+    durationInHours: 8760, // 365 days
   },
   {
     id: 'career_boost_plus',
     name: 'Career Boost+',
-    price: 1499,
+    price: 1699, // Offer Price
+    mrp: 7500, // MRP
+    discountPercentage: 77.34, // (7500 - 1699) / 7500 * 100
     duration: 'One-time Purchase',
     optimizations: 30,
     scoreChecks: 30,
-    linkedinMessages: Infinity,
+    linkedinMessages: 300, // Fixed count
     guidedBuilds: 3,
-    durationInHours: 24 * 365 * 10,
+    tag: 'Best Seller',
+    tagColor: 'text-blue-800 bg-blue-100',
+    gradient: 'from-blue-500 to-cyan-500',
+    icon: 'zap',
+    features: [
+      '✅ 30 Resume Optimizations',
+      '✅ 30 Score Checks',
+      '✅ 300 LinkedIn Messages',
+      '✅ 3 Guided Resume Builds',
+      '✅ Standard Support',
+    ],
+    popular: true, // Will be "Most Popular"
+    durationInHours: 8760, // 365 days
   },
   {
     id: 'pro_resume_kit',
     name: 'Pro Resume Kit',
-    price: 999,
+    price: 1199, // Offer Price
+    mrp: 5000, // MRP
+    discountPercentage: 76.02, // (5000 - 1199) / 5000 * 100
     duration: 'One-time Purchase',
     optimizations: 20,
     scoreChecks: 20,
-    linkedinMessages: 100,
+    linkedinMessages: 100, // Fixed count
     guidedBuilds: 2,
-    durationInHours: 24 * 365 * 10,
+    tag: 'Great Start',
+    tagColor: 'text-green-800 bg-green-100',
+    gradient: 'from-green-500 to-emerald-500',
+    icon: 'rocket',
+    features: [
+      '✅ 20 Resume Optimizations',
+      '✅ 20 Score Checks',
+      '✅ 100 LinkedIn Messages',
+      '✅ 2 Guided Resume Builds',
+      '✅ Email Support',
+    ],
+    popular: false,
+    durationInHours: 8760, // 365 days
   },
   {
     id: 'smart_apply_pack',
     name: 'Smart Apply Pack',
-    price: 499,
+    price: 599, // Offer Price
+    mrp: 2500, // MRP
+    discountPercentage: 76.04, // (2500 - 599) / 2500 * 100
     duration: 'One-time Purchase',
     optimizations: 10,
     scoreChecks: 10,
-    linkedinMessages: 50,
+    linkedinMessages: 50, // Fixed count
     guidedBuilds: 1,
-    durationInHours: 24 * 365 * 10,
+    tag: 'Quick Boost',
+    tagColor: 'text-yellow-800 bg-yellow-100',
+    gradient: 'from-yellow-500 to-orange-500',
+    icon: 'target',
+    features: [
+      '✅ 10 Resume Optimizations',
+      '✅ 10 Score Checks',
+      '✅ 50 LinkedIn Messages',
+      '✅ 1 Guided Resume Build',
+      '✅ Basic Support',
+    ],
+    popular: false,
+    durationInHours: 8760, // 365 days
   },
   {
     id: 'resume_fix_pack',
     name: 'Resume Fix Pack',
-    price: 199,
+    price: 249, // Offer Price
+    mrp: 999, // MRP
+    discountPercentage: 75.07, // (999 - 249) / 999 * 100
     duration: 'One-time Purchase',
     optimizations: 5,
     scoreChecks: 2,
     linkedinMessages: 0,
     guidedBuilds: 0,
-    durationInHours: 24 * 365 * 10,
+    tag: 'Essential',
+    tagColor: 'text-red-800 bg-red-100',
+    gradient: 'from-red-500 to-pink-500',
+    icon: 'wrench',
+    features: [
+      '✅ 5 Resume Optimizations',
+      '✅ 2 Score Checks',
+      '❌ LinkedIn Messages',
+      '❌ Guided Builds',
+      '❌ Priority Support',
+    ],
+    popular: false,
+    durationInHours: 8760, // 365 days
   },
   {
     id: 'lite_check',
     name: 'Lite Check',
-    price: 99,
+    price: 129, // Offer Price
+    mrp: 499, // MRP
+    discountPercentage: 74.15, // (499 - 129) / 499 * 100
     duration: 'One-time Purchase',
     optimizations: 2,
     scoreChecks: 2,
     linkedinMessages: 10,
     guidedBuilds: 0,
-    durationInHours: 24 * 365 * 10,
+    tag: 'Trial',
+    tagColor: 'text-gray-800 bg-gray-100',
+    gradient: 'from-gray-500 to-gray-700',
+    icon: 'check_circle',
+    features: [
+      '✅ 2 Resume Optimizations',
+      '✅ 2 Score Checks',
+      '✅ 10 LinkedIn Messages',
+      '❌ Guided Builds',
+      '❌ Priority Support',
+    ],
+    popular: false,
+    durationInHours: 168, // 7 days (7 * 24 hours)
   },
 ];
 
@@ -140,6 +227,8 @@ serve(async (req) => {
         id: 'addon_only_purchase',
         name: 'Add-on Only Purchase',
         price: 0, // In Rupees
+        mrp: 0, // MRP
+        discountPercentage: 0, // Discount percentage
         duration: 'One-time Purchase',
         optimizations: 0,
         scoreChecks: 0,
