@@ -59,8 +59,7 @@ function App() {
 
   // NEW: State for the OfferOverlay
   const [showOfferOverlay, setShowOfferOverlay] = useState(false);
-  // NEW: State for the floating offer button
-  const [showFloatingOfferButton, setShowFloatingOfferButton] = useState(true);
+  // REMOVED: State for the floating offer button (showFloatingOfferButton)
 
 
   const handleMobileMenuToggle = () => {
@@ -243,11 +242,6 @@ function App() {
       setAuthModalInitialView('login');
     }
   }, [isAuthenticated, user, user?.hasSeenProfilePrompt, isLoading, isAuthModalOpenedByHash]);
-
-  // REMOVED: The useEffect that automatically shows the OfferOverlay on mount.
-  // useEffect(() => {
-  //   setShowOfferOverlay(true);
-  // }, []);
 
   const commonPageProps = {
     isAuthenticated: isAuthenticated,
@@ -441,7 +435,8 @@ function App() {
         isOpen={showOfferOverlay}
         onClose={() => {
           setShowOfferOverlay(false);
-          setShowFloatingOfferButton(false); // Hide the floating button after overlay is closed
+          // When the overlay is closed, you might want to hide the banner too,
+          // or let it reappear after a delay. For now, it will reappear.
         }}
         onAction={() => {
           setShowOfferOverlay(false); // Close overlay
@@ -449,16 +444,23 @@ function App() {
         }}
       />
 
-      {/* NEW: Floating Offer Button */}
-      {showFloatingOfferButton && !showOfferOverlay && (
-        <button
+      {/* NEW: Animated Offer Banner */}
+      {!showOfferOverlay && (
+        <div
           onClick={() => setShowOfferOverlay(true)}
-          className="fixed bottom-4 right-4 z-40 bg-gradient-to-r from-purple-600 to-pink-600 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center space-x-2 animate-bounce-gentle"
-          aria-label="Special Offer"
+          className="fixed bottom-0 left-0 w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-2 px-4 z-40 cursor-pointer overflow-hidden shadow-lg"
+          aria-label="Special Offer Banner"
         >
-          <Sparkles className="w-6 h-6" />
-          <span className="hidden sm:block font-semibold">Special Offer!</span>
-        </button>
+          <div className="flex items-center justify-center">
+            <Sparkles className="w-5 h-5 mr-2 flex-shrink-0" />
+            <div className="relative flex overflow-x-hidden">
+              <p className="animate-marquee-continuous text-sm font-semibold">
+                Exclusive Launch Offer! Get 15% off all plans! Use code PRIMOBOOST - Limited Time! &nbsp;&nbsp;&nbsp; Exclusive Launch Offer! Get 15% off all plans! Use code PRIMOBOOST - Limited Time!
+              </p>
+            </div>
+            <Sparkles className="w-5 h-5 ml-2 flex-shrink-0" />
+          </div>
+        </div>
       )}
     </div>
   );
