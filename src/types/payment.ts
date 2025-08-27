@@ -1,13 +1,13 @@
-// Payment types for the application
-// src/types/payment.ts
 export interface SubscriptionPlan {
   id: string;
   name: string;
-  price: number;
+  price: number; // This will be the offer price
+  mrp: number; // New: Manufacturer's Recommended Price
+  discountPercentage: number; // New: Calculated discount percentage
   duration: string;
   optimizations: number;
   scoreChecks: number;
-  linkedinMessages: number;
+  linkedinMessages: number; // Changed from typeof Infinity to number
   guidedBuilds: number;
   tag: string;
   tagColor: string;
@@ -15,7 +15,7 @@ export interface SubscriptionPlan {
   icon: string;
   features: string[];
   popular?: boolean;
-  durationInHours: number; // ADD THIS LINE
+  durationInHours: number; // Added this property
 }
 
 
@@ -69,3 +69,4 @@ export interface Subscription {
   guidedBuildsUsed: number;
   guidedBuildsTotal: number;
 }
+
