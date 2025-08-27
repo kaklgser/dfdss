@@ -381,9 +381,9 @@ export const Tutorials: React.FC = () => {
                       alt={tutorial.title}
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                     />
-                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <Play className="w-12 h-12 text-white" />
-                    </div>
+                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <Play className="w-12 h-12 text-white" />
+                        </div>
                       </div>
                       <div className="p-6">
                         <div className="flex items-center justify-between mb-3">
