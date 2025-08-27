@@ -25,11 +25,18 @@ import {
   User, // Added for general user
   ChevronDown // Added for select dropdown
 } from 'lucide-react';
+import { VideoModal } from '../VideoModal'; // Import the new VideoModal component
 
 export const Tutorials: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   // Removed showOverlay state
+
+  // NEW: State for VideoModal
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [currentVideoUrl, setCurrentVideoUrl] = useState('');
+  const [currentVideoTitle, setCurrentVideoTitle] = useState('');
+
 
   const categories = [
     { id: 'all', name: 'All Tutorials', count: 0 }, // Count will be updated dynamically
@@ -190,6 +197,23 @@ export const Tutorials: React.FC = () => {
     }
   ];
 
+  // NEW: Function to open the video modal
+  const openVideoModal = (videoUrl: string, title: string) => {
+    // Transform YouTube watch URL to embed URL
+    const embedUrl = videoUrl.replace("watch?v=", "embed/");
+    setCurrentVideoUrl(embedUrl);
+    setCurrentVideoTitle(title);
+    setIsVideoModalOpen(true);
+  };
+
+  // NEW: Function to close the video modal
+  const closeVideoModal = () => {
+    setIsVideoModalOpen(false);
+    setCurrentVideoUrl('');
+    setCurrentVideoTitle('');
+  };
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 relative dark:from-dark-50 dark:to-dark-200 transition-colors duration-300">
       {/* Main Content - Removed blur effect */}
@@ -281,15 +305,13 @@ export const Tutorials: React.FC = () => {
                         <BookOpen className="w-4 h-4 mr-2" />
                         {mainVideoTutorial.category.replace('-', ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                       </div>
-                      <a
-                        href={mainVideoTutorial.videoUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button // Changed from <a> to <button>
+                        onClick={() => openVideoModal(mainVideoTutorial.videoUrl, mainVideoTutorial.title)}
                         className="bg-green-50 px-4 py-2 rounded-lg text-green-800 text-sm font-medium flex items-center dark:bg-neon-cyan-500/10 dark:text-neon-cyan-300 hover:bg-green-100 transition-colors"
                       >
                         <Play className="w-4 h-4 mr-2" />
                         Watch Now
-                      </a>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -370,15 +392,13 @@ export const Tutorials: React.FC = () => {
                             ))}
                             <span className="ml-1 text-gray-700 text-sm font-medium dark:text-gray-300">{tutorial.rating}</span>
                           </div>
-                          <a
-                            href={tutorial.videoUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button // Changed from <a> to <button>
+                            onClick={() => openVideoModal(tutorial.videoUrl, tutorial.title)}
                             className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center space-x-1 dark:text-neon-cyan-400 dark:hover:text-neon-cyan-300"
                           >
                             <span>Watch Video</span>
                             <ArrowRight className="w-4 h-4" />
-                          </a>
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -396,14 +416,149 @@ export const Tutorials: React.FC = () => {
           </div>
         </div>
 
-       
+        {/* Free Resources */}
+        <div className="py-20 bg-white dark:bg-dark-100">
+          <div className="container mx-auto px-4">
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">Free Resources</h2>
+                <p className="text-xl text-gray-600 dark:text-gray-300">Download our comprehensive guide</p>
+              </div>
+
+              <div className="grid md:grid-cols-1 gap-8 max-w-2xl mx-auto">
+                {guides.map((guide, index) => (
+                  <div key={index} className="group">
+                    <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-gray-100 p-8 dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl dark:hover:shadow-neon-cyan/20">
+                      <div className="text-center">
+                        <div className="bg-gradient-to-br from-purple-50 to-blue-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 text-purple-600 dark:from-neon-purple-500/20 dark:to-neon-blue-500/20 dark:text-neon-purple-400 dark:shadow-neon-purple">
+                          {guide.icon}
+                        </div>
+
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">{guide.title}</h3>
+                        <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">{guide.description}</p>
+
+                        <div className="flex justify-center space-x-6 mb-6 text-sm text-gray-500 dark:text-gray-400">
+                          <div className="flex items-center space-x-1">
+                            <BookOpen className="w-4 h-4" />
+                            <span>{guide.pages} pages</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Download className="w-4 h-4" />
+                            <span>{guide.downloads}</span>
+                          </div>
+                        </div>
+
+                        <button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl dark:from-neon-purple-500 dark:to-neon-blue-500 dark:hover:from-neon-purple-400 dark:hover:to-neon-blue-400 dark:shadow-neon-purple">
+                          <Download className="w-5 h-5" />
+                          <span>Download Free</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Learning Path */}
-        
+        <div className="py-20 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-dark-200 dark:to-dark-300">
+          <div className="container mx-auto px-4">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">Recommended Learning Path</h2>
+                <p className="text-xl text-gray-600 dark:text-gray-300">Follow this structured path for best results</p>
+              </div>
+
+              <div className="space-y-6">
+                {[
+                  {
+                    step: 1,
+                    title: 'Start with Basics',
+                    description: 'Learn how to upload your resume and understand the optimization process',
+                    duration: '15 minutes',
+                    icon: <Lightbulb className="w-6 h-6" />
+                  },
+                  {
+                    step: 2,
+                    title: 'Master ATS Optimization',
+                    description: 'Understand how ATS systems work and optimize your resume accordingly',
+                    duration: '30 minutes',
+                    icon: <Target className="w-6 h-6" />
+                  },
+                  {
+                    step: 3,
+                    title: 'Advanced Techniques',
+                    description: 'Learn keyword optimization, formatting, and industry-specific tips',
+                    duration: '45 minutes',
+                    icon: <Zap className="w-6 h-6" />
+                  },
+                  {
+                    step: 4,
+                    title: 'Practice & Perfect',
+                    description: 'Apply your knowledge and create multiple optimized versions',
+                    duration: '60 minutes',
+                    icon: <Award className="w-6 h-6" />
+                  }
+                ].map((item, index) => (
+                  <div key={index} className="group">
+                    <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400 dark:hover:shadow-neon-cyan/20">
+                      <div className="flex items-center space-x-6">
+                        <div className="bg-gradient-to-r from-purple-600 to-blue-600 w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0 dark:from-neon-purple-500 dark:to-neon-blue-500 dark:shadow-neon-purple">
+                          {item.step}
+                        </div>
+
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <div className="text-purple-600 dark:text-neon-purple-400">
+                              {item.icon}
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{item.title}</h3>
+                            <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium dark:bg-neon-purple-500/20 dark:text-neon-purple-300">
+                              {item.duration}
+                            </span>
+                          </div>
+                          <p className="text-gray-700 dark:text-gray-300">{item.description}</p>
+                        </div>
+
+                        <ArrowRight className="w-6 h-6 text-gray-400 group-hover:text-purple-600 transition-colors dark:text-gray-500 dark:group-hover:text-neon-purple-400" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* CTA Section */}
-     
+        <div className="py-20 bg-gradient-to-r from-purple-600 to-blue-700 text-white dark:from-neon-purple-500 dark:to-neon-blue-500">
+          <div className="container mx-auto px-4 text-center">
+            <div className="max-w-3xl mx-auto">
+              <h2 className="text-3xl sm:text-4xl font-bold mb-6">Ready to Start Learning?</h2>
+              <p className="text-xl text-purple-100 dark:text-gray-200 mb-8">
+                Join thousands of professionals who have transformed their careers with our tutorials.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button className="bg-white text-purple-600 font-bold py-4 px-8 rounded-2xl hover:bg-gray-100 transition-colors duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 dark:bg-dark-100 dark:text-neon-purple-400 dark:hover:bg-dark-200 dark:shadow-neon-purple">
+                  Start Learning Now
+                </button>
+                <button className="border-2 border-white text-white font-bold py-4 px-8 rounded-2xl hover:bg-white hover:text-purple-600 transition-colors duration-300 dark:border-neon-cyan-400 dark:hover:bg-neon-cyan-400 dark:hover:text-dark-100">
+                  Download Free Guide
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* NEW: VideoModal component */}
+      <VideoModal
+        isOpen={isVideoModalOpen}
+        onClose={closeVideoModal}
+        videoUrl={currentVideoUrl}
+        title={currentVideoTitle}
+      />
     </div>
   );
 };
