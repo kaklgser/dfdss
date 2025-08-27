@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { X, Sparkles, Target, Briefcase, Loader2, CheckCircle, AlertCircle, PlusCircle, TrendingUp, MessageCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { paymentService } from '../../services/paymentService';
-import { useNavigate } from 'react/router-dom';
+import { useNavigate } from 'react-router-dom'; // Change 'react/router-dom' to 'react-router-dom'
 import { supabase } from '../../lib/supabaseClient';
 
 interface PlanSelectionModalProps {
@@ -28,7 +28,6 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  console.log('PlanSelectionModal: isOpen prop received:', isOpen); // New log
   if (!isOpen) return null;
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -125,10 +124,7 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
         onSubscriptionSuccess();
         onShowAlert('Purchase Successful!', `Your ${featureConfig.title} credit has been added.`, 'success');
         onClose();
-        // Add a small delay before navigating to ensure modal unmounts cleanly
-        setTimeout(() => {
-          navigate(featureConfig.redirectPath);
-        }, 50); // 50ms delay
+        navigate(featureConfig.redirectPath);
       } else {
         setError(result.error || 'Payment failed. Please try again.');
         onShowAlert('Payment Failed', result.error || 'Payment processing failed. Please try again.', 'error');
