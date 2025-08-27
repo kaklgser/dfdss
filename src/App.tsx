@@ -54,7 +54,7 @@ function App() {
   const [planSelectionFeatureId, setPlanSelectionFeatureId] = useState<string | undefined>(undefined);
 
   // NEW: State to control initial expansion of add-ons in SubscriptionPlans modal
-  const [initialExpandAddons, setInitialExpandAddons] = useState(false);
+  const [initialExpandAddons, setInitialExpandAddons] = useState(true);
 
   const handleMobileMenuToggle = () => {
     setShowMobileMenu(!showMobileMenu);
@@ -106,7 +106,8 @@ function App() {
      console.log('App.tsx: handleShowPlanSelection called with featureId:', featureId, 'expandAddons:', expandAddons);
     setPlanSelectionFeatureId(featureId);
     setInitialExpandAddons(expandAddons); // Set the new state
-    setShowPlanSelectionModal(true);
+    setShowPlanSelectionModal(true); // Changed to true
+    console.log('App.tsx: showPlanSelectionModal state set to true.'); // New log
   };
 
   // MODIFIED: handleSelectCareerPlans now opens SubscriptionPlans modal
@@ -120,7 +121,7 @@ function App() {
   const handleShowSubscriptionPlansDirectly = () => {
     console.log('App.tsx: handleShowSubscriptionPlansDirectly called. Opening SubscriptionPlans modal directly.');
     setShowSubscriptionPlans(true);
-    setInitialExpandAddons(true); // Ensure add-ons are expanded
+    setInitialExpandAddons(false); // Ensure add-ons are expanded
   };
 
   const handleSubscriptionSuccess = async () => {
@@ -247,6 +248,7 @@ function App() {
     onNavigateBack: handleNavigateHome,
   };
 
+  console.log('App.tsx: showPlanSelectionModal state before PlanSelectionModal render:', showPlanSelectionModal); // New log
   return (
     <div className="min-h-screen pb-safe-bottom safe-area bg-white dark:bg-dark-50 transition-colors duration-300">
       {showSuccessNotification && (
@@ -316,7 +318,7 @@ function App() {
                     { id: '/about', label: 'About Us', icon: <Info className="w-5 h-5" /> },
                     { id: '/tutorials', label: 'Tutorials', icon: <BookOpen className="w-5 h-5" /> },
                     { id: '/contact', label: 'Contact', icon: <Phone className="w-5 h-5" /> },
-                    { id: '/all-tools', label: 'All Tools & Pages', icon: <Sparkles className="w-5 h-5" /> },
+                   
                     ...(isAuthenticated ? [{ id: 'wallet', label: 'Referral & Wallet', icon: <Wallet className="w-5 h-5" /> }] : []),
                   ].map((item) => (
                     <button
@@ -500,4 +502,3 @@ const AuthButtons: React.FC<{
   );
 };
 export default App;
-
