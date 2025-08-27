@@ -23,7 +23,7 @@ import {
   MessageCircle, // Added for LinkedIn tutorial
   Briefcase, // Added for job strategy
   User, // Added for general user
-  ChevronDown // Added for select dropdown
+  ChevronDown, // Added for select dropdown
     Sparkles,
   BarChart3,
 } from 'lucide-react';
