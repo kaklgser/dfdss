@@ -402,24 +402,7 @@ export const Tutorials: React.FC = () => {
         
 
         {/* CTA Section */}
-        <div className="py-20 bg-gradient-to-r from-purple-600 to-blue-700 text-white dark:from-neon-purple-500 dark:to-neon-blue-500">
-          <div className="container mx-auto px-4 text-center">
-            <div className="max-w-3xl mx-auto">
-              <h2 className="text-3xl sm:text-4xl font-bold mb-6">Ready to Start Learning?</h2>
-              <p className="text-xl text-purple-100 dark:text-gray-200 mb-8">
-                Join thousands of professionals who have transformed their careers with our tutorials.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button className="bg-white text-purple-600 font-bold py-4 px-8 rounded-2xl hover:bg-gray-100 transition-colors duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 dark:bg-dark-100 dark:text-neon-purple-400 dark:hover:bg-dark-200 dark:shadow-neon-purple">
-                  Start Learning Now
-                </button>
-                <button className="border-2 border-white text-white font-bold py-4 px-8 rounded-2xl hover:bg-white hover:text-purple-600 transition-colors duration-300 dark:border-neon-cyan-400 dark:hover:bg-neon-cyan-400 dark:hover:text-dark-100">
-                  Download Free Guide
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+     
       </div>
     </div>
   );
