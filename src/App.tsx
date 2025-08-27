@@ -14,13 +14,14 @@ import { Contact } from './components/pages/Contact';
 import { Tutorials } from './components/pages/Tutorials';
 import { AuthModal } from './components/auth/AuthModal';
 import { UserProfileManagement } from './components/UserProfileManagement';
-import { SubscriptionPlans } from './components/payment/SubscriptionPlans'; // Ensure this import is present
+import { SubscriptionPlans } from './components/payment/SubscriptionPlans';
 import { paymentService } from './services/paymentService';
 import { AlertModal } from './components/AlertModal';
 import { ToolsAndPagesNavigation } from './components/pages/ToolsAndPagesNavigation';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { PlanSelectionModal } from './components/payment/PlanSelectionModal';
 import { PricingPage } from './components/pages/PricingPage';
+import { OfferOverlay } from './components/OfferOverlay'; // Import OfferOverlay
 
 function App() {
   const { isAuthenticated, user, markProfilePromptSeen, isLoading } = useAuth();
@@ -29,7 +30,7 @@ function App() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showProfileManagement, setShowProfileManagement] = useState(false);
-  const [showSubscriptionPlans, setShowSubscriptionPlans] = useState(false); // REINTRODUCED: State for SubscriptionPlans modal
+  const [showSubscriptionPlans, setShowSubscriptionPlans] = useState(false);
   const [showSuccessNotification, setShowSuccessNotification] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [profileViewMode, setProfileViewMode] = useState<'profile' | 'wallet'>('profile');
@@ -53,8 +54,10 @@ function App() {
   const [showPlanSelectionModal, setShowPlanSelectionModal] = useState(false);
   const [planSelectionFeatureId, setPlanSelectionFeatureId] = useState<string | undefined>(undefined);
 
-  // NEW: State to control initial expansion of add-ons in SubscriptionPlans modal
   const [initialExpandAddons, setInitialExpandAddons] = useState(true);
+
+  // NEW STATE FOR OFFER OVERLAY
+  const [showVinayakaOffer, setShowVinayakaOffer] = useState(false);
 
   const handleMobileMenuToggle = () => {
     setShowMobileMenu(!showMobileMenu);
@@ -72,7 +75,6 @@ function App() {
       handleShowProfile('wallet');
       setShowMobileMenu(false);
     } else if (path === 'subscription-plans') {
-      // When navigating directly to subscription-plans, don't expand add-ons by default
       handleShowPlanSelection(undefined, false); 
       setShowMobileMenu(false);
     } else {
@@ -101,27 +103,26 @@ function App() {
     navigate('/');
   };
 
-  // MODIFIED: handleShowPlanSelection now accepts expandAddons parameter
-  const handleShowPlanSelection = (featureId?: string, expandAddons: boolean = false) => {
-     console.log('App.tsx: handleShowPlanSelection called with featureId:', featureId, 'expandAddons:', expandAddons);
+  // MODIFIED: handleShowPlanSelection now accepts planId and couponCode
+  const handleShowPlanSelection = (featureId?: string, expandAddons: boolean = false, planId?: string, couponCode?: string) => {
+     console.log('App.tsx: handleShowPlanSelection called with featureId:', featureId, 'expandAddons:', expandAddons, 'planId:', planId, 'couponCode:', couponCode);
     setPlanSelectionFeatureId(featureId);
-    setInitialExpandAddons(expandAddons); // Set the new state
-    setShowPlanSelectionModal(true); // Changed to true
-    console.log('App.tsx: showPlanSelectionModal state set to true.'); // New log
+    setInitialExpandAddons(expandAddons);
+    setShowSubscriptionPlans(true); // Changed to true to directly open SubscriptionPlans
+    // Store planId and couponCode in state if needed for SubscriptionPlans component
+    // For now, we'll pass them directly to SubscriptionPlans component
   };
 
-  // MODIFIED: handleSelectCareerPlans now opens SubscriptionPlans modal
   const handleSelectCareerPlans = () => {
     console.log('handleSelectCareerPlans called. Attempting to close PlanSelectionModal and open SubscriptionPlans modal.');
-    setShowPlanSelectionModal(false); // Close PlanSelectionModal
-    setShowSubscriptionPlans(true); // OPEN: SubscriptionPlans modal
+    setShowPlanSelectionModal(false);
+    setShowSubscriptionPlans(true);
   };
 
-  // NEW: Function to directly show SubscriptionPlans with add-ons expanded
   const handleShowSubscriptionPlansDirectly = () => {
     console.log('App.tsx: handleShowSubscriptionPlansDirectly called. Opening SubscriptionPlans modal directly.');
     setShowSubscriptionPlans(true);
-    setInitialExpandAddons(false); // Ensure add-ons are expanded
+    setInitialExpandAddons(false);
   };
 
   const handleSubscriptionSuccess = async () => {
@@ -237,18 +238,36 @@ function App() {
     }
   }, [isAuthenticated, user, user?.hasSeenProfilePrompt, isLoading, isAuthModalOpenedByHash]);
 
+  // NEW useEffect for Vinayaka Chavithi Offer
+  useEffect(() => {
+    const offerSeenKey = 'vinayakaChavithiOfferSeen';
+    const offerExpiryDate = new Date('2025-09-10T23:59:59'); // Set your offer expiry date
+
+    const hasSeenOffer = localStorage.getItem(offerSeenKey);
+    const now = new Date();
+
+    if (!hasSeenOffer && now < offerExpiryDate) {
+      const timer = setTimeout(() => {
+        setShowVinayakaOffer(true);
+        localStorage.setItem(offerSeenKey, 'true'); // Mark as seen after showing
+      }, 2000); // Show after 2 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   const commonPageProps = {
     isAuthenticated: isAuthenticated,
     onShowAuth: handleShowAuth,
     onShowSubscriptionPlans: handleShowPlanSelection,
-    onShowSubscriptionPlansDirectly: handleShowSubscriptionPlansDirectly, // NEW PROP
+    onShowSubscriptionPlansDirectly: handleShowSubscriptionPlansDirectly,
     userSubscription: userSubscription,
     onShowAlert: handleShowAlert,
     refreshUserSubscription: refreshUserSubscription,
     onNavigateBack: handleNavigateHome,
   };
 
-  console.log('App.tsx: showPlanSelectionModal state before PlanSelectionModal render:', showPlanSelectionModal); // New log
+  console.log('App.tsx: showPlanSelectionModal state before PlanSelectionModal render:', showPlanSelectionModal);
   return (
     <div className="min-h-screen pb-safe-bottom safe-area bg-white dark:bg-dark-50 transition-colors duration-300">
       {showSuccessNotification && (
@@ -403,7 +422,6 @@ function App() {
         triggeredByFeatureId={planSelectionFeatureId}
       />
 
-      {/* REINTRODUCED: SubscriptionPlans modal rendering */}
       {showSubscriptionPlans && (
         <SubscriptionPlans
           isOpen={showSubscriptionPlans}
@@ -411,6 +429,11 @@ function App() {
           onSubscriptionSuccess={handleSubscriptionSuccess}
           onShowAlert={handleShowAlert}
           initialExpandAddons={initialExpandAddons}
+          // NEW PROPS: Pass planId and couponCode to SubscriptionPlans
+          // These would typically come from a state variable if set by handleShowPlanSelection
+          // For this specific offer, we hardcode them here for the OfferOverlay action
+          initialPlanId={showVinayakaOffer ? 'career_pro_max' : undefined}
+          initialCouponCode={showVinayakaOffer ? 'VNKR50%' : undefined}
         />
       )}
 
@@ -423,6 +446,21 @@ function App() {
         actionText={alertActionText}
         onAction={alertActionCallback}
       />
+
+      {/* NEW: Render OfferOverlay */}
+      {showVinayakaOffer && (
+        <OfferOverlay
+          isOpen={showVinayakaOffer}
+          onClose={() => setShowVinayakaOffer(false)}
+          onAction={() => {
+            // When "Claim Offer" is clicked, navigate to pricing page and pre-select plan/coupon
+            navigate('/pricing');
+            // This will trigger the PricingPage to open SubscriptionPlans with pre-selected values
+            // The actual pre-selection logic is handled in PricingPage and SubscriptionPlans
+            setShowVinayakaOffer(false); // Close the offer overlay
+          }}
+        />
+      )}
     </div>
   );
 }

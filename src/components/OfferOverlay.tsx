@@ -29,19 +29,23 @@ export const OfferOverlay: React.FC<OfferOverlayProps> = ({ isOpen, onClose, onA
           <X className="w-6 h-6" />
         </button>
 
-        {/* Icon */}
-        <div className="bg-gradient-to-br from-purple-100 to-pink-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg dark:from-neon-purple-500/20 dark:to-neon-pink-500/20 dark:shadow-neon-purple">
-          <Gift className="w-10 h-10 text-purple-600 dark:text-neon-purple-400" />
+        {/* Thumbnail Image */}
+        <div className="mb-6">
+          <img
+            src="https://images.pexels.com/photos/1080654/pexels-photo-1080654.jpeg?auto=compress&cs=tinysrgb&w=800" // Example Pexels image URL for Vinayaka Chavithi
+            alt="Vinayaka Chavithi Offer"
+            className="w-full h-40 object-cover rounded-2xl shadow-md mx-auto"
+          />
         </div>
 
         {/* Title */}
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-          Exclusive Launch Offer!
+          🎉 Vinayaka Chavithi Offer! 🎉
         </h2>
 
         {/* Description */}
         <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-          Unlock premium features and supercharge your job search with our limited-time discount on all plans! Don't miss out!
+          Celebrate with us! Get an **additional 50% OFF** on our **Career Pro Max (₹10,000) plan** using code <strong className="text-purple-600 dark:text-neon-purple-400">VNKR50%</strong>. Limited time offer!
         </p>
 
         {/* Call to Action */}
@@ -50,13 +54,13 @@ export const OfferOverlay: React.FC<OfferOverlayProps> = ({ isOpen, onClose, onA
           className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105"
         >
           <Sparkles className="w-5 h-5" />
-          <span>View Special Pricing</span>
+          <span>Claim Your Offer Now!</span>
           <ArrowRight className="w-5 h-5" />
         </button>
 
         {/* Small print */}
         <div className="mt-4 text-xs text-gray-500 dark:text-gray-400">
-          Offer valid for a limited time. Terms and conditions apply.
+          Offer valid until September 10, 2025. Terms and conditions apply.
         </div>
       </div>
     </div>
