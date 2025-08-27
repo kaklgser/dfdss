@@ -32,7 +32,7 @@ export const OfferOverlay: React.FC<OfferOverlayProps> = ({ isOpen, onClose, onA
         {/* Thumbnail Image */}
         <div className="mb-6">
           <img
-            src="https://images.pexels.com/photos/1080654/pexels-photo-1080654.jpeg?auto=compress&cs=tinysrgb&w=800" // Example Pexels image URL for Vinayaka Chavithi
+            src="https://res.cloudinary.com/dvue2zenh/image/upload/v1756304933/aknwm73c5cc0elpcfgll.png" // Example Pexels image URL for Vinayaka Chavithi
             alt="Vinayaka Chavithi Offer"
             className="w-full h-40 object-cover rounded-2xl shadow-md mx-auto"
           />
