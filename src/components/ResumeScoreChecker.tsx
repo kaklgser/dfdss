@@ -64,9 +64,11 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   const [loadingStep, setLoadingStep] = useState('');
   const [scoreResult, setScoreResult] = useState<ComprehensiveScore | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
+  const [hasShownCreditExhaustedAlert, setHasShownCreditExhaustedAlert] = useState(false); // NEW STATE
 
   const handleFileUpload = (result: ExtractionResult) => {
     setExtractionResult(result);
+    setHasShownCreditExhaustedAlert(false); // Reset flag on new file upload
     
     if (scoringMode === 'general' && autoScoreOnUpload && result.text.trim()) {
       setTimeout(() => analyzeResume(), 500);
@@ -86,19 +88,25 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
     }
 
     if (!userSubscription || (userSubscription.scoreChecksTotal - userSubscription.scoreChecksUsed) <= 0) {
-      const planDetails = paymentService.getPlanById(userSubscription?.planId);
-      const planName = planDetails?.name || 'your current plan';
-      const scoreChecksTotal = planDetails?.scoreChecks || 0;
+      if (!hasShownCreditExhaustedAlert) { // Only show if not already shown for this attempt
+        const planDetails = paymentService.getPlanById(userSubscription?.planId);
+        const planName = planDetails?.name || 'your current plan';
+        const scoreChecksTotal = planDetails?.scoreChecks || 0;
 
-      onShowAlert(
-        'Resume Score Check Credits Exhausted',
-        `You have used all your ${scoreChecksTotal} Resume Score Checks from ${planName}. Please upgrade your plan to continue checking scores.`,
-        'warning',
-        'Upgrade Plan',
-        () => onShowSubscriptionPlans('score-checker')
-      );
+        onShowAlert(
+          'Resume Score Check Credits Exhausted',
+          `You have used all your ${scoreChecksTotal} Resume Score Checks from ${planName}. Please upgrade your plan to continue checking scores.`,
+          'warning',
+          'Upgrade Plan',
+          () => onShowSubscriptionPlans('score-checker')
+        );
+        setHasShownCreditExhaustedAlert(true); // Mark as shown
+      }
       return;
     }
+
+    // If we reach here, credits are available, so reset the flag
+    setHasShownCreditExhaustedAlert(false);
 
     if (!extractionResult.text.trim()) {
       onShowAlert('Missing Resume', 'Please upload your resume first to get a score.', 'warning');
@@ -195,6 +203,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
     setJobDescription('');
     setJobTitle('');
     setCurrentStep(0);
+    setHasShownCreditExhaustedAlert(false); // Reset flag when starting a new check
   };
 
   return (
@@ -356,7 +365,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
 
                     <div className="text-center">
                       <button
-                        onClick={analyzeResume}
+                        onClick={() => { setHasShownCreditExhaustedAlert(false); analyzeResume(); }} // Reset flag on button click
                         disabled={scoringMode === null || !extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))}
                         className={`px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 flex items-center space-x-3 mx-auto shadow-xl hover:shadow-2xl ${
                           scoringMode === null || !extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))
