@@ -7,11 +7,12 @@ export interface SubscriptionPlan {
   id: string;
   name: string;
   price: number;
+  mrp: number; // New: Manufacturer's Recommended Price
+  discountPercentage: number; // New: Calculated discount percentage
   duration: string;
-  durationInHours?: number; // Added this property
   optimizations: number;
   scoreChecks: number;
-  linkedinMessages: number | typeof Infinity;
+  linkedinMessages: number; // Changed from typeof Infinity to number
   guidedBuilds: number;
   tag: string;
   tagColor: string;
@@ -19,6 +20,7 @@ export interface SubscriptionPlan {
   icon: string;
   features: string[];
   popular?: boolean;
+  durationInHours: number; // Added this property
 }
 
 export interface Subscription {
@@ -49,12 +51,13 @@ class PaymentService {
     {
       id: 'career_pro_max',
       name: 'Career Pro Max',
-      price: 1999,
+      price: 2299, // Offer Price
+      mrp: 10000, // MRP
+      discountPercentage: 77.01, // (10000 - 2299) / 10000 * 100
       duration: 'One-time Purchase',
-      durationInHours: 8760, // 365 days
       optimizations: 50,
       scoreChecks: 50,
-      linkedinMessages: Infinity,
+      linkedinMessages: 500, // Fixed count
       guidedBuilds: 5,
       tag: 'Ultimate Value',
       tagColor: 'text-purple-800 bg-purple-100',
@@ -63,21 +66,23 @@ class PaymentService {
       features: [
         '✅ 50 Resume Optimizations',
         '✅ 50 Score Checks',
-        '✅ Unlimited LinkedIn Messages',
+        '✅ 500 LinkedIn Messages',
         '✅ 5 Guided Resume Builds',
         '✅ Priority Support',
       ],
-      popular: true,
+      popular: false, // Will be "Best Value"
+      durationInHours: 8760, // 365 days
     },
     {
       id: 'career_boost_plus',
       name: 'Career Boost+',
-      price: 1499,
+      price: 1699, // Offer Price
+      mrp: 7500, // MRP
+      discountPercentage: 77.34, // (7500 - 1699) / 7500 * 100
       duration: 'One-time Purchase',
-      durationInHours: 8760, // 365 days
       optimizations: 30,
       scoreChecks: 30,
-      linkedinMessages: Infinity,
+      linkedinMessages: 300, // Fixed count
       guidedBuilds: 3,
       tag: 'Best Seller',
       tagColor: 'text-blue-800 bg-blue-100',
@@ -86,20 +91,23 @@ class PaymentService {
       features: [
         '✅ 30 Resume Optimizations',
         '✅ 30 Score Checks',
-        '✅ Unlimited LinkedIn Messages',
+        '✅ 300 LinkedIn Messages',
         '✅ 3 Guided Resume Builds',
         '✅ Standard Support',
       ],
+      popular: true, // Will be "Most Popular"
+      durationInHours: 8760, // 365 days
     },
     {
       id: 'pro_resume_kit',
       name: 'Pro Resume Kit',
-      price: 999,
+      price: 1199, // Offer Price
+      mrp: 5000, // MRP
+      discountPercentage: 76.02, // (5000 - 1199) / 5000 * 100
       duration: 'One-time Purchase',
-      durationInHours: 8760, // 365 days
       optimizations: 20,
       scoreChecks: 20,
-      linkedinMessages: 100,
+      linkedinMessages: 100, // Fixed count
       guidedBuilds: 2,
       tag: 'Great Start',
       tagColor: 'text-green-800 bg-green-100',
@@ -112,16 +120,19 @@ class PaymentService {
         '✅ 2 Guided Resume Builds',
         '✅ Email Support',
       ],
+      popular: false,
+      durationInHours: 8760, // 365 days
     },
     {
       id: 'smart_apply_pack',
       name: 'Smart Apply Pack',
-      price: 499,
+      price: 599, // Offer Price
+      mrp: 2500, // MRP
+      discountPercentage: 76.04, // (2500 - 599) / 2500 * 100
       duration: 'One-time Purchase',
-      durationInHours: 8760, // 365 days
       optimizations: 10,
       scoreChecks: 10,
-      linkedinMessages: 50,
+      linkedinMessages: 50, // Fixed count
       guidedBuilds: 1,
       tag: 'Quick Boost',
       tagColor: 'text-yellow-800 bg-yellow-100',
@@ -134,13 +145,16 @@ class PaymentService {
         '✅ 1 Guided Resume Build',
         '✅ Basic Support',
       ],
+      popular: false,
+      durationInHours: 8760, // 365 days
     },
     {
       id: 'resume_fix_pack',
       name: 'Resume Fix Pack',
-      price: 199,
+      price: 249, // Offer Price
+      mrp: 999, // MRP
+      discountPercentage: 75.07, // (999 - 249) / 999 * 100
       duration: 'One-time Purchase',
-      durationInHours: 8760, // 365 days
       optimizations: 5,
       scoreChecks: 2,
       linkedinMessages: 0,
@@ -156,13 +170,16 @@ class PaymentService {
         '❌ Guided Builds',
         '❌ Priority Support',
       ],
+      popular: false,
+      durationInHours: 8760, // 365 days
     },
     {
       id: 'lite_check',
       name: 'Lite Check',
-      price: 99,
-      duration: 'One-time Purchase', // While it's a "Trial", for consistency with DB date calculation, give it a duration.
-      durationInHours: 168, // 7 days (7 * 24 hours)
+      price: 129, // Offer Price
+      mrp: 499, // MRP
+      discountPercentage: 74.15, // (499 - 129) / 499 * 100
+      duration: 'One-time Purchase',
       optimizations: 2,
       scoreChecks: 2,
       linkedinMessages: 10,
@@ -178,6 +195,8 @@ class PaymentService {
         '❌ Guided Builds',
         '❌ Priority Support',
       ],
+      popular: false,
+      durationInHours: 168, // 7 days (7 * 24 hours)
     },
   ];
 
@@ -799,10 +818,9 @@ class PaymentService {
       return { success: true };
     } catch (error) {
       console.error('PaymentService: Error in processFreeSubscription:', error);
-      return { success: false, error: (error as Error).message || 'Failed to activate free subscription.' };
+      throw error;
     }
   }
 }
 
 export const paymentService = new PaymentService();
-
