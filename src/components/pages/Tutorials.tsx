@@ -371,16 +371,19 @@ export const Tutorials: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filteredTutorials.map((tutorial) => (
                   <div key={tutorial.id} className="group">
-                    <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-gray-100 dark:bg-dark-100 dark:border-dark-300 dark:hover:shadow-neon-cyan/20">
-                      <div className="relative aspect-w-16 aspect-h-9 overflow-hidden rounded-t-2xl">
-                        <img
-                          src={tutorial.thumbnail}
-                          alt={tutorial.title}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <Play className="w-12 h-12 text-white" />
-                        </div>
+                    <div
+                    className="relative aspect-w-16 aspect-h-9 overflow-hidden rounded-t-2xl"
+                    onClick={() => window.open(tutorial.videoUrl, '_blank')}
+                    style={{ cursor: 'pointer' }} // Optional: Adds a pointer cursor on hover
+                  >
+                    <img
+                      src={tutorial.thumbnail}
+                      alt={tutorial.title}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <Play className="w-12 h-12 text-white" />
+                    </div>
                       </div>
                       <div className="p-6">
                         <div className="flex items-center justify-between mb-3">
