@@ -62,7 +62,7 @@ export const Tutorials: React.FC = () => {
       views: '12.5K',
       rating: 4.9,
       // Updated videoUrl to a directly streamable MP4 from Cloudinary
-      videoUrl: 'https://res.cloudinary.com/dlkovvlud/video/upload/v1700000000/sample_video.mp4',
+      videoUrl: 'https://www.youtube.com/watch?v=x6AD2JsGafA',
       isPopular: true
     },
     {
