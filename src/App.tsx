@@ -59,6 +59,9 @@ function App() {
 
   // NEW: State for the OfferOverlay
   const [showOfferOverlay, setShowOfferOverlay] = useState(false);
+  // NEW: State for the floating offer button
+  const [showFloatingOfferButton, setShowFloatingOfferButton] = useState(true);
+
 
   const handleMobileMenuToggle = () => {
     setShowMobileMenu(!showMobileMenu);
@@ -241,12 +244,10 @@ function App() {
     }
   }, [isAuthenticated, user, user?.hasSeenProfilePrompt, isLoading, isAuthModalOpenedByHash]);
 
-  // NEW: Show the OfferOverlay when the component mounts
-  useEffect(() => {
-    // You can add logic here to show it only once per session, etc.
-    // For now, it will show every time the App component mounts.
-    setShowOfferOverlay(true);
-  }, []);
+  // REMOVED: The useEffect that automatically shows the OfferOverlay on mount.
+  // useEffect(() => {
+  //   setShowOfferOverlay(true);
+  // }, []);
 
   const commonPageProps = {
     isAuthenticated: isAuthenticated,
@@ -438,12 +439,27 @@ function App() {
       {/* NEW: Render the OfferOverlay */}
       <OfferOverlay
         isOpen={showOfferOverlay}
-        onClose={() => setShowOfferOverlay(false)}
+        onClose={() => {
+          setShowOfferOverlay(false);
+          setShowFloatingOfferButton(false); // Hide the floating button after overlay is closed
+        }}
         onAction={() => {
           setShowOfferOverlay(false); // Close overlay
           navigate('/pricing'); // Navigate to pricing page
         }}
       />
+
+      {/* NEW: Floating Offer Button */}
+      {showFloatingOfferButton && !showOfferOverlay && (
+        <button
+          onClick={() => setShowOfferOverlay(true)}
+          className="fixed bottom-4 right-4 z-40 bg-gradient-to-r from-purple-600 to-pink-600 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center space-x-2 animate-bounce-gentle"
+          aria-label="Special Offer"
+        >
+          <Sparkles className="w-6 h-6" />
+          <span className="hidden sm:block font-semibold">Special Offer!</span>
+        </button>
+      )}
     </div>
   );
 }
