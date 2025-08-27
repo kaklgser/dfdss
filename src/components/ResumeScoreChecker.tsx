@@ -61,7 +61,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   const [scoringMode, setScoringMode] = useState<ScoringMode | null>(null);
   const [autoScoreOnUpload, setAutoScoreOnUpload] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [loadingStep, setLoadingStep] = useState('');
+  const [loadingStep, setLoadingStep] = '';
   const [scoreResult, setScoreResult] = useState<ComprehensiveScore | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [hasShownCreditExhaustedAlert, setHasShownCreditExhaustedAlert] = useState(false); // NEW STATE
@@ -100,7 +100,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
           'Upgrade Plan',
           () => onShowSubscriptionPlans('score-checker')
         );
-        setHasShownCreditExhaustedAlert(false); // Mark as shown
+        setHasShownCreditExhaustedAlert(true); // Mark as shown
       }
       return;
     }
