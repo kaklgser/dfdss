@@ -72,11 +72,11 @@ export const Tutorials: React.FC = () => {
       duration: '2:30',
       difficulty: 'Intermediate',
       category: 'optimization',
-      thumbnail: 'https://www.youtube.com/watch?v=_Jez3fo4NJs',
+      thumbnail: 'https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=600',
       views: '8.2K',
       rating: 4.8,
       // Updated videoUrl to a directly streamable MP4 from Cloudinary
-      videoUrl: 'https://res.cloudinary.com/dlkovvlud/video/upload/v1700000000/sample_video.mp4',
+      videoUrl: 'https://www.youtube.com/watch?v=_Jez3fo4NJs',
       isPopular: false
     },
     {
