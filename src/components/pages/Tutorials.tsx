@@ -215,9 +215,7 @@ export const Tutorials: React.FC = () => {
                 <div className="bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full border border-white/20 dark:bg-neon-cyan-500/20 dark:border-neon-cyan-400/30">
                   <span className="text-lg font-semibold">🎥 Video Tutorials</span>
                 </div>
-                <div className="bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full border border-white/20 dark:bg-neon-blue-500/20 dark:border-neon-blue-400/30">
-                  <span className="text-lg font-semibold">📚 Free Resources</span>
-                </div>
+               
               </div>
             </div>
           </div>
