@@ -50,7 +50,7 @@ export const Tutorials: React.FC = () => {
     { id: 'analysis', name: 'Analysis', count: 0 }
   ];
 
-  const allTutorials = [ // Renamed to allTutorials to distinguish from filtered
+ const allTutorials = [
     {
       id: 1,
       title: 'Getting Started with PrimoBoost AI',
@@ -61,7 +61,8 @@ export const Tutorials: React.FC = () => {
       thumbnail: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=600',
       views: '12.5K',
       rating: 4.9,
-      videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      // Changed videoUrl to a direct MP4 link (example from Pexels)
+      videoUrl: 'https://www.pexels.com/video/a-man-typing-on-a-laptop-3196004/download/',
       isPopular: true
     },
     {
@@ -74,7 +75,8 @@ export const Tutorials: React.FC = () => {
       thumbnail: 'https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=600',
       views: '8.2K',
       rating: 4.8,
-      videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      // Changed videoUrl to a direct MP4 link (example from Pexels)
+      videoUrl: 'https://www.pexels.com/video/a-woman-working-on-her-laptop-3196005/download/',
       isPopular: false
     },
     {
@@ -87,7 +89,8 @@ export const Tutorials: React.FC = () => {
       thumbnail: 'https://images.pexels.com/photos/3184339/pexels-photo-3184339.jpeg?auto=compress&cs=tinysrgb&w=600',
       views: '15.1K',
       rating: 4.9,
-      videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      // Changed videoUrl to a direct MP4 link (example from Pexels)
+      videoUrl: 'https://www.pexels.com/video/a-woman-working-on-her-laptop-3196006/download/',
       isPopular: true
     },
     // New Tutorials
@@ -101,7 +104,8 @@ export const Tutorials: React.FC = () => {
       thumbnail: 'https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=600',
       views: '5.3K',
       rating: 4.7,
-      videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      // Changed videoUrl to a direct MP4 link (example from Pexels)
+      videoUrl: 'https://www.pexels.com/video/a-man-working-on-a-laptop-3196007/download/',
       isPopular: false
     },
     {
@@ -114,7 +118,8 @@ export const Tutorials: React.FC = () => {
       thumbnail: 'https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=600',
       views: '7.8K',
       rating: 4.9,
-      videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      // Changed videoUrl to a direct MP4 link (example from Pexels)
+      videoUrl: 'https://www.pexels.com/video/a-woman-working-on-a-laptop-3196008/download/',
       isPopular: true
     },
     {
@@ -127,7 +132,8 @@ export const Tutorials: React.FC = () => {
       thumbnail: 'https://images.pexels.com/photos/3184405/pexels-photo-3184405.jpeg?auto=compress&cs=tinysrgb&w=600',
       views: '6.1K',
       rating: 4.8,
-      videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      // Changed videoUrl to a direct MP4 link (example from Pexels)
+      videoUrl: 'https://www.pexels.com/video/a-man-working-on-a-laptop-3196009/download/',
       isPopular: false
     },
     {
@@ -140,7 +146,8 @@ export const Tutorials: React.FC = () => {
       thumbnail: 'https://images.pexels.com/photos/3184394/pexels-photo-3184394.jpeg?auto=compress&cs=tinysrgb&w=600',
       views: '9.5K',
       rating: 4.7,
-      videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      // Changed videoUrl to a direct MP4 link (example from Pexels)
+      videoUrl: 'https://www.pexels.com/video/a-woman-working-on-a-laptop-3196010/download/',
       isPopular: true
     },
     {
@@ -153,7 +160,8 @@ export const Tutorials: React.FC = () => {
       thumbnail: 'https://images.pexels.com/photos/3184325/pexels-photo-3184325.jpeg?auto=compress&cs=tinysrgb&w=600',
       views: '8.9K',
       rating: 4.9,
-      videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      // Changed videoUrl to a direct MP4 link (example from Pexels)
+      videoUrl: 'https://www.pexels.com/video/a-man-working-on-a-laptop-3196011/download/',
       isPopular: false
     }
   ];
