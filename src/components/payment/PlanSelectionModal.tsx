@@ -28,6 +28,7 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  console.log('PlanSelectionModal: isOpen prop received:', isOpen); // New log
   if (!isOpen) return null;
 
   const handleBackdropClick = (e: React.MouseEvent) => {
