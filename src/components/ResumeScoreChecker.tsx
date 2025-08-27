@@ -100,7 +100,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
           'Upgrade Plan',
           () => onShowSubscriptionPlans('score-checker')
         );
-       // Mark as shown
+        setHasShownCreditExhaustedAlert(false); // Mark as shown
       }
       return;
     }
