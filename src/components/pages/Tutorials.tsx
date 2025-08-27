@@ -215,7 +215,9 @@ export const Tutorials: React.FC = () => {
                 <div className="bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full border border-white/20 dark:bg-neon-cyan-500/20 dark:border-neon-cyan-400/30">
                   <span className="text-lg font-semibold">🎥 Video Tutorials</span>
                 </div>
-               
+                <div className="bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full border border-white/20 dark:bg-neon-blue-500/20 dark:border-neon-blue-400/30">
+                  <span className="text-lg font-semibold">📚 Free Resources</span>
+                </div>
               </div>
             </div>
           </div>
@@ -394,50 +396,7 @@ export const Tutorials: React.FC = () => {
           </div>
         </div>
 
-        {/* Free Resources */}
-        <div className="py-20 bg-white dark:bg-dark-100">
-          <div className="container mx-auto px-4">
-            <div className="max-w-6xl mx-auto">
-              <div className="text-center mb-12">
-                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">Free Resources</h2>
-                <p className="text-xl text-gray-600 dark:text-gray-300">Download our comprehensive guide</p>
-              </div>
-
-              <div className="grid md:grid-cols-1 gap-8 max-w-2xl mx-auto">
-                {guides.map((guide, index) => (
-                  <div key={index} className="group">
-                    <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-gray-100 p-8 dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl dark:hover:shadow-neon-cyan/20">
-                      <div className="text-center">
-                        <div className="bg-gradient-to-br from-purple-50 to-blue-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 text-purple-600 dark:from-neon-purple-500/20 dark:to-neon-blue-500/20 dark:text-neon-purple-400 dark:shadow-neon-purple">
-                          {guide.icon}
-                        </div>
-
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">{guide.title}</h3>
-                        <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">{guide.description}</p>
-
-                        <div className="flex justify-center space-x-6 mb-6 text-sm text-gray-500 dark:text-gray-400">
-                          <div className="flex items-center space-x-1">
-                            <BookOpen className="w-4 h-4" />
-                            <span>{guide.pages} pages</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Download className="w-4 h-4" />
-                            <span>{guide.downloads}</span>
-                          </div>
-                        </div>
-
-                        <button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl dark:from-neon-purple-500 dark:to-neon-blue-500 dark:hover:from-neon-purple-400 dark:hover:to-neon-blue-400 dark:shadow-neon-purple">
-                          <Download className="w-5 h-5" />
-                          <span>Download Free</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+       
 
         {/* Learning Path */}
         <div className="py-20 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-dark-200 dark:to-dark-300">
