@@ -33,7 +33,7 @@ export const Tutorials: React.FC = () => {
   // Removed showOverlay state
 
   // NEW: State for VideoModal
-  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [isVideoModalOpen, setIsVideoModal] = useState(false);
   const [currentVideoUrl, setCurrentVideoUrl] = useState('');
   const [currentVideoTitle, setCurrentVideoTitle] = useState('');
 
@@ -179,7 +179,7 @@ export const Tutorials: React.FC = () => {
   const filteredTutorials = allTutorials.filter(tutorial => {
     const matchesCategory = selectedCategory === 'all' || tutorial.category === selectedCategory;
     const matchesSearch = tutorial.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         tutorial.description.toLowerCase().includes(searchTerm.toLowerCase());
+                          tutorial.description.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -212,12 +212,12 @@ export const Tutorials: React.FC = () => {
     const embedUrl = videoUrl.replace("watch?v=", "embed/");
     setCurrentVideoUrl(embedUrl);
     setCurrentVideoTitle(title);
-    setIsVideoModalOpen(true);
+    setIsVideoModal(true);
   };
 
   // NEW: Function to close the video modal
   const closeVideoModal = () => {
-    setIsVideoModalOpen(false);
+    setIsVideoModal(false);
     setCurrentVideoUrl('');
     setCurrentVideoTitle('');
   };
@@ -372,7 +372,12 @@ export const Tutorials: React.FC = () => {
                 {filteredTutorials.map((tutorial) => (
                   <div key={tutorial.id} className="group">
                     <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-gray-100 dark:bg-dark-100 dark:border-dark-300 dark:hover:shadow-neon-cyan/20">
-                      <div className="relative aspect-w-16 aspect-h-9 overflow-hidden rounded-t-2xl">
+                      {/* Add onClick to this div to make the thumbnail area clickable */}
+                      <div
+                        className="relative aspect-w-16 aspect-h-9 overflow-hidden rounded-t-2xl"
+                        onClick={() => window.open(tutorial.videoUrl, '_blank')} // ADDED onClick handler
+                        style={{ cursor: 'pointer' }} // Optional: Add cursor pointer for better UX
+                      >
                         <img
                           src={tutorial.thumbnail}
                           alt={tutorial.title}
@@ -402,7 +407,7 @@ export const Tutorials: React.FC = () => {
                             <span className="ml-1 text-gray-700 text-sm font-medium dark:text-gray-300">{tutorial.rating}</span>
                           </div>
                           <button // Changed from <a> to <button>
-                            onClick={() => window.open(tutorial.videoUrl, '_blank')} // MODIFIED: Direct redirect
+                            // REMOVED onClick={() => window.open(tutorial.videoUrl, '_blank')}
                             className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center space-x-1 dark:text-neon-cyan-400 dark:hover:text-neon-cyan-300"
                           >
                             <span>Watch Video</span>
@@ -563,7 +568,7 @@ export const Tutorials: React.FC = () => {
 
       {/* NEW: VideoModal component */}
       <VideoModal
-        isOpen={isVideoModalOpen}
+        isOpen={isVideoModal}
         onClose={closeVideoModal}
         videoUrl={currentVideoUrl}
         title={currentVideoTitle}
