@@ -24,8 +24,54 @@ import {
   Briefcase, // Added for job strategy
   User, // Added for general user
   ChevronDown // Added for select dropdown
+    Sparkles,
+  BarChart3,
 } from 'lucide-react';
+
+
 import { VideoModal } from '../VideoModal'; // Import the new VideoModal component
+import { motion } from "framer-motion";
+
+// Utility: cn
+function cn(...classes: (string | undefined | null | false)[]) {
+  return classes.filter(Boolean).join(' ');
+}
+
+// ModernButton
+interface ModernButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+}
+
+const ModernButton = React.forwardRef<HTMLButtonElement, ModernButtonProps>(
+  ({ className, variant = 'primary', size = 'md', ...props }, ref) => {
+    const baseClasses =
+      'font-poppins font-semibold rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed';
+
+    const variants = {
+      primary: 'bg-purple-600 text-white hover:scale-105 shadow-lg',
+      secondary: 'bg-white text-purple-700 hover:scale-105 shadow-md',
+      outline: 'border border-purple-500 text-purple-500 hover:bg-purple-50',
+      ghost: 'bg-transparent text-purple-700 hover:bg-purple-100',
+    };
+
+    const sizes = {
+      sm: 'px-4 py-2 text-sm',
+      md: 'px-6 py-3 text-base',
+      lg: 'px-8 py-4 text-lg',
+    };
+
+    return (
+      <button
+        className={cn(baseClasses, variants[variant], sizes[size], className)}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
+
+ModernButton.displayName = 'ModernButton';
 
 export const Tutorials: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -252,9 +298,77 @@ export const Tutorials: React.FC = () => {
                   <span className="text-lg font-semibold">📚 Free Resources</span>
                 </div>
               </div>
-            </div>
+
+  const guides = [
+    {
+      title: 'Complete Resume Optimization Guide',
+      description:
+        'A comprehensive 50-page guide covering everything from basics to advanced techniques.',
+      type: 'PDF Guide',
+      pages: 50,
+      downloads: '25K+',
+      icon: <FileText className="w-6 h-6" />,
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 relative dark:from-dark-50 dark:to-dark-200 transition-colors duration-300">
+      {/* Hero Section */}
+      <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
+        {/* Gradient Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#5B00F7] via-[#2E73FF] to-[#5B00F7]" />
+        {/* Decorative wave/blur effects */}
+        <div className="absolute top-20 left-20 w-40 h-40 bg-white/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-32 right-32 w-60 h-60 bg-white/10 rounded-full blur-[150px]" />
+
+        {/* Content */}
+        <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
+          <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-6 leading-tight">
+            Learn & Master <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5B00F7] to-[#2E73FF]">
+              Resume Optimization
+            </span>
+          </h1>
+
+          <p className="text-lg md:text-2xl text-white/90 mb-12 max-w-3xl mx-auto">
+            Watch our tutorial video to learn how to create the perfect resume and
+            land your dream job with AI-powered optimization.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+            <ModernButton
+              size="sm"
+              className="bg-gradient-to-r from-[#5B00F7] to-[#2E73FF] text-white font-semibold px-6 py-4 rounded-xl flex items-center gap-3 hover:opacity-90 transition"
+            >
+              <Play className="w-6 h-6" />
+              Watch Video Tutorial
+            </ModernButton>
+
+            <ModernButton
+              variant="secondary"
+              size="sm"
+              className="bg-[#FFD33D] text-black font-semibold px-6 py-4 rounded-xl flex items-center gap-3 hover:brightness-95 transition"
+            >
+              <BookOpen className="w-6 h-6" />
+              Free Resources
+            </ModernButton>
           </div>
         </div>
+      </section>
+
+      {/* Video Tutorial */}
+       {/* Video Tutorial */}
+      <div className="py-20 bg-white dark:bg-dark-100">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                Video Tutorial
+              </h2>
+              <p className="text-xl text-gray-600 dark:text-gray-300">
+                Learn how to use PrimoBoost AI to optimize your resume
+              </p>
+            </div>
 
         {/* Main Video Tutorial Section */}
         <div className="py-20 bg-white dark:bg-dark-100">
@@ -426,9 +540,6 @@ export const Tutorials: React.FC = () => {
                   </div>
                 )}
               </div>
-            </div>
-          </div>
-        </div>
 
         {/* Free Resources */}
         <div className="py-20 bg-white dark:bg-dark-100">
@@ -539,27 +650,32 @@ export const Tutorials: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+                </div>
 
-        {/* CTA Section */}
-        <div className="py-20 bg-gradient-to-r from-purple-600 to-blue-700 text-white dark:from-neon-purple-500 dark:to-neon-blue-500">
-          <div className="container mx-auto px-4 text-center">
-            <div className="max-w-3xl mx-auto">
-              <h2 className="text-3xl sm:text-4xl font-bold mb-6">Ready to Start Learning?</h2>
-              <p className="text-xl text-purple-100 dark:text-gray-200 mb-8">
-                Join thousands of professionals who have transformed their careers with our tutorials.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button className="bg-white text-purple-600 font-bold py-4 px-8 rounded-2xl hover:bg-gray-100 transition-colors duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 dark:bg-dark-100 dark:text-neon-purple-400 dark:hover:bg-dark-200 dark:shadow-neon-purple">
-                  Start Learning Now
-                </button>
-                <button className="border-2 border-white text-white font-bold py-4 px-8 rounded-2xl hover:bg-white hover:text-purple-600 transition-colors duration-300 dark:border-neon-cyan-400 dark:hover:bg-neon-cyan-400 dark:hover:text-dark-100">
-                  Download Free Guide
-                </button>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+                  Getting Started with PrimoBoost AI
+                </h3>
+                <p className="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
+                  In this comprehensive tutorial, you'll learn how to upload your resume, optimize it
+                  for specific job descriptions, and export it in various formats. We'll cover all
+                  the essential features of PrimoBoost AI to help you create a resume that stands
+                  out to both ATS systems and human recruiters.
+                </p>
+
+                <div className="flex flex-wrap gap-4">
+                  <div className="bg-blue-50 px-4 py-2 rounded-lg text-blue-800 text-sm font-medium flex items-center dark:bg-neon-cyan-500/10 dark:text-neon-cyan-300">
+                    <Users className="w-4 h-4 mr-2" />
+                    12.5K views
+                  </div>
+                  <div className="bg-purple-50 px-4 py-2 rounded-lg text-purple-800 text-sm font-medium flex items-center dark:bg-neon-purple-500/10 dark:text-neon-purple-300">
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    Beginner friendly
+                  </div>
+                  <div className="bg-green-50 px-4 py-2 rounded-lg text-green-800 text-sm font-medium flex items-center dark:bg-neon-cyan-500/10 dark:text-neon-cyan-300">
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Updated for 2025
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -573,6 +689,260 @@ export const Tutorials: React.FC = () => {
         videoUrl={currentVideoUrl}
         title={currentVideoTitle}
       />
+      {/* Free Resources */}
+      <div className="py-20 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-dark-200 dark:to-dark-300">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                Free Resources
+              </h2>
+              <p className="text-xl text-gray-600 dark:text-gray-300">
+                Download our comprehensive guide
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-1 gap-8 max-w-2xl mx-auto">
+              {guides.map((guide, index) => (
+                <div key={index} className="group">
+                  <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-gray-100 p-8 dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl dark:hover:shadow-neon-cyan/20">
+                    <div className="text-center">
+                      <div className="bg-gradient-to-br from-purple-50 to-blue-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 text-purple-600 dark:from-neon-purple-500/20 dark:to-neon-blue-500/20 dark:text-neon-purple-400 dark:shadow-neon-purple">
+                        {guide.icon}
+                      </div>
+
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+                        {guide.title}
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
+                        {guide.description}
+                      </p>
+
+                      <div className="flex justify-center space-x-6 mb-6 text-sm text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center space-x-1">
+                          <BookOpen className="w-4 h-4" />
+                          <span>{guide.pages} pages</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Download className="w-4 h-4" />
+                          <span>{guide.downloads}</span>
+                        </div>
+                      </div>
+
+                      <button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl dark:from-neon-purple-500 dark:to-neon-blue-500 dark:hover:from-neon-purple-400 dark:hover:to-neon-blue-400 dark:shadow-neon-purple">
+                        <Download className="w-5 h-5" />
+                        <span>Download Free</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ✅ Learning Path */}
+      <section className="py-20 px-6 bg-white dark:bg-dark-100">
+        {(() => {
+          const PinContainer = ({ children, containerClassName = "" }) => {
+            return (
+              <motion.div
+                whileHover={{ rotateX: 6, rotateY: 6 }}
+                transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                style={{ perspective: "1000px" }} // ✅ FIXED: inline style for perspective
+                className={`relative ${containerClassName}`}
+              >
+                {children}
+              </motion.div>
+            );
+          };
+
+          const steps = [
+            {
+              number: 1,
+              title: "Start with Basics",
+              description: "Learn how to upload your resume and understand the optimization process",
+              duration: "15 minutes",
+              icon: <CheckCircle className="w-8 h-8 text-white" />,
+              color: "primary",
+              glow: "from-purple-500/30 to-blue-500/30",
+            },
+            {
+              number: 2,
+              title: "Master ATS Optimization",
+              description: "Understand how ATS systems work and optimize your resume accordingly",
+              duration: "30 minutes",
+              icon: <BarChart3 className="w-8 h-8 text-white" />,
+              color: "accent-aqua",
+              glow: "from-cyan-400/30 to-teal-400/30",
+            },
+            {
+              number: 3,
+              title: "Advanced Techniques",
+              description: "Learn keyword optimization, formatting, and industry-specific tips",
+              duration: "25 minutes",
+              icon: <Zap className="w-8 h-8 text-foreground" />,
+              color: "accent-yellow",
+              glow: "from-yellow-400/30 to-orange-400/30",
+            },
+            {
+              number: 4,
+              title: "Practice & Perfect",
+              description: "Apply your knowledge and create multiple optimized versions",
+              duration: "45 minutes",
+              icon: <Award className="w-8 h-8 text-white" />,
+              color: "primary",
+              glow: "from-purple-500/30 to-pink-500/30",
+            },
+          ];
+
+          return (
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center mb-16">
+                <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-6 font-poppins">
+                  Recommended Learning Path
+                </h2>
+                <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto font-inter">
+                  Follow this structured path for best results
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
+                {steps.map((step, index) => {
+                  const isEven = index % 2 === 1;
+                  return (
+                    <motion.div
+                      key={step.number}
+                      initial={{ opacity: 0, y: 50 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: index * 0.2 }}
+                      viewport={{ once: true }}
+                      animate={{ y: [0, -8, 0] }}
+                      // ✅ FIXED: only 1 transition prop
+                      transition={{
+                        duration: 4,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: index * 0.5,
+                      }}
+                      className={`${isEven ? "md:translate-y-8" : ""} flex justify-center relative`}
+                    >
+                      {/* Glow Aura */}
+                      <motion.div
+                        className={`absolute inset-0 blur-3xl rounded-full bg-gradient-to-r ${step.glow} opacity-50`}
+                        animate={{ opacity: [0.3, 0.7, 0.3], scale: [0.95, 1.05, 0.95] }}
+                        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                      />
+
+                      {/* Card */}
+                      <PinContainer containerClassName="w-[20rem] h-[20rem] relative z-10">
+                        <div className="flex flex-col p-6 w-[18rem] h-[18rem] bg-gradient-to-b from-white to-gray-50 dark:from-dark-200 dark:to-dark-300 border rounded-2xl shadow-lg">
+                          
+                          {/* Header */}
+                          <div className="flex items-center justify-between mb-4">
+                            <div
+                              className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shadow-md
+                              ${step.color === "primary"
+                                ? "bg-purple-600 text-white"
+                                : step.color === "accent-aqua"
+                                ? "bg-cyan-500 text-white"
+                                : step.color === "accent-yellow"
+                                ? "bg-yellow-400 text-gray-900"
+                                : "bg-purple-600 text-white"}`}
+                            >
+                              {step.number}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                              <Clock className="w-3 h-3" />
+                              <span>{step.duration}</span>
+                            </div>
+                          </div>
+
+                          {/* Icon */}
+                          <div className="flex justify-center mb-6">
+                            <div
+                              className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-md
+                              ${step.color === "primary"
+                                ? "bg-gradient-to-r from-purple-500 to-blue-500"
+                                : step.color === "accent-aqua"
+                                ? "bg-cyan-500"
+                                : step.color === "accent-yellow"
+                                ? "bg-yellow-400"
+                                : "bg-gradient-to-r from-purple-500 to-blue-500"}`}
+                            >
+                              {step.icon}
+                            </div>
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex-1 text-center space-y-3">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 font-poppins">
+                              {step.title}
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-inter">
+                              {step.description}
+                            </p>
+                          </div>
+
+                          {/* Footer */}
+                          <div className="flex justify-center items-center mt-4">
+                            <div className="text-purple-600 dark:text-neon-purple-400 text-sm font-medium flex items-center gap-2">
+                              Learn More
+                              <ArrowRight className="w-4 h-4" />
+                            </div>
+                          </div>
+                        </div>
+                      </PinContainer>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+      </section>
+
+      {/* CTA Section */}
+           <section className="py-20 px-6 bg-gradient-to-br from-purple-600 via-blue-600 to-purple-600 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-96 h-96 bg-cyan-400/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-yellow-400/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <div className="inline-flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full text-white/90 text-sm font-medium mb-8">
+            <Sparkles className="w-4 h-4" />
+            Ready to Transform Your Career?
+          </div>
+          <h2 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight font-poppins">
+            Ready to Start Learning?
+          </h2>
+          <p className="text-xl md:text-2xl text-white/90 mb-12 max-w-2xl mx-auto font-inter leading-relaxed">
+            Join thousands of professionals who have transformed their careers with our tutorials.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+            <ModernButton size="lg" variant="secondary" className="group flex items-center gap-3 bg-yellow-400 hover:bg-yellow-500 text-black shadow-2xl">
+              Start Learning Now
+              <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+            </ModernButton>
+            <ModernButton variant="outline" size="lg" className="border-white/30 text-white hover:bg-white/10 hover:border-white/50">
+              Download Free Guide
+            </ModernButton>
+          </div>
+          <div className="mt-12 flex flex-wrap justify-center gap-8 text-white/70 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-cyan-400 rounded-full" />
+              <span>Free to start</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-yellow-400 rounded-full" />
+              <span>No credit card required</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-white/50 rounded-full" />
+              <span>Expert support included</span>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };
