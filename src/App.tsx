@@ -21,6 +21,7 @@ import { ToolsAndPagesNavigation } from './components/pages/ToolsAndPagesNavigat
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { PlanSelectionModal } from './components/payment/PlanSelectionModal';
 import { PricingPage } from './components/pages/PricingPage';
+import { OfferOverlay } from './components/OfferOverlay'; // Import the new OfferOverlay
 
 function App() {
   const { isAuthenticated, user, markProfilePromptSeen, isLoading } = useAuth();
@@ -55,6 +56,9 @@ function App() {
 
   // NEW: State to control initial expansion of add-ons in SubscriptionPlans modal
   const [initialExpandAddons, setInitialExpandAddons] = useState(true);
+
+  // NEW: State for the OfferOverlay
+  const [showOfferOverlay, setShowOfferOverlay] = useState(false);
 
   const handleMobileMenuToggle = () => {
     setShowMobileMenu(!showMobileMenu);
@@ -236,6 +240,13 @@ function App() {
       setAuthModalInitialView('login');
     }
   }, [isAuthenticated, user, user?.hasSeenProfilePrompt, isLoading, isAuthModalOpenedByHash]);
+
+  // NEW: Show the OfferOverlay when the component mounts
+  useEffect(() => {
+    // You can add logic here to show it only once per session, etc.
+    // For now, it will show every time the App component mounts.
+    setShowOfferOverlay(true);
+  }, []);
 
   const commonPageProps = {
     isAuthenticated: isAuthenticated,
@@ -422,6 +433,16 @@ function App() {
         type={alertType}
         actionText={alertActionText}
         onAction={alertActionCallback}
+      />
+
+      {/* NEW: Render the OfferOverlay */}
+      <OfferOverlay
+        isOpen={showOfferOverlay}
+        onClose={() => setShowOfferOverlay(false)}
+        onAction={() => {
+          setShowOfferOverlay(false); // Close overlay
+          navigate('/pricing'); // Navigate to pricing page
+        }}
       />
     </div>
   );
