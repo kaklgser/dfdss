@@ -120,7 +120,7 @@ function App() {
   const handleShowSubscriptionPlansDirectly = () => {
     console.log('App.tsx: handleShowSubscriptionPlansDirectly called. Opening SubscriptionPlans modal directly.');
     setShowSubscriptionPlans(true);
-    setInitialExpandAddons(true); // Ensure add-ons are expanded
+    setInitialExpandAddons(false); // Ensure add-ons are expanded
   };
 
   const handleSubscriptionSuccess = async () => {
