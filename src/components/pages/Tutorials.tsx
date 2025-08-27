@@ -399,74 +399,7 @@ export const Tutorials: React.FC = () => {
        
 
         {/* Learning Path */}
-        <div className="py-20 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-dark-200 dark:to-dark-300">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="text-center mb-12">
-                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">Recommended Learning Path</h2>
-                <p className="text-xl text-gray-600 dark:text-gray-300">Follow this structured path for best results</p>
-              </div>
-
-              <div className="space-y-6">
-                {[
-                  {
-                    step: 1,
-                    title: 'Start with Basics',
-                    description: 'Learn how to upload your resume and understand the optimization process',
-                    duration: '15 minutes',
-                    icon: <Lightbulb className="w-6 h-6" />
-                  },
-                  {
-                    step: 2,
-                    title: 'Master ATS Optimization',
-                    description: 'Understand how ATS systems work and optimize your resume accordingly',
-                    duration: '30 minutes',
-                    icon: <Target className="w-6 h-6" />
-                  },
-                  {
-                    step: 3,
-                    title: 'Advanced Techniques',
-                    description: 'Learn keyword optimization, formatting, and industry-specific tips',
-                    duration: '45 minutes',
-                    icon: <Zap className="w-6 h-6" />
-                  },
-                  {
-                    step: 4,
-                    title: 'Practice & Perfect',
-                    description: 'Apply your knowledge and create multiple optimized versions',
-                    duration: '60 minutes',
-                    icon: <Award className="w-6 h-6" />
-                  }
-                ].map((item, index) => (
-                  <div key={index} className="group">
-                    <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400 dark:hover:shadow-neon-cyan/20">
-                      <div className="flex items-center space-x-6">
-                        <div className="bg-gradient-to-r from-purple-600 to-blue-600 w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0 dark:from-neon-purple-500 dark:to-neon-blue-500 dark:shadow-neon-purple">
-                          {item.step}
-                        </div>
-
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <div className="text-purple-600 dark:text-neon-purple-400">
-                              {item.icon}
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{item.title}</h3>
-                            <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium dark:bg-neon-purple-500/20 dark:text-neon-purple-300">
-                              {item.duration}
-                            </span>
-                          </div>
-                          <p className="text-gray-700 dark:text-gray-300">{item.description}</p>
-                        </div>
-
-                        <ArrowRight className="w-6 h-6 text-gray-400 group-hover:text-purple-600 transition-colors dark:text-gray-500 dark:group-hover:text-neon-purple-400" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        
 
         {/* CTA Section */}
         <div className="py-20 bg-gradient-to-r from-purple-600 to-blue-700 text-white dark:from-neon-purple-500 dark:to-neon-blue-500">
