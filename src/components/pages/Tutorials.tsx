@@ -62,7 +62,7 @@ export const Tutorials: React.FC = () => {
       views: '12.5K',
       rating: 4.9,
       // Updated videoUrl to a directly streamable MP4 from Cloudinary
-        videoUrl: 'https://www.youtube.com/embed/x6AD2JsGafA',
+        videoUrl: 'https://res.cloudinary.com/dlkovvlud/video/upload/v1700000000/sample_video.mp4',
       isPopular: true
     },
     {
@@ -315,7 +315,7 @@ export const Tutorials: React.FC = () => {
                         {mainVideoTutorial.category.replace('-', ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                       </div>
                       <button // Changed from <a> to <button>
-                        onClick={() => openVideoModal(mainVideoTutorial.videoUrl, mainVideoTutorial.title)}
+                        onClick={() => window.open(mainVideoTutorial.videoUrl, '_blank')} // MODIFIED: Direct redirect
                         className="bg-green-50 px-4 py-2 rounded-lg text-green-800 text-sm font-medium flex items-center dark:bg-neon-cyan-500/10 dark:text-neon-cyan-300 hover:bg-green-100 transition-colors"
                       >
                         <Play className="w-4 h-4 mr-2" />
@@ -402,7 +402,7 @@ export const Tutorials: React.FC = () => {
                             <span className="ml-1 text-gray-700 text-sm font-medium dark:text-gray-300">{tutorial.rating}</span>
                           </div>
                           <button // Changed from <a> to <button>
-                            onClick={() => openVideoModal(tutorial.videoUrl, tutorial.title)}
+                            onClick={() => window.open(tutorial.videoUrl, '_blank')} // MODIFIED: Direct redirect
                             className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center space-x-1 dark:text-neon-cyan-400 dark:hover:text-neon-cyan-300"
                           >
                             <span>Watch Video</span>
