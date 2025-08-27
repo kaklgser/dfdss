@@ -395,11 +395,17 @@ export const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
                             </div>
                             <h3 className="text-base sm:text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
                             <div className="text-center mb-4"> {/* Increased mb to push credits down */}
-                              <span className="block text-xl sm:text-3xl font-bold text-gray-900 dark:text-dark-900"> {/* Added 'block' */}
-                                ₹{plan.price}
-                              </span>
+                              <span className="text-sm text-red-500 line-through">₹{plan.mrp}</span>
+                              <div className="flex items-center justify-center">
+                                <span className="block text-xl sm:text-3xl font-bold text-gray-900 dark:text-dark-900"> {/* Added 'block' */}
+                                  ₹{plan.price}
+                                </span>
+                                <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">
+                                  {plan.discountPercentage}% OFF
+                                </span>
+                              </div>
                               <span className="block text-gray-600 text-xs sm:text-base"> {/* Added 'block', removed ml-1 */}
-                                /{plan.duration.toLowerCase()}
+                                One-time purchase
                               </span>
                             </div>
                           </div>
@@ -467,7 +473,7 @@ export const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
           </div>
 
           {/* Desktop Grid */}
-          <div className="hidden md:grid grid-cols-2 lg:grid-cols-6 gap-3 lg:gap-6 mb-4 lg:mb-8">
+          <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-6 mb-4 lg:mb-8">
             {allPlansWithAddOnOption.map((plan) => (
               <div
                 key={plan.id}
@@ -484,7 +490,7 @@ export const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
                       className="inline-flex items-center bg-gradient-to-r from-green-500 to-emerald-500 text-white px-2 lg:px-4 py-1 lg:py-2 rounded-full text-xs lg:text-sm font-bold shadow-lg"
                       style={{ fontSize: '10px', lineHeight: '1rem' }}
                     >
-                      <span className="mr-1 text-sm">🏆</span> Most Popular
+                      <span className="mr-1 text-sm">🏆</span> {plan.id === 'career_boost_plus' ? 'Most Popular' : 'Best Value'}
                     </span>
                   </div>
 
@@ -494,15 +500,17 @@ export const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
                   <div className="text-center mb-3 lg:mb-6">
                     {/* Plan Name */}
                     <h3 className="text-sm lg:text-xl font-bold text-gray-900 dark:text-gray-100 mb-2 break-words">{plan.name}</h3>
-                    {/* Price and Duration - Adjusted for separate lines and spacing */}
-                    <div className="text-center mb-4"> {/* Increased mb */}
-                      <span className="block text-lg lg:text-3xl font-bold text-gray-900 dark:text-gray-900"> {/* Added 'block' */}
-                        ₹{plan.price}
-                      </span>
-                      <span className="block text-gray-600 dark:text-gray-400 text-xs lg:text-base"> {/* Added 'block', removed ml-1 */}
-                        /{plan.duration.toLowerCase()}
-                      </span>
+                    {/* Price Display */}
+                    <div className="flex flex-col items-center mb-2">
+                      <span className="text-sm text-red-500 line-through">₹{plan.mrp}</span>
+                      <div className="flex items-center">
+                        <span className="text-xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100">₹{plan.price}</span>
+                        <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">
+                          {plan.discountPercentage}% OFF
+                        </span>
+                      </div>
                     </div>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm">One-time purchase</p>
                   </div>
                   {/* Resume Credits - Adjusted mb */}
                   <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg lg:rounded-2xl p-2 lg:p-4 text-center mb-4"> {/* Adjusted mb */}
@@ -720,4 +728,3 @@ export const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
     </div>
   );
 };
-
