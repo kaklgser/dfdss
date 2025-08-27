@@ -78,7 +78,7 @@ export const AlertModal: React.FC<AlertModalProps> = ({
         <div className={`relative bg-gradient-to-br ${getHeaderClasses()} p-6 border-b border-gray-200 dark:border-dark-300`}>
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-white/50 min-w-[44px] min-h-[44px] dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-dark-300/50"
+            className="absolute top-4 left-4 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-white/50 min-w-[44px] min-h-[44px] dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-dark-300/50"
           >
             <X className="w-6 h-6" />
           </button>
@@ -94,22 +94,27 @@ export const AlertModal: React.FC<AlertModalProps> = ({
         {/* Content */}
         <div className="p-6 text-center">
           <p className="text-gray-700 dark:text-gray-300 mb-6">{message}</p>
-          {actionText && onAction && (
+          {actionText && onAction ? ( // Only show action button if actionText and onAction are provided
             <button
-              onClick={onAction}
+              onClick={() => {
+                if (onAction) onAction(); // Execute the provided action
+                onClose(); // Then close the modal
+              }}
               className={`w-full py-3 px-6 rounded-xl font-semibold text-white transition-all duration-300 shadow-lg hover:shadow-xl ${getButtonClasses()} dark:shadow-neon-cyan`}
             >
               {actionText}
             </button>
+          ) : ( // Otherwise, show a generic close button
+            <button
+              onClick={onClose}
+              className="w-full py-3 px-6 rounded-xl font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 transition-colors duration-300 dark:bg-dark-200 dark:text-gray-300 dark:hover:bg-dark-300"
+            >
+              Close
+            </button>
           )}
-          <button
-            onClick={onClose}
-            className="w-full mt-3 py-3 px-6 rounded-xl font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 transition-colors duration-300 dark:bg-dark-200 dark:text-gray-300 dark:hover:bg-dark-300"
-          >
-            Close
-          </button>
         </div>
       </div>
     </div>
   );
 };
+
