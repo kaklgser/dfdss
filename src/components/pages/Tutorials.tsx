@@ -54,8 +54,8 @@ export const Tutorials: React.FC = () => {
     {
       id: 1,
       title: 'Getting Started with PrimoBoost AI',
-      description: 'Learn the basics of uploading your resume and getting your first optimization.',
-      duration: '5:30',
+      description: 'Get started on your first resume .',
+      duration: '2:52',
       difficulty: 'Beginner',
       category: 'getting-started',
       thumbnail: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=600',
@@ -69,10 +69,10 @@ export const Tutorials: React.FC = () => {
       id: 2,
       title: 'JD-Based Resume Optimization',
       description: 'Master the art of tailoring your resume to specific job descriptions.',
-      duration: '8:45',
+      duration: '2:30',
       difficulty: 'Intermediate',
       category: 'optimization',
-      thumbnail: 'https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=600',
+      thumbnail: 'https://www.youtube.com/watch?v=_Jez3fo4NJs',
       views: '8.2K',
       rating: 4.8,
       // Updated videoUrl to a directly streamable MP4 from Cloudinary
