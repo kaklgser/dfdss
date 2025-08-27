@@ -299,18 +299,7 @@ export const Tutorials: React.FC = () => {
                 </div>
               </div>
 
-  const guides = [
-    {
-      title: 'Complete Resume Optimization Guide',
-      description:
-        'A comprehensive 50-page guide covering everything from basics to advanced techniques.',
-      type: 'PDF Guide',
-      pages: 50,
-      downloads: '25K+',
-      icon: <FileText className="w-6 h-6" />,
-    },
-  ];
-
+ 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 relative dark:from-dark-50 dark:to-dark-200 transition-colors duration-300">
       {/* Hero Section */}
