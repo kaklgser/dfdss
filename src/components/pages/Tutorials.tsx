@@ -299,7 +299,8 @@ export const Tutorials: React.FC = () => {
                 </div>
               </div>
 
- 
+  c
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 relative dark:from-dark-50 dark:to-dark-200 transition-colors duration-300">
       {/* Hero Section */}
