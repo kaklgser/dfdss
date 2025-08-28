@@ -45,7 +45,7 @@ export const OfferOverlay: React.FC<OfferOverlayProps> = ({ isOpen, onClose, onA
 
         {/* Description */}
         <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-          Celebrate with us! Get an **additional 50% OFF** on our **Career Pro Max (₹10,000) plan** using code <strong className="text-purple-600 dark:text-neon-purple-400">VNKR50%</strong>. Limited time offer!
+          Celebrate with us! Get an additional 50% OFF on our Career Pro Max (₹10,000) plan using code <strong className="text-purple-600 dark:text-neon-purple-400">VNK50</strong>. Limited time offer!
         </p>
 
         {/* Call to Action */}
