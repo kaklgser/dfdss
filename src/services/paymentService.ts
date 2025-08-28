@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabaseClient';
 export interface SubscriptionPlan {
   id: string;
   name: string;
-  price: number;
+  price: number; // This will be the offer price
   mrp: number; // New: Manufacturer's Recommended Price
   discountPercentage: number; // New: Calculated discount percentage
   duration: string;
@@ -22,6 +22,7 @@ export interface SubscriptionPlan {
   popular?: boolean;
   durationInHours: number; // Added this property
 }
+
 
 export interface Subscription {
   id: string;
@@ -139,11 +140,11 @@ class PaymentService {
       gradient: 'from-yellow-500 to-orange-500',
       icon: 'target',
       features: [
-        '✅ 10 Resume Optimizations',
-        '✅ 10 Score Checks',
-        '✅ 50 LinkedIn Messages',
-        '✅ 1 Guided Resume Build',
-        '✅ Basic Support',
+      '✅ 10 Resume Optimizations',
+      '✅ 10 Score Checks',
+      '✅ 50 LinkedIn Messages',
+      '✅ 1 Guided Resume Build',
+      '✅ Basic Support',
       ],
       popular: false,
       durationInHours: 8760, // 365 days
@@ -362,8 +363,8 @@ class PaymentService {
         .from('subscriptions')
         .select(`id, ${usedField}, ${totalField}`)
         .eq('user_id', userId)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
+        .eq('status', 'active') // Ensure we only fetch active subscriptions
+        .order('created_at', { ascending: false }) // Get the latest one if multiple
         .limit(1)
         .maybeSingle();
 
@@ -510,10 +511,10 @@ class PaymentService {
     }
   }
 
-  // MODIFIED: applyCoupon now performs server-side validation
+  // MODIFIED: applyCoupon now performs server-side validation and includes VNKR50%
   async applyCoupon(planId: string, couponCode: string, userId: string | null): Promise<{ couponApplied: string | null; discountAmount: number; finalAmount: number; error?: string; isValid: boolean; message: string }> {
     const plan = this.getPlanById(planId);
-    if (!plan && planId !== 'addon_only_purchase') { // Allow addon_only_purchase for coupon application
+    if (!plan && planId !== 'addon_only_purchase') {
       return { couponApplied: null, discountAmount: 0, finalAmount: 0, error: 'Invalid plan selected', isValid: false, message: 'Invalid plan selected' };
     }
 
@@ -531,10 +532,7 @@ class PaymentService {
 
     let originalPrice = (plan?.price || 0) * 100; // Convert to paise, or 0 if addon_only
     if (planId === 'addon_only_purchase') {
-      // For addon_only_purchase, the original price is the sum of selected add-ons.
-      // This logic needs to be handled on the frontend or passed as an argument.
-      // For now, assume originalPrice is 0 for coupon calculation if it's an add-on only purchase.
-      originalPrice = 0; // Coupons typically apply to plans, not individual add-ons unless specified.
+      originalPrice = 0;
     }
 
     let discountAmount = 0;
@@ -550,15 +548,25 @@ class PaymentService {
       discountAmount = originalPrice;
       finalAmount = 0;
     } else if (normalizedCoupon === 'first500' && planId === 'lite_check') {
-      // This coupon requires a backend check for usage limit.
-      // For frontend simulation, we'll assume it's valid if it reaches here.
-      // The actual check will happen in the Supabase Edge Function.
       discountAmount = Math.floor(originalPrice * 0.98);
       finalAmount = originalPrice - discountAmount;
     } else if (normalizedCoupon === 'worthyone' && planId === 'career_pro_max') {
       discountAmount = Math.floor(originalPrice * 0.5);
       finalAmount = originalPrice - discountAmount;
-    } else {
+    }
+    // NEW COUPON LOGIC: VNKR50% for career_pro_max
+    else if (normalizedCoupon === 'vnkr50%' && planId === 'career_pro_max') {
+      discountAmount = Math.floor(originalPrice * 0.5); // 50% off
+      finalAmount = originalPrice - discountAmount;
+      message = 'Vinayaka Chavithi Offer applied! 50% off!';
+    }
+    // NEW COUPON LOGIC: VNK50 for career_pro_max
+    else if (normalizedCoupon === 'vnk50' && planId === 'career_pro_max') {
+      discountAmount = Math.floor(originalPrice * 0.5); // 50% off
+      finalAmount = originalPrice - discountAmount;
+      message = 'VNK50 coupon applied! 50% off!';
+    }
+    else {
       return { couponApplied: null, discountAmount: 0, finalAmount: originalPrice, error: 'Invalid coupon code or not applicable to selected plan', isValid: false, message: 'Invalid coupon code or not applicable to selected plan' };
     }
 
