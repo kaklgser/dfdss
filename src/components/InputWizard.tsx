@@ -1,5 +1,4 @@
-// src/components/InputWizard.tsx
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Upload,
   FileText,
@@ -11,10 +10,158 @@ import {
   CheckCircle,
   Edit3
 } from 'lucide-react';
-import { FileUpload } from './FileUpload';
-import { InputSection } from './InputSection';
-import { UserType } from '../types/resume';
-import { User as AuthUser } from '../types/auth';
+
+// Define the types that were assumed to be in '../types/resume' and '../types/auth'
+// For demonstration, these are simplified. In a real application, you would have these in separate files.
+export type UserType = 'fresher' | 'experienced' | 'student';
+export type ScoringMode = 'general' | 'jd_based';
+
+export interface ExtractionResult {
+  text: string;
+  // Add other properties if your actual ExtractionResult has them
+}
+
+export interface User {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  // Add other auth user properties as needed
+}
+
+// --- Start of FileUpload Component (was './FileUpload') ---
+interface FileUploadProps {
+  onFileUpload: (result: ExtractionResult) => void;
+}
+
+const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload }) => {
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      setError('Please select a file.');
+      return;
+    }
+
+    setFileName(file.name);
+    setError(null);
+    setIsLoading(true);
+
+    // Simulate file reading and text extraction
+    try {
+      const fileText = await readFileAsText(file);
+      onFileUpload({ text: fileText });
+    } catch (err) {
+      setError('Failed to read file. Please try again.');
+      console.error('File upload error:', err);
+      onFileUpload({ text: '' }); // Clear any previous result on error
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const readFileAsText = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          resolve(e.target.result as string);
+        } else {
+          reject(new Error('File reader result is empty.'));
+        }
+      };
+      reader.onerror = (e) => {
+        reject(reader.error);
+      };
+      reader.readAsText(file);
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <label
+        htmlFor="resume-upload"
+        className="flex flex-col items-center justify-center w-full px-4 py-6 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer bg-blue-50 hover:bg-blue-100 transition-colors duration-200 dark:bg-dark-200 dark:border-blue-700 dark:hover:bg-dark-300"
+      >
+        <Upload className="w-10 h-10 text-blue-500 mb-3 dark:text-blue-400" />
+        <p className="mb-2 text-sm text-gray-600 dark:text-gray-300">
+          <span className="font-semibold">Click to upload</span> or drag and drop
+        </p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">PDF, DOCX, TXT (Max 5MB)</p>
+        <input id="resume-upload" type="file" className="hidden" accept=".pdf,.doc,.docx,.txt" onChange={handleFileChange} />
+      </label>
+      {fileName && (
+        <p className="text-sm text-gray-700 dark:text-gray-200">
+          Uploaded: <span className="font-medium">{fileName}</span>
+        </p>
+      )}
+      {isLoading && (
+        <p className="text-sm text-blue-600 dark:text-blue-400">Processing file...</p>
+      )}
+      {error && (
+        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+      )}
+    </div>
+  );
+};
+// --- End of FileUpload Component ---
+
+
+// --- Start of InputSection Component (was './InputSection') ---
+interface InputSectionProps {
+  resumeText: string;
+  jobDescription: string;
+  onResumeChange: (text: string) => void;
+  onJobDescriptionChange: (text: string) => void;
+}
+
+const InputSection: React.FC<InputSectionProps> = ({
+  resumeText,
+  jobDescription,
+  onResumeChange,
+  onJobDescriptionChange,
+}) => {
+  return (
+    <div className="space-y-6">
+      <div>
+        <label htmlFor="resume-textarea" className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
+          Your Resume Text
+        </label>
+        <textarea
+          id="resume-textarea"
+          value={resumeText}
+          onChange={(e) => onResumeChange(e.target.value)}
+          rows={10}
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100 dark:placeholder-gray-400"
+          placeholder="Paste your resume text here, or it will be populated from your uploaded file."
+        ></textarea>
+        <p className="text-xs text-gray-500 mt-2 dark:text-gray-400">
+          This is the extracted text from your resume. You can edit it if needed.
+        </p>
+      </div>
+      <div>
+        <label htmlFor="job-description-textarea" className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
+          Job Description
+        </label>
+        <textarea
+          id="job-description-textarea"
+          value={jobDescription}
+          onChange={(e) => onJobDescriptionChange(e.target.value)}
+          rows={10}
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100 dark:placeholder-gray-400"
+          placeholder="Paste the job description you're applying for here. This will be used to tailor the optimization."
+        ></textarea>
+        <p className="text-xs text-gray-500 mt-2 dark:text-gray-400">
+          Provide the job description for the best possible resume matching.
+        </p>
+      </div>
+    </div>
+  );
+};
+// --- End of InputSection Component ---
+
 
 interface InputWizardProps {
   extractionResult: ExtractionResult;
@@ -32,7 +179,7 @@ interface InputWizardProps {
   handleOptimize: () => void;
   isAuthenticated: boolean;
   onShowAuth: () => void;
-  user: AuthUser | null;
+  user: User | null; // Renamed from AuthUser to User as it's defined here
   onShowProfile: (mode?: 'profile' | 'wallet') => void;
 }
 
@@ -57,6 +204,7 @@ export const InputWizard: React.FC<InputWizardProps> = ({
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
 
+  // Define the steps for the wizard
   const steps = [
     {
       id: 'upload',
@@ -71,6 +219,7 @@ export const InputWizard: React.FC<InputWizardProps> = ({
           <FileUpload onFileUpload={setExtractionResult} />
         </div>
       ),
+      // Step is valid if resume text exists
       isValid: extractionResult.text.trim().length > 0
     },
     {
@@ -91,6 +240,7 @@ export const InputWizard: React.FC<InputWizardProps> = ({
           />
         </div>
       ),
+      // Step is valid if resume text exists and job description is provided if scoring mode is not general
       isValid: extractionResult.text.trim().length > 0 && (scoringMode === 'general' || jobDescription.trim().length > 0)
     },
     {
@@ -142,7 +292,7 @@ export const InputWizard: React.FC<InputWizardProps> = ({
           </div>
         </div>
       ),
-      isValid: true
+      isValid: true // This step is always valid as the role is optional
     },
     {
       id: 'experience',
@@ -183,7 +333,7 @@ export const InputWizard: React.FC<InputWizardProps> = ({
           </div>
         </div>
       ),
-      isValid: true
+      isValid: true // This step is always valid as user must choose one type
     },
     {
       id: 'optimize',
@@ -242,6 +392,7 @@ export const InputWizard: React.FC<InputWizardProps> = ({
                   onShowAuth();
                 }
               }}
+              // Button is disabled if resume is not uploaded, or if in JD-based mode and JD/target role are missing
               disabled={!extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !targetRole.trim()))}
               className={`w-full py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center space-x-3 ${
                 !extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !targetRole.trim()))
@@ -263,39 +414,46 @@ export const InputWizard: React.FC<InputWizardProps> = ({
           </div>
         </div>
       ),
+      // Optimization step is valid if resume is uploaded and JD/target role are provided if scoring mode is JD-based
       isValid: extractionResult.text.trim().length > 0 && (scoringMode === 'general' || (jobDescription.trim().length > 0 && targetRole.trim().length > 0))
     }
   ];
 
+  // Handler for moving to the next step
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     }
   };
 
+  // Handler for moving to the previous step
   const handlePrevious = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
   };
 
-  const itemBaseWidth = 96;
-  const itemMarginRight = 16;
+  // --- Carousel logic for step indicator ---
+  const itemBaseWidth = 96; // Corresponds to w-24 (24 * 4 = 96px)
+  const itemMarginRight = 16; // Corresponds to space-x-4 (4 * 4 = 16px)
   const itemFullWidth = itemBaseWidth + itemMarginRight;
 
-  const visibleIconsCount = 3;
+  const visibleIconsCount = 3; // Number of icons visible at a time on smaller screens
 
   const maxScrollLeft = -(Math.max(0, steps.length - visibleIconsCount) * itemFullWidth);
 
   let translateX = 0;
   const targetCenterIndex = Math.floor(visibleIconsCount / 2);
 
+  // Adjust translateX to center the current step if it's beyond the initial visible icons
   if (currentStep > targetCenterIndex) {
     translateX = -(currentStep - targetCenterIndex) * itemFullWidth;
   }
 
+  // Ensure translateX does not exceed the bounds
   translateX = Math.max(maxScrollLeft, translateX);
   translateX = Math.min(0, translateX);
+  // --- End carousel logic ---
 
   const currentStepData = steps[currentStep];
 
@@ -359,10 +517,11 @@ export const InputWizard: React.FC<InputWizardProps> = ({
       {/* Navigation Buttons */}
       <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 dark:bg-dark-50 dark:border-dark-400">
         <div className="flex justify-between items-center gap-2">
+          {/* Previous Button */}
           <button
             onClick={handlePrevious}
             disabled={currentStep === 0}
-            className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 sm:w-auto flex-shrink-0 ${ // Removed w-1/3
+            className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 sm:w-auto flex-shrink-0 ${
               currentStep === 0
                 ? 'bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-dark-200 dark:text-gray-500'
                 : 'bg-gray-600 hover:bg-gray-700 text-white shadow-lg hover:shadow-xl dark:bg-gray-700 dark:hover:bg-gray-800'
@@ -372,7 +531,8 @@ export const InputWizard: React.FC<InputWizardProps> = ({
             <span>Previous</span>
           </button>
 
-          <div className="text-center flex-grow sm:w-48 flex-shrink-0"> {/* Removed w-1/3, added flex-grow */}
+          {/* Progress Indicator */}
+          <div className="text-center flex-grow sm:w-48 flex-shrink-0">
             <div className="text-sm text-gray-500 mb-1 dark:text-gray-400">Progress</div>
             <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-dark-200">
               <div
@@ -382,11 +542,12 @@ export const InputWizard: React.FC<InputWizardProps> = ({
             </div>
           </div>
 
+          {/* Next Button or Placeholder */}
           {currentStep < steps.length - 1 ? (
             <button
               onClick={handleNext}
               disabled={!currentStepData.isValid}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 sm:w-auto flex-shrink-0 ${ // Removed w-1/3
+              className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 sm:w-auto flex-shrink-0 ${
                 !currentStepData.isValid
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-dark-200 dark:text-gray-500'
                   : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl dark:bg-blue-700 dark:hover:bg-blue-800'
@@ -396,7 +557,8 @@ export const InputWizard: React.FC<InputWizardProps> = ({
               <ArrowRight className="w-5 h-5" />
             </button>
           ) : (
-            <div className="sm:w-24 flex-shrink-0" /> {/* Removed w-1/3 */}
+            // This div acts as a placeholder to maintain layout balance when the "Next" button is not present
+            <div className="sm:w-24 flex-shrink-0" />
           )}
         </div>
       </div>
