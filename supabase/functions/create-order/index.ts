@@ -253,8 +253,6 @@ serve(async (req) => {
       const normalizedCoupon = couponCode.toLowerCase().trim();
 
       // Per-user coupon usage check (now applies to all non-empty coupon codes)
-      // The original code's `if (normalizedCoupon !== '')` condition has been removed
-      // to ensure this check applies broadly without explicit bypasses.
       const { count: userCouponUsageCount, error: userCouponUsageError } = await supabase
         .from('payment_transactions')
         .select('id', { count: 'exact' })
@@ -320,6 +318,29 @@ serve(async (req) => {
         finalAmount = (plan.price * 100) - discountAmount; // Calculate in paise
         appliedCoupon = 'worthyone';
       }
+      // NEW COUPON LOGIC: VNKR50% for career_pro_max
+      else if (normalizedCoupon === 'vnkr50%' && planId === 'career_pro_max') {
+        discountAmount = Math.floor(originalPrice * 0.5); // 50% off
+        finalAmount = originalPrice - discountAmount;
+        appliedCoupon = 'vnkr50%';
+      }
+      // NEW COUPON LOGIC: VNK50 for career_pro_max
+      else if (normalizedCoupon === 'vnk50' && planId === 'career_pro_max') {
+        discountAmount = Math.floor(originalPrice * 0.5); // 50% off
+        finalAmount = originalPrice - discountAmount;
+        appliedCoupon = 'vnk50';
+      }
+      else {
+        // If coupon is not recognized or not applicable to the plan, do not apply discount
+        // and return an error message.
+        return new Response(
+          JSON.stringify({ error: 'Invalid coupon code or not applicable to selected plan.' }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400,
+          },
+        );
+      }
     }
 
     // Apply wallet deduction (walletDeduction is already in paise from frontend)
@@ -354,7 +375,7 @@ serve(async (req) => {
         amount: plan.price * 100, // Original plan price in paise
         currency: 'INR', // Explicitly set currency as it's not nullable and has a default
         coupon_code: appliedCoupon, // Save applied coupon code
-        discount_amount: discountAmount, // Save discount amount (in paise)
+        discount_amount: discountAmount, // In paise
         final_amount: finalAmount, // Final amount after discounts/wallet/addons (in paise)
         purchase_type: planId === 'addon_only_purchase' ? 'addon_only' : (Object.keys(selectedAddOns || {}).length > 0 ? 'plan_with_addons' : 'plan'),
         // payment_id and order_id will be updated by verify-payment function
