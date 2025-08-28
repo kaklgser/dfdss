@@ -222,7 +222,6 @@ serve(async (req) => {
     // Get plan details
     let plan: PlanConfig;
     if (planId === 'addon_only_purchase' || planId === null) {
-      // Handle add-on only purchases
       plan = {
         id: 'addon_only_purchase',
         name: 'Add-on Only Purchase',
@@ -245,8 +244,11 @@ serve(async (req) => {
     }
 
     // Calculate final amount based on plan price (all calculations in paise)
-    let finalAmount = plan.price * 100; // Convert plan price to paise
+    // Ensure this line is at the top level of the try block
+    let originalPrice = (plan?.price || 0) * 100; // Convert to paise, or 0 if addon_only
+
     let discountAmount = 0;
+    let finalAmount = originalPrice;
     let appliedCoupon = null;
 
     if (couponCode) {
