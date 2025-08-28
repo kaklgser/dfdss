@@ -362,7 +362,7 @@ export const InputWizard: React.FC<InputWizardProps> = ({
           <button
             onClick={handlePrevious}
             disabled={currentStep === 0}
-            className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 w-1/3 sm:w-auto flex-shrink-0 ${
+            className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 sm:w-auto flex-shrink-0 ${ // Removed w-1/3
               currentStep === 0
                 ? 'bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-dark-200 dark:text-gray-500'
                 : 'bg-gray-600 hover:bg-gray-700 text-white shadow-lg hover:shadow-xl dark:bg-gray-700 dark:hover:bg-gray-800'
@@ -372,7 +372,7 @@ export const InputWizard: React.FC<InputWizardProps> = ({
             <span>Previous</span>
           </button>
 
-          <div className="text-center w-1/3 sm:w-48 flex-shrink-0">
+          <div className="text-center flex-grow sm:w-48 flex-shrink-0"> {/* Removed w-1/3, added flex-grow */}
             <div className="text-sm text-gray-500 mb-1 dark:text-gray-400">Progress</div>
             <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-dark-200">
               <div
@@ -386,7 +386,7 @@ export const InputWizard: React.FC<InputWizardProps> = ({
             <button
               onClick={handleNext}
               disabled={!currentStepData.isValid}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 w-1/3 sm:w-auto flex-shrink-0 ${
+              className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 sm:w-auto flex-shrink-0 ${ // Removed w-1/3
                 !currentStepData.isValid
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-dark-200 dark:text-gray-500'
                   : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl dark:bg-blue-700 dark:hover:bg-blue-800'
@@ -396,7 +396,7 @@ export const InputWizard: React.FC<InputWizardProps> = ({
               <ArrowRight className="w-5 h-5" />
             </button>
           ) : (
-            <div className="w-1/3 sm:w-24 flex-shrink-0" />
+            <div className="sm:w-24 flex-shrink-0" /> {/* Removed w-1/3 */}
           )}
         </div>
       </div>
