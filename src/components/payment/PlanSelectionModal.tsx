@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { X, Sparkles, Target, Briefcase, Loader2, CheckCircle, AlertCircle, PlusCircle, TrendingUp, MessageCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { paymentService } from '../../services/paymentService';
-import { useNavigate } from 'react-router-dom'; // Change 'react/router-dom' to 'react-router-dom'
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 
 interface PlanSelectionModalProps {
@@ -13,6 +13,8 @@ interface PlanSelectionModalProps {
   onSubscriptionSuccess: () => void;
   onShowAlert: (title: string, message: string, type?: 'info' | 'success' | 'warning' | 'error', actionText?: string, onAction?: () => void) => void;
   triggeredByFeatureId?: string;
+  // NEW PROP: Callback for successful add-on purchase
+  onAddonPurchaseSuccess?: (featureId: string) => void;
 }
 
 export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
@@ -22,6 +24,7 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
   onSubscriptionSuccess,
   onShowAlert,
   triggeredByFeatureId,
+  onAddonPurchaseSuccess, // Destructure the new prop
 }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -126,11 +129,14 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
 
         // Check if it was a single-use add-on purchase (triggeredByFeatureId is present)
         if (triggeredByFeatureId) {
-            // For single-use add-ons, just close the modal. The calling component will react.
-            onClose();
+            // Call the new callback for add-on purchase success
+            if (onAddonPurchaseSuccess) {
+                onAddonPurchaseSuccess(triggeredByFeatureId);
+            }
+            onClose(); // Close the modal
         } else {
             // For full plan purchases or general plan selection, navigate to pricing page
-            navigate('/pricing'); // Or featureConfig.redirectPath if it's a specific tool page
+            navigate('/pricing');
             onClose();
         }
       } else {
