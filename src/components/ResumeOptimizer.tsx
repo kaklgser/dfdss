@@ -45,7 +45,7 @@ interface ResumeOptimizerProps {
   onNavigateBack: () => void;
   userSubscription: any; // Keep this as it's passed from App.tsx
   refreshUserSubscription: () => Promise<void>; // Keep this as it's passed from App.tsx
-  onShowPlanSelection: () => void; // MODIFIED: Changed prop name
+  onShowPlanSelection: (featureId?: string) => void; // MODIFIED: Changed prop name
 }
 
 const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
@@ -120,6 +120,9 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
   const [linkedinUrl, setLinkedinUrl] = useState('');
   const [githubUrl, setGithubUrl] = useState('');
 
+  // NEW STATE: To track if optimization was interrupted due to credit
+  const [optimizationInterrupted, setOptimizationInterrupted] = useState(false);
+
 
   // --- Effects and Handlers ---
 
@@ -145,6 +148,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     setActiveTab('resume');
     // Removed setShowOptimizationDropdown(false); as it's no longer needed
     setShowMobileInterface(false);
+    setOptimizationInterrupted(false); // Reset interruption flag
   };
 
   /**
@@ -182,6 +186,16 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
       setCurrentStep(1); // Advance to next step after upload
     }
   }, [extractionResult.text, currentStep]);
+
+  // NEW EFFECT: Re-trigger optimization if it was interrupted and credits are now available
+  useEffect(() => {
+    if (optimizationInterrupted && userSubscription && (userSubscription.optimizationsTotal - userSubscription.optimizationsUsed) > 0) {
+      console.log('ResumeOptimizer: Credits replenished, re-attempting optimization.');
+      setOptimizationInterrupted(false); // Reset the flag immediately
+      handleOptimize(); // Re-run the optimization function
+    }
+  }, [userSubscription, optimizationInterrupted]);
+
 
   /**
    * Main function to handle the entire resume optimization process.
@@ -223,6 +237,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
       console.log('handleOptimize: Optimizations remaining (before useOptimization check):', userSubscription ? (userSubscription.optimizationsTotal - userSubscription.optimizationsUsed) : 'N/A'); // ADDED LOG
 
       if (!userSubscription || (userSubscription.optimizationsTotal - userSubscription.optimizationsUsed) <= 0) {
+        setOptimizationInterrupted(true); // Set flag: optimization was interrupted
         onShowPlanSelection('optimizer'); // Pass feature ID for context-specific modal
         return;
       }
@@ -444,7 +459,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
   };
 
   /**
-   * Adds a new tech stack item to the manual project state.
+   * Adds a new tech stack item to the manual project's tech stack.
    */
   const addTechToStack = () => {
     if (newTechStack.trim() && !manualProject.techStack.includes(newTechStack.trim())) {
@@ -457,7 +472,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
   };
 
   /**
-   * Removes a tech stack item from the manual project state.
+   * Removes a tech stack item from the manual project's tech stack.
    */
   const removeTechFromStack = (tech: string) => {
     setManualProject(prev => ({
@@ -659,8 +674,6 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
                 handleOptimize={handleOptimize}
                 isAuthenticated={isAuthenticated}
                 onShowAuth={onShowAuth}
-                currentStep={currentStep}
-                setCurrentStep={setCurrentStep}
                 user={user} // Pass user prop
                 onShowProfile={onShowProfile} // Pass onShowProfile prop
               />
