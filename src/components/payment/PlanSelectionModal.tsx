@@ -121,12 +121,19 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
       );
 
       if (result.success) {
-  onSubscriptionSuccess();
-  onShowAlert('Purchase Successful!', `Your ${featureConfig.title} credit has been added.`, 'success');
-  navigate(featureConfig.redirectPath); // Navigate first
-  onClose(); // Then close the modal
-}
- else {
+        onSubscriptionSuccess();
+        onShowAlert('Purchase Successful!', `Your ${featureConfig.title} credit has been added.`, 'success');
+
+        // Check if it was a single-use add-on purchase (triggeredByFeatureId is present)
+        if (triggeredByFeatureId) {
+            // For single-use add-ons, just close the modal. The calling component will react.
+            onClose();
+        } else {
+            // For full plan purchases or general plan selection, navigate to pricing page
+            navigate('/pricing'); // Or featureConfig.redirectPath if it's a specific tool page
+            onClose();
+        }
+      } else {
         setError(result.error || 'Payment failed. Please try again.');
         onShowAlert('Payment Failed', result.error || 'Payment processing failed. Please try again.', 'error');
       }
