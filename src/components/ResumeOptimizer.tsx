@@ -1,5 +1,5 @@
 // src/components/ResumeOptimizer.tsx
-import React, { useState, useEffect, useCallback } from 'react'; // Import useCallback
+import React, { useState, useEffect, useCallback } from 'react';
 
 // Supabase client and auth context
 import { supabase } from '../lib/supabaseClient';
@@ -9,21 +9,21 @@ import { useAuth } from '../contexts/AuthContext';
 import { FileText, Sparkles, Download, TrendingUp, Target, Award, User, Briefcase, AlertCircle, CheckCircle, Loader2, RefreshCw, Zap, Plus, Eye, EyeOff, Crown, Calendar, Clock, Users, Star, ArrowRight, Shield, Settings, LogOut, Menu, X, Upload, BarChart3, Lightbulb, ArrowLeft, StretchHorizontal as SwitchHorizontal, ChevronUp, ChevronDown } from 'lucide-react';
 
 // Local Components
-import { Header } from './Header'; // Assuming Header component is used elsewhere
-import { Navigation } from './components/navigation/Navigation'; // Assuming Navigation is a separate component
-import { FileUpload } from './FileUpload'; // Component for handling resume file uploads
-import { InputSection } from './InputSection'; // Assuming this component is part of the InputWizard
-import { ResumePreview } from './ResumePreview'; // Displays the formatted resume
-import { ExportButtons } from './ExportButtons'; // Handles PDF and DOCX export
-import { ComprehensiveAnalysis } from './ComprehensiveAnalysis'; // Displays score analysis and detailed feedback
-import { ProjectAnalysisModal } from './ProjectAnalysisModal'; // Modal for project analysis
-import { MobileOptimizedInterface } from './MobileOptimizedInterface'; // Mobile-specific UI
-import { ProjectEnhancement } from './ProjectEnhancement'; // Modal for project enhancement suggestions
-import { SubscriptionPlans } from './payment/SubscriptionPlans'; // Modal for payment/subscription plans
-import { SubscriptionStatus } from './payment/SubscriptionStatus'; // Component to display subscription info
-import { MissingSectionsModal } from './MissingSectionsModal'; // Modal for user to add missing sections
-import { InputWizard } from './InputWizard'; // Main input wizard component
-import { LoadingAnimation } from './LoadingAnimation'; // Import LoadingAnimation component
+import { Header } from './Header';
+import { Navigation } from './components/navigation/Navigation';
+import { FileUpload } from './FileUpload';
+import { InputSection } from './InputSection';
+import { ResumePreview } from './ResumePreview';
+import { ExportButtons } from './ExportButtons';
+import { ComprehensiveAnalysis } from './ComprehensiveAnalysis';
+import { ProjectAnalysisModal } from './ProjectAnalysisModal';
+import { MobileOptimizedInterface } from './MobileOptimizedInterface';
+import { ProjectEnhancement } from './ProjectEnhancement';
+import { SubscriptionPlans } from './payment/SubscriptionPlans';
+import { SubscriptionStatus } from './payment/SubscriptionStatus';
+import { MissingSectionsModal } from './MissingSectionsModal';
+import { InputWizard } from './InputWizard';
+import { LoadingAnimation } from './LoadingAnimation';
 
 // Services and Utilities
 import { parseFile } from '../utils/fileParser';
@@ -36,16 +36,16 @@ import { analyzeProjectAlignment } from '../services/projectAnalysisService';
 import { paymentService } from '../services/paymentService';
 // Data Types
 import { ResumeData, UserType, MatchScore, DetailedScore } from '../types/resume';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom';
 
 interface ResumeOptimizerProps {
   isAuthenticated: boolean;
   onShowAuth: () => void;
   onShowProfile: (mode?: 'profile' | 'wallet') => void;
   onNavigateBack: () => void;
-  userSubscription: any; // Keep this as it's passed from App.tsx
-  refreshUserSubscription: () => Promise<void>; // Keep this as it's passed from App.tsx
-  onShowPlanSelection: (featureId?: string) => void; // MODIFIED: Changed prop name
+  userSubscription: any;
+  refreshUserSubscription: () => Promise<void>;
+  onShowPlanSelection: (featureId?: string) => void;
   toolProcessTrigger: (() => void) | null;
   setToolProcessTrigger: React.Dispatch<React.SetStateAction<(() => void) | null>>;
 }
@@ -57,15 +57,13 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
   onNavigateBack,
   userSubscription,
   refreshUserSubscription,
-  onShowPlanSelection, // MODIFIED: Changed prop name
+  onShowPlanSelection,
   toolProcessTrigger,
   setToolProcessTrigger
 }) => {
   const { user } = useAuth();
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
 
-  // --- State Variables ---
-  // Input data state
   const [extractionResult, setExtractionResult] = useState<ExtractionResult>({ text: '', extraction_mode: 'TEXT', trimmed: false });
   const [jobDescription, setJobDescription] = useState('');
   const [targetRole, setTargetRole] = useState('');
@@ -73,31 +71,26 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
   const [scoringMode, setScoringMode] = useState<ScoringMode>('general');
   const [autoScoreOnUpload, setAutoScoreOnUpload] = useState(true);
 
-  // Optimization process state
   const [optimizedResume, setOptimizedResume] = useState<ResumeData | null>(null);
   const [parsedResumeData, setParsedResumeData] = useState<ResumeData | null>(null);
   const [pendingResumeData, setPendingResumeData] = useState<ResumeData | null>(null);
 
-  // Score and analysis state
   const [beforeScore, setBeforeScore] = useState<MatchScore | null>(null);
   const [afterScore, setAfterScore] = useState<MatchScore | null>(null);
   const [initialResumeScore, setInitialResumeScore] = useState<DetailedScore | null>(null);
   const [finalResumeScore, setFinalResumeScore] = useState<DetailedScore | null>(null);
   const [changedSections, setChangedSections] = useState<string[]>([]);
 
-  // Loading and UI state
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [isCalculatingScore, setIsCalculatingScore] = useState(false);
   const [isProcessingMissingSections, setIsProcessingMissingSections] = useState(false);
-  const [activeTab, setActiveTab] = useState<'resume'>('resume'); // Removed 'analysis' option
-  const [currentStep, setCurrentStep] = useState(0); // Changed initial step to 0 for InputWizard
+  const [activeTab, setActiveTab] = useState<'resume'>('resume');
+  const [currentStep, setCurrentStep] = useState(0);
 
-  // Modal-specific state
   const [showProjectAnalysis, setShowProjectAnalysis] = useState(false);
   const [showMissingSectionsModal, setShowMissingSectionsModal] = useState(false);
   const [missingSections, setMissingSections] = useState<string[]>([]);
 
-  // Other UI/form-related state (e.g., for manual project add)
   const [showMobileInterface, setShowMobileInterface] = useState(false);
   const [showProjectMismatch, setShowProjectMismatch] = useState(false);
   const [showProjectOptions, setShowProjectOptions] = useState(false);
@@ -114,24 +107,15 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
 
   const [showProjectEnhancement, setShowProjectEnhancement] = useState(false);
 
-  // Subscription and wallet state
   const [subscription, setSubscription] = useState<any>(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
   const [walletRefreshKey, setWalletRefreshKey] = useState(0);
 
-  // Deprecated/unused variables from original prompt, retained for clarity
   const [linkedinUrl, setLinkedinUrl] = useState('');
   const [githubUrl, setGithubUrl] = useState('');
 
-  // NEW STATE: To track if optimization was interrupted due to credit
   const [optimizationInterrupted, setOptimizationInterrupted] = useState(false);
 
-
-  // --- Effects and Handlers ---
-
-  /**
-   * Clears all state and resets the UI to the initial input wizard view.
-   */
   const handleStartNewResume = () => {
     setOptimizedResume(null);
     setExtractionResult({ text: '', extraction_mode: 'TEXT', trimmed: false });
@@ -147,15 +131,12 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     setNewTechStack('');
     setLowScoringProjects([]);
     setChangedSections([]);
-    setCurrentStep(0); // Reset to first step of wizard
+    setCurrentStep(0);
     setActiveTab('resume');
     setShowMobileInterface(false);
-    setOptimizationInterrupted(false); // Reset interruption flag
+    setOptimizationInterrupted(false);
   };
 
-  /**
-   * Fetches the user's subscription status.
-   */
   const checkSubscriptionStatus = async () => {
     if (!user) return;
     try {
@@ -169,9 +150,6 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     }
   };
 
-  /**
-   * Initial effect to check for authentication and fetch subscription status.
-   */
   useEffect(() => {
     if (isAuthenticated && user) {
       checkSubscriptionStatus();
@@ -180,24 +158,19 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     }
   }, [isAuthenticated, user]);
 
-  /**
-   * Effect to auto-advance the wizard step after a resume is uploaded.
-   */
   useEffect(() => {
     if (extractionResult.text.trim().length > 0 && currentStep === 0) {
-      setCurrentStep(1); // Advance to next step after upload
+      setCurrentStep(1);
     }
   }, [extractionResult.text, currentStep]);
 
-  // Register the handleOptimize function with the App.tsx trigger
   useEffect(() => {
     setToolProcessTrigger(() => handleOptimize);
     return () => {
-      setToolProcessTrigger(null); // Clean up on unmount
+      setToolProcessTrigger(null);
     };
-  }, [setToolProcessTrigger, handleOptimize]); // Depend on the memoized handleOptimize
+  }, [setToolProcessTrigger, handleOptimize]);
 
-  // NEW EFFECT: Re-trigger optimization if it was interrupted and credits are now available
   useEffect(() => {
     if (optimizationInterrupted && userSubscription) {
       refreshUserSubscription().then(() => {
@@ -210,11 +183,6 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     }
   }, [optimizationInterrupted, refreshUserSubscription, userSubscription, handleOptimize]);
 
-
-  /**
-   * Main function to handle the entire resume optimization process.
-   * Includes session validation, subscription checks, and API calls.
-   */
   const handleOptimize = useCallback(async () => {
     console.log('handleOptimize: Function called.');
 
@@ -298,10 +266,6 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     }
   }, [extractionResult, jobDescription, user, onShowAuth, userSubscription, onShowPlanSelection, userType, targetRole]);
 
-
-  /**
-   * Helper function to start the optimization process after missing sections are handled.
-   */
   const continueOptimizationProcess = async (resumeData: ResumeData, accessToken: string) => {
     try {
       await handleInitialResumeProcessing(resumeData, accessToken);
@@ -312,9 +276,6 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     }
   };
 
-  /**
-   * Performs the first pass of scoring and sets up for project analysis.
-   */
   const handleInitialResumeProcessing = async (resumeData: ResumeData, accessToken: string) => {
     try {
       setIsCalculatingScore(true);
@@ -336,9 +297,6 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     }
   };
 
-  /**
-   * Checks the parsed resume data for any missing key sections.
-   */
   const checkForMissingSections = (resumeData: ResumeData): string[] => {
     const missing: string[] = [];
     if (!resumeData.workExperience || resumeData.workExperience.length === 0 || resumeData.workExperience.every(exp => !exp.role?.trim())) {
@@ -356,9 +314,6 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     return missing;
   };
 
-  /**
-   * Handles the data provided by the user in the MissingSectionsModal.
-   */
   const handleMissingSectionsProvided = async (data: any) => {
     setIsProcessingMissingSections(true);
     try {
@@ -387,9 +342,6 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     }
   };
 
-  /**
-   * Performs the final AI optimization pass on the resume.
-   */
   const proceedWithFinalOptimization = async (resumeData: ResumeData, initialScore: DetailedScore, accessToken: string) => {
     try {
       setIsOptimizing(true);
@@ -445,9 +397,6 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     }
   };
 
-  /**
-   * Handles user response from the project mismatch modal.
-   */
   const handleProjectMismatchResponse = (proceed: boolean) => {
     setShowProjectMismatch(false);
     if (proceed) {
@@ -460,9 +409,6 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     }
   };
 
-  /**
-   * Handles user selection of how to add a project.
-   */
   const handleProjectOptionSelect = (option: 'manual' | 'ai') => {
     setShowProjectOptions(false);
     if (option === 'manual') {
@@ -472,9 +418,6 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     }
   };
 
-  /**
-   * Adds a new tech stack item to the manual project's tech stack.
-   */
   const addTechToStack = () => {
     if (newTechStack.trim() && !manualProject.techStack.includes(newTechStack.trim())) {
       setManualProject(prev => ({
@@ -485,9 +428,6 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     }
   };
 
-  /**
-   * Removes a tech stack item from the manual project's tech stack.
-   */
   const removeTechFromStack = (tech: string) => {
     setManualProject(prev => ({
       ...prev,
@@ -495,18 +435,12 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     }));
   };
 
-  /**
-   * Generates a project description based on manual input (a placeholder for a future AI call).
-   */
   const generateProjectDescription = async (project: typeof manualProject, jd: string): Promise<string> => {
     return `• Developed ${project.title} using ${project.techStack.join(', ')} technologies
 • Implemented core features and functionality aligned with industry best practices
 • Delivered scalable solution with focus on performance and user experience`;
   };
 
-  /**
-   * Handles the submission of a manually added project.
-   */
   const handleManualProjectSubmit = async () => {
     if (!manualProject.title || manualProject.techStack.length === 0 || !parsedResumeData) {
       alert('Please provide project title and tech stack.');
@@ -540,9 +474,6 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     }
   };
 
-  /**
-   * Handles a situation where projects are updated (e.g., from the ProjectEnhancement modal).
-   */
   const handleProjectsUpdated = async (updatedResumeData: ResumeData) => {
     console.log('Projects updated, triggering final AI re-optimization...');
     setOptimizedResume(updatedResumeData);
@@ -558,9 +489,6 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     }
   };
 
-  /**
-   * Generates new scores after a project is added, then proceeds with final optimization.
-   */
   const generateScoresAfterProjectAdd = async (updatedResume: ResumeData, accessToken: string) => {
     try {
       setIsCalculatingScore(true);
@@ -575,16 +503,11 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     }
   }
 
-  /**
-   * Handles a successful subscription purchase.
-   */
   const handleSubscriptionSuccess = () => {
     checkSubscriptionStatus();
     onShowPlanSelection();
     setWalletRefreshKey(prevKey => prev + 1);
   };
-
-  // --- Conditional UI Rendering ---
 
   if (showMobileInterface && optimizedResume) {
     const mobileSections = [
@@ -959,7 +882,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
         onSectionsProvided={handleMissingSectionsProvided}
       />
     </div>
-  )
+  );
 };
 
 export default ResumeOptimizer;
