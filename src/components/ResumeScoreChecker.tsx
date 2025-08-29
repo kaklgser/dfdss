@@ -171,15 +171,19 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
 
   // NEW EFFECT: Re-trigger analysis if it was interrupted and credits are now available
   useEffect(() => {
-    // Only re-trigger if analysis was previously interrupted AND credits are now available
-    if (analysisInterrupted && userSubscription && (userSubscription.scoreChecksTotal - userSubscription.scoreChecksUsed) > 0) {
-        console.log('ResumeScoreChecker: Credits replenished, re-attempting analysis.');
-        // Reset the flag immediately to prevent re-triggering in a loop
-        setAnalysisInterrupted(false);
-        // Re-run the analysis function
-        analyzeResume();
+    // Only re-trigger if analysis was previously interrupted AND userSubscription exists
+    if (analysisInterrupted && userSubscription) {
+      // Explicitly refresh userSubscription to get the latest data
+      refreshUserSubscription().then(() => {
+        // After refresh, check if credits are now available
+        if (userSubscription && (userSubscription.scoreChecksTotal - userSubscription.scoreChecksUsed) > 0) {
+          console.log('ResumeScoreChecker: Credits replenished, re-attempting analysis.');
+          setAnalysisInterrupted(false); // Reset the flag immediately
+          analyzeResume(); // Re-run the analysis function
+        }
+      });
     }
-  }, [userSubscription, analysisInterrupted]); // Depend on userSubscription and the flag
+  }, [analysisInterrupted, refreshUserSubscription, userSubscription]); // Add refreshUserSubscription to dependencies
 
   const getScoreColor = (score: number) => {
     if (score >= 90) return 'text-green-600';
