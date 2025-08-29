@@ -1,5 +1,5 @@
 // src/components/ResumeOptimizer.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; // Import useCallback
 
 // Supabase client and auth context
 import { supabase } from '../lib/supabaseClient';
@@ -10,7 +10,7 @@ import { FileText, Sparkles, Download, TrendingUp, Target, Award, User, Briefcas
 
 // Local Components
 import { Header } from './Header'; // Assuming Header component is used elsewhere
-import { Navigation } from './navigation/Navigation'; // Assuming Navigation is a separate component
+import { Navigation } from './components/navigation/Navigation'; // Assuming Navigation is a separate component
 import { FileUpload } from './FileUpload'; // Component for handling resume file uploads
 import { InputSection } from './InputSection'; // Assuming this component is part of the InputWizard
 import { ResumePreview } from './ResumePreview'; // Displays the formatted resume
@@ -46,6 +46,8 @@ interface ResumeOptimizerProps {
   userSubscription: any; // Keep this as it's passed from App.tsx
   refreshUserSubscription: () => Promise<void>; // Keep this as it's passed from App.tsx
   onShowPlanSelection: (featureId?: string) => void; // MODIFIED: Changed prop name
+  toolProcessTrigger: (() => void) | null;
+  setToolProcessTrigger: React.Dispatch<React.SetStateAction<(() => void) | null>>;
 }
 
 const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
@@ -55,7 +57,9 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
   onNavigateBack,
   userSubscription,
   refreshUserSubscription,
-  onShowPlanSelection // MODIFIED: Changed prop name
+  onShowPlanSelection, // MODIFIED: Changed prop name
+  toolProcessTrigger,
+  setToolProcessTrigger
 }) => {
   const { user } = useAuth();
   const navigate = useNavigate(); // Initialize useNavigate
@@ -187,6 +191,14 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     }
   }, [extractionResult.text, currentStep]);
 
+  // Register the handleOptimize function with the App.tsx trigger
+  useEffect(() => {
+    setToolProcessTrigger(() => handleOptimize);
+    return () => {
+      setToolProcessTrigger(null); // Clean up on unmount
+    };
+  }, [setToolProcessTrigger, handleOptimize]); // Depend on the memoized handleOptimize
+
   // NEW EFFECT: Re-trigger optimization if it was interrupted and credits are now available
   useEffect(() => {
     if (optimizationInterrupted && userSubscription) { // Check userSubscription for existence
@@ -200,14 +212,14 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
         }
       });
     }
-  }, [optimizationInterrupted, refreshUserSubscription, userSubscription]); // Add refreshUserSubscription to dependencies
+  }, [optimizationInterrupted, refreshUserSubscription, userSubscription, handleOptimize]); // Add handleOptimize to dependencies
 
 
   /**
    * Main function to handle the entire resume optimization process.
    * Includes session validation, subscription checks, and API calls.
    */
-  const handleOptimize = async () => {
+  const handleOptimize = useCallback(async () => { // Wrap in useCallback
     console.log('handleOptimize: Function called.');
 
     if (!extractionResult.text.trim() || !jobDescription.trim()) {
@@ -288,7 +300,8 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
       alert(`An error occurred: ${error.message || 'Failed to validate session or check subscription.'}`);
       setIsOptimizing(false);
     }
-  };
+  }, [extractionResult, jobDescription, user, onShowAuth, userSubscription, onShowPlanSelection, userType, targetRole]); // Add all dependencies for useCallback
+
 
   /**
    * Helper function to start the optimization process after missing sections are handled.
@@ -624,7 +637,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
   <div className="bg-white rounded-2xl shadow-xl p-8 text-center max-w-md w-full dark:bg-dark-100">
     <Loader2 className="w-16 h-16 text-blue-600 animate-spin mx-auto mb-6 dark:text-neon-cyan-400" />
     <h2 className="text-2xl font-bold text-gray-900 mb-3 dark:text-gray-100">{loadingMessage}</h2>
-    <p className="text-gray-600 mb-4 dark:text-gray-300">{subMessage}</p>
+    <p className="text-gray-600 mb-4 dark:text-gray-300">{submessage}</p>
     <p className="text-sm text-gray-500 dark:text-gray-400">
       This may take a few moments as we process complex data and apply advanced algorithms.
     </p>
@@ -840,95 +853,97 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Start Date *
-                    </label>
-                    <input
-                      type="month"
-                      value={manualProject.startDate}
-                      onChange={(e) => setManualProject(prev => ({ ...prev, startDate: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      End Date *
-                    </label>
-                    <input
-                      type="month"
-                      value={manualProject.endDate}
-                      onChange={(e) => setManualProject(prev => ({ ...prev, endDate: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tech Stack *
-                  </label>
-                  <div className="flex gap-2 mb-2">
-                    <input
-                      type="text"
-                      value={newTechStack}
-                      onChange={(e) => setNewTechStack(e.target.value)}
-                      placeholder="e.g., React, Node.js"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      onKeyPress={(e) => e.key === 'Enter' && addTechToStack()}
-                    />
-                    <button
-                      onClick={addTechToStack}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                      Add
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {manualProject.techStack.map((tech, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800"
-                      >
-                        {tech}
-                        <button
-                          onClick={() => removeTechFromStack(tech)}
-                          className="ml-2 text-green-600 hover:text-green-800"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    One-liner Description (Optional)
+                    Start Date *
                   </label>
                   <input
-                    type="text"
-                    value={manualProject.oneLiner}
-                    onChange={(e) => setManualProject(prev => ({ ...prev, oneLiner: e.target.value }))}
-                    placeholder="Brief description of the project"
+                    type="month"
+                    value={manualProject.startDate}
+                    onChange={(e) => setManualProject(prev => ({ ...prev, startDate: e.target.value }))}
+                    placeholder="e.g., React, Node.js"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    End Date *
+                  </label>
+                  <input
+                    type="month"
+                    value={manualProject.endDate}
+                    onChange={(e) => setManualProject(prev => ({ ...prev, endDate: e.target.value }))}
+                    placeholder="e.g., React, Node.js"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   />
                 </div>
               </div>
 
-              <div className="flex space-x-3 mt-6">
-                <button
-                  onClick={handleManualProjectSubmit}
-                  disabled={!manualProject.title || manualProject.techStack.length === 0}
-                  className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-xl transition-colors"
-                >
-                  Generate & Add Project
-                </button>
-                <button
-                  onClick={() => setShowManualProjectAdd(false)}
-                  className="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold rounded-xl transition-colors"
-                >
-                  Cancel
-                </button>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tech Stack *
+                </label>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={newTechStack}
+                    onChange={(e) => setNewTechStack(e.target.value)}
+                    placeholder="e.g., React, Node.js"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    onKeyPress={(e) => e.key === 'Enter' && addTechToStack()}
+                  />
+                  <button
+                    onClick={addTechToStack}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    Add
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {manualProject.techStack.map((tech, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800"
+                    >
+                      {tech}
+                      <button
+                        onClick={() => removeTechFromStack(tech)}
+                        className="ml-2 text-green-600 hover:text-green-800"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  One-liner Description (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={manualProject.oneLiner}
+                  onChange={(e) => setManualProject(prev => ({ ...prev, oneLiner: e.target.value }))}
+                  placeholder="Brief description of the project"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={handleManualProjectSubmit}
+                disabled={!manualProject.title || manualProject.techStack.length === 0}
+                className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-xl transition-colors"
+              >
+                Generate & Add Project
+              </button>
+              <button
+                onClick={() => setShowManualProjectAdd(false)}
+                className="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
