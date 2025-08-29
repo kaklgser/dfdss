@@ -63,6 +63,9 @@ interface LinkedInMessageGeneratorProps {
     onAction?: () => void
   ) => void;
   refreshUserSubscription: () => Promise<void>;
+  // NEW PROPS: For triggering tool process after add-on purchase
+  toolProcessTrigger: (() => void) | null;
+  setToolProcessTrigger: React.Dispatch<React.SetStateAction<(() => void) | null>>;
 }
 
 /**
@@ -98,7 +101,9 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
   userSubscription,
   onShowSubscriptionPlans,
   onShowAlert,
-  refreshUserSubscription
+  refreshUserSubscription,
+  toolProcessTrigger, // Destructure
+  setToolProcessTrigger, // Destructure
 }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -134,14 +139,28 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
     }
   }, [user]);
 
+  // Register the handleGenerateMessage function with the App.tsx trigger
+  useEffect(() => {
+    setToolProcessTrigger(() => handleGenerateMessage);
+    return () => {
+      setToolProcessTrigger(null); // Clean up on unmount
+    };
+  }, [setToolProcessTrigger, isAuthenticated, userSubscription]); // Add dependencies for handleGenerateMessage
+
   // NEW EFFECT: Re-trigger message generation if it was interrupted and credits are now available
   useEffect(() => {
-    if (messageGenerationInterrupted && userSubscription && (userSubscription.linkedinMessagesTotal - userSubscription.linkedinMessagesUsed) > 0) {
-      console.log('LinkedInMessageGenerator: Credits replenished, re-attempting message generation.');
-      setMessageGenerationInterrupted(false); // Reset the flag immediately
-      handleGenerateMessage(); // Re-run the message generation function
+    if (messageGenerationInterrupted && userSubscription) { // Check userSubscription for existence
+      // Explicitly refresh userSubscription to get the latest data
+      refreshUserSubscription().then(() => {
+        // After refresh, check if credits are now available
+        if (userSubscription && (userSubscription.linkedinMessagesTotal - userSubscription.linkedinMessagesUsed) > 0) {
+          console.log('LinkedInMessageGenerator: Credits replenished, re-attempting message generation.');
+          setMessageGenerationInterrupted(false); // Reset the flag immediately
+          handleGenerateMessage(); // Re-run the message generation function
+        }
+      });
     }
-  }, [userSubscription, messageGenerationInterrupted]);
+  }, [messageGenerationInterrupted, refreshUserSubscription, userSubscription]); // Add refreshUserSubscription to dependencies
 
   const messageTypes: Array<{
     id: MessageType;
@@ -232,6 +251,9 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
       );
       return;
     }
+
+    // Ensure userSubscription is up-to-date before checking credits
+    await refreshUserSubscription();
 
     const creditsLeft =
       (userSubscription?.linkedinMessagesTotal || 0) - (userSubscription?.linkedinMessagesUsed || 0);
