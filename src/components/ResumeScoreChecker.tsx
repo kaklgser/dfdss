@@ -1,5 +1,5 @@
 // src/components/ResumeScoreChecker.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Upload,
   FileText,
@@ -66,6 +66,9 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [hasShownCreditExhaustedAlert, setHasShownCreditExhaustedAlert] = useState(false); // NEW STATE
 
+  // NEW STATE: To track if analysis was interrupted due to credit
+  const [analysisInterrupted, setAnalysisInterrupted] = useState(false);
+
   const handleFileUpload = (result: ExtractionResult) => {
     setExtractionResult(result);
     setHasShownCreditExhaustedAlert(false); // Reset flag on new file upload
@@ -102,11 +105,12 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
         );
         setHasShownCreditExhaustedAlert(true); // Mark as shown
       }
+      setAnalysisInterrupted(true); // Set flag: analysis was interrupted
       return;
     }
 
     // If we reach here, credits are available, so reset the flag
-    setHasShownCreditExhaustedAlert(false);
+    setAnalysisInterrupted(false);
 
     if (!extractionResult.text.trim()) {
       onShowAlert('Missing Resume', 'Please upload your resume first to get a score.', 'warning');
@@ -164,6 +168,18 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
       setLoadingStep('');
     }
   };
+
+  // NEW EFFECT: Re-trigger analysis if it was interrupted and credits are now available
+  useEffect(() => {
+    // Only re-trigger if analysis was previously interrupted AND credits are now available
+    if (analysisInterrupted && userSubscription && (userSubscription.scoreChecksTotal - userSubscription.scoreChecksUsed) > 0) {
+        console.log('ResumeScoreChecker: Credits replenished, re-attempting analysis.');
+        // Reset the flag immediately to prevent re-triggering in a loop
+        setAnalysisInterrupted(false);
+        // Re-run the analysis function
+        analyzeResume();
+    }
+  }, [userSubscription, analysisInterrupted]); // Depend on userSubscription and the flag
 
   const getScoreColor = (score: number) => {
     if (score >= 90) return 'text-green-600';
