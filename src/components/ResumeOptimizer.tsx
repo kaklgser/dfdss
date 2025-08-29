@@ -104,7 +104,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     title: '',
     startDate: '',
     endDate: '',
-    techStack: [] as string[],
+    techStack: [],
     oneLiner: ''
   });
   const [newTechStack, setNewTechStack] = useState('');
@@ -189,12 +189,18 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
 
   // NEW EFFECT: Re-trigger optimization if it was interrupted and credits are now available
   useEffect(() => {
-    if (optimizationInterrupted && userSubscription && (userSubscription.optimizationsTotal - userSubscription.optimizationsUsed) > 0) {
-      console.log('ResumeOptimizer: Credits replenished, re-attempting optimization.');
-      setOptimizationInterrupted(false); // Reset the flag immediately
-      handleOptimize(); // Re-run the optimization function
+    if (optimizationInterrupted && userSubscription) { // Check userSubscription for existence
+      // Explicitly refresh userSubscription to get the latest data
+      refreshUserSubscription().then(() => {
+        // After refresh, check if credits are now available
+        if (userSubscription && (userSubscription.optimizationsTotal - userSubscription.optimizationsUsed) > 0) {
+          console.log('ResumeOptimizer: Credits replenished, re-attempting optimization.');
+          setOptimizationInterrupted(false); // Reset the flag immediately
+          handleOptimize(); // Re-run the optimization function
+        }
+      });
     }
-  }, [userSubscription, optimizationInterrupted]);
+  }, [optimizationInterrupted, refreshUserSubscription, userSubscription]); // Add refreshUserSubscription to dependencies
 
 
   /**
@@ -411,7 +417,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
 
       if (optimizationResult.success) {
         await checkSubscriptionStatus(); // This fetches the updated subscription
-        setWalletRefreshKey(prevKey => prevKey + 1);
+        setWalletRefreshKey(prevKey => prev + 1);
         console.log('ResumeOptimizer: After checkSubscriptionStatus - userSubscription:', userSubscription); // ADDED LOG
       } else {
         console.error('ResumeOptimizer: Failed to decrement optimization usage:', optimizationResult.error); // ADDED LOG
@@ -568,7 +574,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
   const handleSubscriptionSuccess = () => {
     checkSubscriptionStatus();
     onShowPlanSelection(); // MODIFIED: Call the new plan selection handler
-    setWalletRefreshKey(prevKey => prevKey + 1);
+    setWalletRefreshKey(prevKey => prev + 1);
   };
 
   // --- Conditional UI Rendering ---
