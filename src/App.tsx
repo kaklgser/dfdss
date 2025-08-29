@@ -59,6 +59,9 @@ function App() {
   // NEW STATE FOR OFFER OVERLAY
   const [showVinayakaOffer, setShowVinayakaOffer] = useState(false);
 
+  // NEW STATE: To store the callback for re-triggering tool process
+  const [toolProcessTrigger, setToolProcessTrigger] = useState<(() => void) | null>(null);
+
   const handleMobileMenuToggle = () => {
     setShowMobileMenu(!showMobileMenu);
   };
@@ -256,6 +259,22 @@ function App() {
     }
   }, []);
 
+  // NEW FUNCTION: Callback to trigger tool process after add-on purchase
+  const handleAddonPurchaseSuccess = (featureId: string) => {
+    console.log(`App.tsx: Add-on purchase successful for feature: ${featureId}. Triggering tool process.`);
+    // This will be called by PlanSelectionModal
+    // We need to ensure the tool component has a way to receive this trigger.
+    // For now, we'll just refresh the subscription, and the tool's useEffect
+    // should pick up the change and re-trigger.
+    refreshUserSubscription();
+    // If there's a specific process to trigger, we can use a state variable
+    // that the tool component watches.
+    if (toolProcessTrigger) {
+      toolProcessTrigger();
+      setToolProcessTrigger(null); // Clear the trigger after use
+    }
+  };
+
   const commonPageProps = {
     isAuthenticated: isAuthenticated,
     onShowAuth: handleShowAuth,
@@ -265,6 +284,8 @@ function App() {
     onShowAlert: handleShowAlert,
     refreshUserSubscription: refreshUserSubscription,
     onNavigateBack: handleNavigateHome,
+    // Pass the setter for the tool process trigger
+    setToolProcessTrigger: setToolProcessTrigger,
   };
 
   console.log('App.tsx: showPlanSelectionModal state before PlanSelectionModal render:', showPlanSelectionModal);
@@ -291,6 +312,8 @@ function App() {
               onShowPlanSelection={handleShowPlanSelection}
               userSubscription={userSubscription}
               refreshUserSubscription={refreshUserSubscription}
+              toolProcessTrigger={toolProcessTrigger} // Pass the trigger state
+              setToolProcessTrigger={setToolProcessTrigger} // Pass the setter
             />
           </main>
         } />
@@ -420,6 +443,7 @@ function App() {
         onSubscriptionSuccess={handleSubscriptionSuccess}
         onShowAlert={handleShowAlert}
         triggeredByFeatureId={planSelectionFeatureId}
+        onAddonPurchaseSuccess={handleAddonPurchaseSuccess} // Pass the new callback
       />
 
       {showSubscriptionPlans && (
@@ -431,7 +455,7 @@ function App() {
           initialExpandAddons={initialExpandAddons}
           // NEW PROPS: Pass planId and couponCode to SubscriptionPlans
           // These would typically come from a state variable if set by handleShowPlanSelection
-          // For this specific offer, we hardcode them here for the OfferOverlay action
+          // For this specific offer, we'll hardcode them here for the OfferOverlay action
           initialPlanId={showVinayakaOffer ? 'career_pro_max' : undefined}
           initialCouponCode={showVinayakaOffer ? 'VNKR50%' : undefined}
         />
