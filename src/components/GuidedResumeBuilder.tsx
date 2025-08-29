@@ -43,6 +43,9 @@ interface GuidedResumeBuilderProps {
   onShowSubscriptionPlans: (featureId?: string) => void;
   onShowAlert: (title: string, message: string, type?: 'info' | 'success' | 'warning' | 'error', actionText?: string, onAction?: () => void) => void;
   refreshUserSubscription: () => Promise<void>;
+  // NEW PROPS: For triggering tool process after add-on purchase
+  toolProcessTrigger: (() => void) | null;
+  setToolProcessTrigger: React.Dispatch<React.SetStateAction<(() => void) | null>>;
 }
 
 export const GuidedResumeBuilder: React.FC<GuidedResumeBuilderProps> = ({
@@ -53,6 +56,8 @@ export const GuidedResumeBuilder: React.FC<GuidedResumeBuilderProps> = ({
   onShowSubscriptionPlans,
   onShowAlert,
   refreshUserSubscription,
+  toolProcessTrigger, // Destructure
+  setToolProcessTrigger, // Destructure
 }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -92,14 +97,28 @@ export const GuidedResumeBuilder: React.FC<GuidedResumeBuilderProps> = ({
     }
   }, [user]);
 
+  // Register the handleGenerate function with the App.tsx trigger
+  useEffect(() => {
+    setToolProcessTrigger(() => handleGenerate);
+    return () => {
+      setToolProcessTrigger(null); // Clean up on unmount
+    };
+  }, [setToolProcessTrigger, isAuthenticated, userSubscription]); // Add dependencies for handleGenerate
+
   // NEW EFFECT: Re-trigger generation if it was interrupted and credits are now available
   useEffect(() => {
-    if (generationInterrupted && userSubscription && (userSubscription.guidedBuildsTotal - userSubscription.guidedBuildsUsed) > 0) {
-      console.log('GuidedResumeBuilder: Credits replenished, re-attempting generation.');
-      setGenerationInterrupted(false); // Reset the flag immediately
-      handleGenerate(); // Re-run the generation function
+    if (generationInterrupted && userSubscription) { // Check userSubscription for existence
+      // Explicitly refresh userSubscription to get the latest data
+      refreshUserSubscription().then(() => {
+        // After refresh, check if credits are now available
+        if (userSubscription && (userSubscription.guidedBuildsTotal - userSubscription.guidedBuildsUsed) > 0) {
+          console.log('GuidedResumeBuilder: Credits replenished, re-attempting generation.');
+          setGenerationInterrupted(false); // Reset the flag immediately
+          handleGenerate(); // Re-run the generation function
+        }
+      });
     }
-  }, [userSubscription, generationInterrupted]);
+  }, [generationInterrupted, refreshUserSubscription, userSubscription]); // Add refreshUserSubscription to dependencies
 
   const steps = [
     {
@@ -155,6 +174,8 @@ export const GuidedResumeBuilder: React.FC<GuidedResumeBuilderProps> = ({
     }
 
     // Check subscription and guided build credits
+    await refreshUserSubscription(); // Ensure userSubscription is up-to-date
+
     if (!userSubscription || (userSubscription.guidedBuildsTotal - userSubscription.guidedBuildsUsed) <= 0) {
       console.log('GuidedResumeBuilder: Guided build credits exhausted or no subscription. Calling onShowSubscriptionPlans.'); // New log
       setGenerationInterrupted(true); // Set flag: generation was interrupted
@@ -976,10 +997,9 @@ const SkillsStep: React.FC<{ resumeData: ResumeData; setResumeData: React.Dispat
 
   const removeSkillFromCategory = (categoryIndex: number, skillIndex: number) => {
     const updated = [...resumeData.skills];
-    if (updated[categoryIndex].list.length > 1) {
-      updated[categoryIndex].list.splice(skillIndex, 1);
-      setResumeData(prev => ({ ...prev, skills: updated }));
-    }
+    updated[categoryIndex].list.splice(skillIndex, 1);
+    updated[categoryIndex].count = updated[categoryIndex].list.length;
+    setResumeData(prev => ({ ...prev, skills: updated }));
   };
 
   return (
@@ -1106,7 +1126,7 @@ const SkillCategoryCard: React.FC<{
           {skillCategory.list.map((skill: string, skillIndex: number) => (
             <span
               key={skillIndex}
-              className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800 dark:bg-neon-cyan-500/20 dark:text-neon-cyan-300"
+              className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
             >
               {skill}
               <button
