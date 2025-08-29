@@ -125,11 +125,23 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
   const [copySuccess, setCopySuccess] = useState<number | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
 
+  // NEW STATE: To track if message generation was interrupted due to credit
+  const [messageGenerationInterrupted, setMessageGenerationInterrupted] = useState(false);
+
   useEffect(() => {
     if (user?.name) {
       setFormData((prev) => ({ ...prev, senderName: user.name || prev.senderName }));
     }
   }, [user]);
+
+  // NEW EFFECT: Re-trigger message generation if it was interrupted and credits are now available
+  useEffect(() => {
+    if (messageGenerationInterrupted && userSubscription && (userSubscription.linkedinMessagesTotal - userSubscription.linkedinMessagesUsed) > 0) {
+      console.log('LinkedInMessageGenerator: Credits replenished, re-attempting message generation.');
+      setMessageGenerationInterrupted(false); // Reset the flag immediately
+      handleGenerateMessage(); // Re-run the message generation function
+    }
+  }, [userSubscription, messageGenerationInterrupted]);
 
   const messageTypes: Array<{
     id: MessageType;
@@ -229,6 +241,7 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
       const planName = planDetails?.name || 'your current plan';
       const linkedinMessagesTotal = planDetails?.linkedinMessages || 0;
 
+      setMessageGenerationInterrupted(true); // Set flag: message generation was interrupted
       onShowAlert(
         'LinkedIn Message Credits Exhausted',
         `You have used all your ${linkedinMessagesTotal} LinkedIn Message generations from ${planName}. Please upgrade your plan to continue generating messages.`,
