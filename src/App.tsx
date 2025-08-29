@@ -108,7 +108,7 @@ function App() {
      console.log('App.tsx: handleShowPlanSelection called with featureId:', featureId, 'expandAddons:', expandAddons, 'planId:', planId, 'couponCode:', couponCode);
     setPlanSelectionFeatureId(featureId);
     setInitialExpandAddons(expandAddons);
-    setShowSubscriptionPlans(true); // Changed to true to directly open SubscriptionPlans
+    setShowPlanSelectionModal(true); // Changed to true to directly open SubscriptionPlans
     // Store planId and couponCode in state if needed for SubscriptionPlans component
     // For now, we'll pass them directly to SubscriptionPlans component
   };
