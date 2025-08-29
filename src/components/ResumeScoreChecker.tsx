@@ -41,6 +41,9 @@ interface ResumeScoreCheckerProps {
   onShowSubscriptionPlans: (featureId?: string) => void;
   onShowAlert: (title: string, message: string, type?: 'info' | 'success' | 'warning' | 'error', actionText?: string, onAction?: () => void) => void;
   refreshUserSubscription: () => Promise<void>;
+  // NEW PROPS: For triggering tool process after add-on purchase
+  toolProcessTrigger: (() => void) | null;
+  setToolProcessTrigger: React.Dispatch<React.SetStateAction<(() => void) | null>>;
 }
 
 export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
@@ -51,6 +54,8 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   onShowSubscriptionPlans,
   onShowAlert,
   refreshUserSubscription,
+  toolProcessTrigger, // Destructure
+  setToolProcessTrigger, // Destructure
 }) => {
   const navigate = useNavigate();
 
@@ -68,6 +73,14 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
 
   // NEW STATE: To track if analysis was interrupted due to credit
   const [analysisInterrupted, setAnalysisInterrupted] = useState(false);
+
+  // Register the analyzeResume function with the App.tsx trigger
+  useEffect(() => {
+    setToolProcessTrigger(() => analyzeResume);
+    return () => {
+      setToolProcessTrigger(null); // Clean up on unmount
+    };
+  }, [setToolProcessTrigger, extractionResult, jobDescription, jobTitle, scoringMode, autoScoreOnUpload, isAuthenticated, userSubscription]); // Add dependencies for analyzeResume
 
   const handleFileUpload = (result: ExtractionResult) => {
     setExtractionResult(result);
@@ -89,6 +102,9 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
       onShowAlert('Authentication Required', 'Please sign in to get your resume score.', 'error', 'Sign In', onShowAuth);
       return;
     }
+
+    // Ensure userSubscription is up-to-date before checking credits
+    await refreshUserSubscription();
 
     if (!userSubscription || (userSubscription.scoreChecksTotal - userSubscription.scoreChecksUsed) <= 0) {
       if (!hasShownCreditExhaustedAlert) { // Only show if not already shown for this attempt
