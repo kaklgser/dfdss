@@ -959,7 +959,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
         onSectionsProvided={handleMissingSectionsProvided}
       />
     </div>
-  );
+  )
 };
 
 export default ResumeOptimizer;
