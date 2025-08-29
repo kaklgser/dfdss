@@ -121,11 +121,12 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
       );
 
       if (result.success) {
-        onSubscriptionSuccess();
-        onShowAlert('Purchase Successful!', `Your ${featureConfig.title} credit has been added.`, 'success');
-        onClose();
-        navigate(featureConfig.redirectPath);
-      } else {
+  onSubscriptionSuccess();
+  onShowAlert('Purchase Successful!', `Your ${featureConfig.title} credit has been added.`, 'success');
+  navigate(featureConfig.redirectPath); // Navigate first
+  onClose(); // Then close the modal
+}
+ else {
         setError(result.error || 'Payment failed. Please try again.');
         onShowAlert('Payment Failed', result.error || 'Payment processing failed. Please try again.', 'error');
       }
