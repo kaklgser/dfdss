@@ -76,6 +76,9 @@ export const GuidedResumeBuilder: React.FC<GuidedResumeBuilderProps> = ({
   const [userType, setUserType] = useState<UserType>('fresher');
   const [showPreview, setShowPreview] = useState(false);
 
+  // NEW STATE: To track if generation was interrupted due to credit
+  const [generationInterrupted, setGenerationInterrupted] = useState(false);
+
   useEffect(() => {
     if (user) {
       setResumeData(prev => ({
@@ -88,6 +91,15 @@ export const GuidedResumeBuilder: React.FC<GuidedResumeBuilderProps> = ({
       }));
     }
   }, [user]);
+
+  // NEW EFFECT: Re-trigger generation if it was interrupted and credits are now available
+  useEffect(() => {
+    if (generationInterrupted && userSubscription && (userSubscription.guidedBuildsTotal - userSubscription.guidedBuildsUsed) > 0) {
+      console.log('GuidedResumeBuilder: Credits replenished, re-attempting generation.');
+      setGenerationInterrupted(false); // Reset the flag immediately
+      handleGenerate(); // Re-run the generation function
+    }
+  }, [userSubscription, generationInterrupted]);
 
   const steps = [
     {
@@ -145,6 +157,7 @@ export const GuidedResumeBuilder: React.FC<GuidedResumeBuilderProps> = ({
     // Check subscription and guided build credits
     if (!userSubscription || (userSubscription.guidedBuildsTotal - userSubscription.guidedBuildsUsed) <= 0) {
       console.log('GuidedResumeBuilder: Guided build credits exhausted or no subscription. Calling onShowSubscriptionPlans.'); // New log
+      setGenerationInterrupted(true); // Set flag: generation was interrupted
       onShowSubscriptionPlans('guided-builder'); // This should trigger the modal
       return;
     }
@@ -815,19 +828,19 @@ const ProjectsStep: React.FC<{ resumeData: ResumeData; setResumeData: React.Disp
     }));
   };
 
-  const addBullet = (projectIndex: number) => {
+  const addProjectBullet = (projectIndex: number) => {
     const updated = [...resumeData.projects];
     updated[projectIndex].bullets.push('');
     setResumeData(prev => ({ ...prev, projects: updated }));
   };
 
-  const updateBullet = (projectIndex: number, bulletIndex: number, value: string) => {
+  const updateProjectBullet = (projectIndex: number, bulletIndex: number, value: string) => {
     const updated = [...resumeData.projects];
     updated[projectIndex].bullets[bulletIndex] = value;
     setResumeData(prev => ({ ...prev, projects: updated }));
   };
 
-  const removeBullet = (projectIndex: number, bulletIndex: number) => {
+  const removeProjectBullet = (projectIndex: number, bulletIndex: number) => {
     const updated = [...resumeData.projects];
     if (updated[projectIndex].bullets.length > 1) {
       updated[projectIndex].bullets.splice(bulletIndex, 1);
@@ -902,7 +915,7 @@ const ProjectsStep: React.FC<{ resumeData: ResumeData; setResumeData: React.Disp
               </div>
             ))}
             <button
-              onClick={() => addBullet(index)}
+              onClick={() => addProjectBullet(index)}
               className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
             >
               <Plus className="w-4 h-4 mr-1" />
@@ -1063,15 +1076,27 @@ const SkillCategoryCard: React.FC<{
         <div className="flex gap-2 mb-2">
           <input
             type="text"
-            value={newSkill}
-            onChange={(e) => setNewSkill(e.target.value)}
-            placeholder="Add a skill"
+            value={''} // Controlled input for adding new skill
+            onChange={(e) => { /* No direct state update here */ }}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                addSkillToCategory(categoryIndex, e.currentTarget.value);
+                e.currentTarget.value = ''; // Clear input after adding
+              }
+            }}
+            placeholder="e.g., JavaScript, React, Node.js"
             className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100"
-            onKeyPress={(e) => e.key === 'Enter' && handleAddSkill()}
           />
           <button
-            onClick={handleAddSkill}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors"
+            onClick={() => {
+              // Manually get value from input if not using onKeyPress
+              const inputElement = document.querySelector<HTMLInputElement>(`input[placeholder="e.g., JavaScript, React, Node.js"]`);
+              if (inputElement) {
+                addSkillToCategory(categoryIndex, inputElement.value);
+                inputElement.value = '';
+              }
+            }}
+            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-3 py-3 rounded-lg transition-colors text-sm min-h-[44px]"
           >
             Add
           </button>
@@ -1085,7 +1110,7 @@ const SkillCategoryCard: React.FC<{
             >
               {skill}
               <button
-                onClick={() => onRemoveSkill(index, skillIndex)}
+                onClick={() => removeSkillFromCategory(categoryIndex, skillIndex)}
                 className="ml-2 text-blue-600 hover:text-blue-800"
               >
                 <X className="w-3 h-3" />
@@ -1156,4 +1181,3 @@ const ReviewStep: React.FC<{
     </div>
   );
 };
-
