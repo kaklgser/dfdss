@@ -885,6 +885,6 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
       />
     </div>
   )
-};
+}
 
 export default ResumeOptimizer;
