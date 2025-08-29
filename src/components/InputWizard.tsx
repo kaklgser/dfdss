@@ -396,7 +396,7 @@ export const InputWizard: React.FC<InputWizardProps> = ({
               <ArrowRight className="w-5 h-5" />
             </button>
           ) : (
-            <div className="sm:w-24 flex-shrink-0" /> {/* Removed w-1/3 */}
+            <div className="sm:w-24 flex-shrink-0" /> 
           )}
         </div>
       </div>
