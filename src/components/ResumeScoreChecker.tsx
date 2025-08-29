@@ -1,5 +1,5 @@
 // src/components/ResumeScoreChecker.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; // Import useCallback
 import {
   Upload,
   FileText,
@@ -41,7 +41,6 @@ interface ResumeScoreCheckerProps {
   onShowSubscriptionPlans: (featureId?: string) => void;
   onShowAlert: (title: string, message: string, type?: 'info' | 'success' | 'warning' | 'error', actionText?: string, onAction?: () => void) => void;
   refreshUserSubscription: () => Promise<void>;
-  // NEW PROPS: For triggering tool process after add-on purchase
   toolProcessTrigger: (() => void) | null;
   setToolProcessTrigger: React.Dispatch<React.SetStateAction<(() => void) | null>>;
 }
@@ -54,8 +53,8 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   onShowSubscriptionPlans,
   onShowAlert,
   refreshUserSubscription,
-  toolProcessTrigger, // Destructure
-  setToolProcessTrigger, // Destructure
+  toolProcessTrigger,
+  setToolProcessTrigger,
 }) => {
   const navigate = useNavigate();
 
@@ -80,7 +79,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
     return () => {
       setToolProcessTrigger(null); // Clean up on unmount
     };
-  }, [setToolProcessTrigger, extractionResult, jobDescription, jobTitle, scoringMode, autoScoreOnUpload, isAuthenticated, userSubscription]); // Add dependencies for analyzeResume
+  }, [setToolProcessTrigger, analyzeResume]); // Depend on the memoized analyzeResume
 
   const handleFileUpload = (result: ExtractionResult) => {
     setExtractionResult(result);
@@ -91,7 +90,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
     }
   };
 
-  const analyzeResume = async () => {
+  const analyzeResume = useCallback(async () => { // Wrap in useCallback
     if (scoringMode === null) {
       onShowAlert('Choose a Scoring Method', 'Please select either "Score Against a Job" or "General Score" to continue.', 'warning');
       return;
@@ -183,7 +182,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
       setIsAnalyzing(false);
       setLoadingStep('');
     }
-  };
+  }, [extractionResult, jobDescription, jobTitle, scoringMode, isAuthenticated, userSubscription, onShowAuth, onShowSubscriptionPlans, onShowAlert, refreshUserSubscription, hasShownCreditExhaustedAlert, setAnalysisInterrupted, setScoreResult, setIsAnalyzing, setLoadingStep, setCurrentStep]); // Add all dependencies for useCallback
 
   // NEW EFFECT: Re-trigger analysis if it was interrupted and credits are now available
   useEffect(() => {
@@ -199,7 +198,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
         }
       });
     }
-  }, [analysisInterrupted, refreshUserSubscription, userSubscription]); // Add refreshUserSubscription to dependencies
+  }, [analysisInterrupted, refreshUserSubscription, userSubscription, analyzeResume]); // Add analyzeResume to dependencies
 
   const getScoreColor = (score: number) => {
     if (score >= 90) return 'text-green-600';
