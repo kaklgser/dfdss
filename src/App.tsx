@@ -18,7 +18,7 @@ import { SubscriptionPlans } from './components/payment/SubscriptionPlans';
 import { paymentService } from './services/paymentService';
 import { AlertModal } from './components/AlertModal';
 import { ToolsAndPagesNavigation } from './components/pages/ToolsAndPagesNavigation';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react/router-dom';
 import { PlanSelectionModal } from './components/payment/PlanSelectionModal';
 import { PricingPage } from './components/pages/PricingPage';
 import { OfferOverlay } from './components/OfferOverlay'; // Import OfferOverlay
@@ -260,15 +260,10 @@ function App() {
   }, []);
 
   // NEW FUNCTION: Callback to trigger tool process after add-on purchase
-  const handleAddonPurchaseSuccess = (featureId: string) => {
+  const handleAddonPurchaseSuccess = async (featureId: string) => { // Make it async
     console.log(`App.tsx: Add-on purchase successful for feature: ${featureId}. Triggering tool process.`);
-    // This will be called by PlanSelectionModal
-    // We need to ensure the tool component has a way to receive this trigger.
-    // For now, we'll just refresh the subscription, and the tool's useEffect
-    // should pick up the change and re-trigger.
-    refreshUserSubscription();
-    // If there's a specific process to trigger, we can use a state variable
-    // that the tool component watches.
+    await refreshUserSubscription(); // Await the refresh to ensure state is updated
+    console.log(`App.tsx: User subscription refreshed. Now attempting to trigger tool process.`);
     if (toolProcessTrigger) {
       toolProcessTrigger();
       setToolProcessTrigger(null); // Clear the trigger after use
