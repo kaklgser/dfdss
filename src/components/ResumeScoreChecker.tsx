@@ -129,14 +129,31 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
       return;
     }
 
-    // ADDED DELAY HERE
-    await new Promise(resolve => setTimeout(resolve, 3000)); // Increased delay to 3 seconds
+    let latestUserSubscription: Subscription | null = null;
+    let retryCount = 0;
+    let delay = 500; // Initial delay of 0.5 seconds
+    const MAX_RETRIES = 6; // Max 6 retries (0.5s, 1s, 2s, 4s, 8s, 16s)
 
-    const latestUserSubscription = await paymentService.getUserSubscription(user.id); // Fetch directly
-    console.log('analyzeResume: Latest user subscription fetched:', latestUserSubscription);
+    while (retryCount < MAX_RETRIES) {
+      latestUserSubscription = await paymentService.getUserSubscription(user.id);
+      console.log(`analyzeResume: Latest user subscription fetched (attempt ${retryCount + 1}):`, latestUserSubscription);
+
+      if (latestUserSubscription && (latestUserSubscription.scoreChecksTotal - latestUserSubscription.scoreChecksUsed) > 0) {
+        console('analyzeResume: Credits available. Proceeding with analysis.');
+        setAnalysisInterrupted(false); // Reset this flag if credits are now available
+        break; // Exit loop if credits are found
+      }
+
+      retryCount++;
+      if (retryCount < MAX_RETRIES) {
+        console.log(`analyzeResume: Credits not yet available. Retrying in ${delay / 1000}s...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        delay *= 2; // Exponential backoff
+      }
+    }
 
     if (!latestUserSubscription || (latestUserSubscription.scoreChecksTotal - latestUserSubscription.scoreChecksUsed) <= 0) {
-      console.log('analyzeResume: Credits exhausted or no subscription found after direct fetch.');
+      console.log('analyzeResume: Credits exhausted or no subscription found after all retries.');
       if (!hasShownCreditExhaustedAlert) {
         const planDetails = paymentService.getPlanById(latestUserSubscription?.planId); // Use latestUserSubscription here
         const planName = planDetails?.name || 'your current plan';
@@ -159,9 +176,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
       setAnalysisInterrupted(true); // Set this flag to true if credits are exhausted
       return;
     }
-    console.log('analyzeResume: Credits available. Proceeding with analysis.');
-    setAnalysisInterrupted(false); // Reset this flag if credits are now available
-
+    
     if (!extractionResult.text.trim()) {
       // Defensive check before calling onShowAlert
       if (onShowAlert) {
