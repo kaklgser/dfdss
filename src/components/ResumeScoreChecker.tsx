@@ -28,11 +28,18 @@ import {
 import { FileUpload } from './FileUpload';
 import { getComprehensiveScore } from '../services/scoringService';
 import { LoadingAnimation } from './LoadingAnimation';
-import { ComprehensiveScore, ScoringMode, ExtractionResult, ConfidenceLevel, MatchBand, DetailedScore } from '../types/resume';
+import {
+  ComprehensiveScore,
+  ScoringMode,
+  ExtractionResult,
+  ConfidenceLevel,
+  MatchBand,
+  DetailedScore,
+} from '../types/resume';
 import type { Subscription } from '../types/payment';
 import { paymentService } from '../services/paymentService';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext'; // Import useAuth to get the user object
+import { useAuth } from '../contexts/AuthContext';
 
 interface ResumeScoreCheckerProps {
   onNavigateBack: () => void;
@@ -40,7 +47,13 @@ interface ResumeScoreCheckerProps {
   onShowAuth: () => void;
   userSubscription: Subscription | null;
   onShowSubscriptionPlans: (featureId?: string) => void;
-  onShowAlert: (title: string, message: string, type?: 'info' | 'success' | 'warning' | 'error', actionText?: string, onAction?: () => void) => void;
+  onShowAlert: (
+    title: string,
+    message: string,
+    type?: 'info' | 'success' | 'warning' | 'error',
+    actionText?: string,
+    onAction?: () => void
+  ) => void;
   refreshUserSubscription: () => Promise<void>;
   toolProcessTrigger: (() => void) | null;
   setToolProcessTrigger: React.Dispatch<React.SetStateAction<(() => void) | null>>;
@@ -50,27 +63,30 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   onNavigateBack,
   isAuthenticated,
   onShowAuth,
-  userSubscription, // Keep this prop, but we'll fetch fresh data inside _analyzeResumeInternal
+  userSubscription,
   onShowSubscriptionPlans,
-  onShowAlert, // This is the prop in question
+  onShowAlert,
   refreshUserSubscription,
   toolProcessTrigger,
   setToolProcessTrigger,
 }) => {
-  // CRITICAL DEBUGGING STEP: Verify onShowAlert is a function immediately
+  // Guard: ensure onShowAlert is callable
   if (typeof onShowAlert !== 'function') {
     console.error('CRITICAL ERROR: onShowAlert prop is not a function or is undefined!', onShowAlert);
-    // This will cause a React error, but it will confirm if the prop is truly missing at this point.
     throw new Error('onShowAlert prop is missing or invalid in ResumeScoreChecker');
   }
 
-  // ADDED LOG: Check onShowAlert value at component render
   console.log('ResumeScoreChecker: onShowAlert prop value at render:', onShowAlert);
-
   console.log('ResumeScoreChecker: Component rendered. userSubscription:', userSubscription);
-  const { user } = useAuth(); // Get the user object from AuthContext
+
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const [extractionResult, setExtractionResult] = useState<ExtractionResult>({ text: '', extraction_mode: 'TEXT', trimmed: false });
+
+  const [extractionResult, setExtractionResult] = useState<ExtractionResult>({
+    text: '',
+    extraction_mode: 'TEXT',
+    trimmed: false,
+  });
   const [jobDescription, setJobDescription] = useState('');
   const [jobTitle, setJobTitle] = useState('');
   const [scoringMode, setScoringMode] = useState<ScoringMode | null>(null);
@@ -80,47 +96,106 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   const [scoreResult, setScoreResult] = useState<ComprehensiveScore | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [hasShownCreditExhaustedAlert, setHasShownCreditExhaustedAlert] = useState(false);
-
   const [analysisInterrupted, setAnalysisInterrupted] = useState(false);
 
-  // NEW useEffect: Reset hasShownCreditExhaustedAlert when userSubscription changes
+  // Reset the "exhausted" alert whenever subscription changes
   useEffect(() => {
     setHasShownCreditExhaustedAlert(false);
   }, [userSubscription]);
 
+  const analyzeResume = useCallback(async () => {
+    console.log('analyzeResume: onShowAlert value inside useCallback:', onShowAlert);
+    console.log('analyzeResume: Function started.');
 
-  // Renamed analyzeResume to _analyzeResumeInternal
-  const _analyzeResumeInternal = useCallback(async () => {
-    console.log('_analyzeResumeInternal: Function started. Assuming credits are available.');
-
-    // Ensure user is available before attempting to fetch subscription
-    if (!user?.id) {
-      console.error('_analyzeResumeInternal: User ID not available, cannot proceed with analysis.');
-      onShowAlert('Authentication Required', 'User data not fully loaded. Please try again or sign in.', 'error', 'Sign In', onShowAuth);
+    if (scoringMode === null) {
+      onShowAlert(
+        'Choose a Scoring Method',
+        'Please select either "Score Against a Job" or "General Score" to continue.',
+        'warning'
+      );
+      console.log('analyzeResume: Exiting early due to scoringMode === null.');
       return;
     }
 
-    // Re-fetch subscription to get the latest state for decrementing usage
-    const latestUserSubscription = await paymentService.getUserSubscription(user.id);
-    if (!latestUserSubscription || (latestUserSubscription.scoreChecksTotal - latestUserSubscription.scoreChecksUsed) <= 0) {
-      console.error('_analyzeResumeInternal: Credits unexpectedly exhausted during internal analysis. This should not happen if pre-check worked.');
-      onShowAlert('Credits Exhausted', 'Your credits were used up before analysis could complete. Please upgrade.', 'error', 'Upgrade Plan', () => onShowSubscriptionPlans('score-checker'));
+    if (!isAuthenticated) {
+      onShowAlert(
+        'Authentication Required',
+        'Please sign in to get your resume score.',
+        'error',
+        'Sign In',
+        onShowAuth
+      );
+      console.log('analyzeResume: Exiting early due to !isAuthenticated.');
+      return;
+    }
+
+    if (!user?.id) {
+      console.log('analyzeResume: User ID not available, cannot fetch subscription/credits.');
+      onShowAlert(
+        'Authentication Required',
+        'User data not fully loaded. Please try again or sign in.',
+        'error',
+        'Sign In',
+        onShowAuth
+      );
+      return;
+    }
+
+    // —— NEW: Check COMBINED credits (plan + add-ons) ——
+    console.log('analyzeResume: fetching latest COMBINED credits (plan + add-ons)');
+    let totalAvailable: number = 0;
+    try {
+      // Requires helpers added in paymentService: getScoreCheckerCredits
+      totalAvailable = await paymentService.getScoreCheckerCredits(user.id);
+    } catch (e) {
+      console.error('analyzeResume: getScoreCheckerCredits failed:', e);
+      // Fallback to plan-only check if helper is unavailable
+      const latestUserSubscription = await paymentService.getUserSubscription(user.id);
+      totalAvailable =
+        (latestUserSubscription?.scoreChecksTotal ?? 0) -
+        (latestUserSubscription?.scoreChecksUsed ?? 0);
+    }
+    console.log('analyzeResume: combined credits available:', totalAvailable);
+
+    if (totalAvailable <= 0) {
+      console.log('analyzeResume: Credits exhausted (combined).');
+      if (!hasShownCreditExhaustedAlert) {
+        const latestUserSubscription = await paymentService.getUserSubscription(user.id);
+        const planDetails = paymentService.getPlanById(latestUserSubscription?.planId);
+        const planName = planDetails?.name || 'your current plan';
+        const scoreChecksTotal = planDetails?.scoreChecks || 0;
+
+        onShowAlert(
+          'Resume Score Check Credits Exhausted',
+          `You have no Resume Score Check credits left on ${planName} (and no add-on credits remain). Please upgrade or add a credit to continue.`,
+          'warning',
+          'Get Credits',
+          () => onShowSubscriptionPlans('score-checker')
+        );
+        setHasShownCreditExhaustedAlert(true);
+      }
       setAnalysisInterrupted(true);
       return;
     }
 
+    console.log('analyzeResume: Credits available. Proceeding with analysis.');
+    setAnalysisInterrupted(false);
+
     if (!extractionResult.text.trim()) {
       onShowAlert('Missing Resume', 'Please upload your resume first to get a score.', 'warning');
+      console.log('analyzeResume: Exiting early due to missing resume text.');
       return;
     }
 
     if (scoringMode === 'jd_based') {
       if (!jobDescription.trim()) {
         onShowAlert('Missing Job Description', 'Job description is required for JD-based scoring.', 'warning');
+        console.log('analyzeResume: Exiting early due to missing job description.');
         return;
       }
       if (!jobTitle.trim()) {
         onShowAlert('Missing Job Title', 'Job title is required for JD-based scoring.', 'warning');
+        console.log('analyzeResume: Exiting early due to missing job title.');
         return;
       }
     }
@@ -128,13 +203,13 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
     setScoreResult(null);
     setIsAnalyzing(true);
     setLoadingStep('Extracting & cleaning your resume...');
-    console.log('_analyzeResumeInternal: Starting analysis, setIsAnalyzing(true).');
+    console.log('analyzeResume: Starting analysis, setIsAnalyzing(true).');
 
     try {
       if (scoringMode === 'jd_based') {
         setLoadingStep(`Comparing with Job Title: ${jobTitle}...`);
       }
-      
+
       setLoadingStep('Scoring across 16 criteria...');
 
       const result = await getComprehensiveScore(
@@ -149,117 +224,72 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
       setScoreResult(result);
       setCurrentStep(2);
 
-      // Decrement usage after successful analysis
-      const usageResult = await paymentService.useScoreCheck(latestUserSubscription.userId);
-      if (usageResult.success) {
-        await refreshUserSubscription(); // Refresh App.tsx state after usage
-      } else {
-        console.error('Failed to decrement score check usage:', usageResult.error);
-        onShowAlert('Usage Update Failed', 'Failed to record score check usage. Please contact support.', 'error');
+      // If the result is cached/free, DO NOT consume a credit
+      if (result?.cached) {
+        console.log('analyzeResume: Result is cached. Skipping credit consumption.');
+        return;
+      }
+
+      // —— NEW: Consume ONE credit from the appropriate bucket ——
+      // Requires helpers added in paymentService: consumeScoreCheckerCredit
+      try {
+        const consume = await paymentService.consumeScoreCheckerCredit(user.id);
+        if (consume?.ok) {
+          console.log(`analyzeResume: Consumed one credit from: ${consume.from}`);
+          await refreshUserSubscription(); // Keep header/wallet/subscription state in sync
+        } else {
+          console.error('Failed to consume credit:', consume?.error);
+          onShowAlert(
+            'Usage Update Failed',
+            'We could not record the credit usage. Your analysis finished, but please contact support so we can sync your balance.',
+            'error'
+          );
+        }
+      } catch (e: any) {
+        console.error('Error while consuming credit:', e);
+        onShowAlert(
+          'Usage Update Failed',
+          'We could not record the credit usage. Your analysis finished, but please contact support so we can sync your balance.',
+          'error'
+        );
       }
     } catch (error: any) {
-      console.error('_analyzeResumeInternal: Error in try block:', error);
-      onShowAlert('Analysis Failed', `Failed to analyze resume: ${error.message || 'Unknown error'}. Please try again.`, 'error');
+      console.error('analyzeResume: Error in try block:', error);
+      onShowAlert(
+        'Analysis Failed',
+        `Failed to analyze resume: ${error?.message || 'Unknown error'}. Please try again.`,
+        'error'
+      );
     } finally {
       setIsAnalyzing(false);
       setLoadingStep('');
-      console.log('_analyzeResumeInternal: Analysis finished, setIsAnalyzing(false).');
+      console.log('analyzeResume: Analysis finished, setIsAnalyzing(false).');
     }
-  }, [extractionResult, jobDescription, jobTitle, scoringMode, isAuthenticated, onShowAuth, onShowSubscriptionPlans, onShowAlert, refreshUserSubscription, user]);
+  }, [
+    extractionResult,
+    jobDescription,
+    jobTitle,
+    scoringMode,
+    isAuthenticated,
+    onShowAuth,
+    onShowSubscriptionPlans,
+    onShowAlert,
+    refreshUserSubscription,
+    hasShownCreditExhaustedAlert,
+    user,
+  ]);
 
-
-  // New public function called by the button click
-  const analyzeResume = useCallback(async () => {
-    console.log('analyzeResume: Public function called.');
-
-    if (scoringMode === null) {
-      onShowAlert('Choose a Scoring Method', 'Please select either "Score Against a Job" or "General Score" to continue.', 'warning');
-      return;
-    }
-
-    if (!isAuthenticated) {
-      onShowAlert('Authentication Required', 'Please sign in to get your resume score.', 'error', 'Sign In', onShowAuth);
-      return;
-    }
-
-    if (!user?.id) {
-      onShowAlert('Authentication Required', 'User data not fully loaded. Please try again or sign in.', 'error', 'Sign In', onShowAuth);
-      return;
-    }
-
-    if (!extractionResult.text.trim()) {
-      onShowAlert('Missing Resume', 'Please upload your resume first to get a score.', 'warning');
-      return;
-    }
-
-    if (scoringMode === 'jd_based') {
-      if (!jobDescription.trim()) {
-        onShowAlert('Missing Job Description', 'Job description is required for JD-based scoring.', 'warning');
-        return;
-      }
-      if (!jobTitle.trim()) {
-        onShowAlert('Missing Job Title', 'Job title is required for JD-based scoring.', 'warning');
-        return;
-      }
-    }
-
-    // IMMEDIATE CREDIT CHECK (NO RETRIES HERE)
-    const currentSubscription = await paymentService.getUserSubscription(user.id);
-    if (!currentSubscription || (currentSubscription.scoreChecksTotal - currentSubscription.scoreChecksUsed) <= 0) {
-      console.log('analyzeResume: Credits exhausted. Showing alert immediately.');
-      onShowAlert(
-        'Resume Score Check Credits Exhausted',
-        `You have used all your ${currentSubscription?.scoreChecksTotal || 0} Resume Score Checks from ${paymentService.getPlanById(currentSubscription?.planId || '')?.name || 'your current plan'}. Please upgrade your plan to continue checking scores.`,
-        'warning',
-        'Upgrade Plan',
-        () => onShowSubscriptionPlans('score-checker')
-      );
-      setHasShownCreditExhaustedAlert(true); // Set flag to prevent repeated alerts
-      setAnalysisInterrupted(true); // Indicate analysis was interrupted due to credits
-      return;
-    }
-
-    // If credits are available, proceed to the internal analysis function
-    setHasShownCreditExhaustedAlert(false); // Reset flag if credits are now available
-    setAnalysisInterrupted(false); // Reset interrupted flag
-    _analyzeResumeInternal();
-
-  }, [extractionResult, jobDescription, jobTitle, scoringMode, isAuthenticated, onShowAuth, onShowSubscriptionPlans, onShowAlert, user, _analyzeResumeInternal]); // Depend on _analyzeResumeInternal
-
-
-  // The useEffect for re-triggering should remain as is, but now calls _analyzeResumeInternal with retries
+  // If analysis was blocked due to no credits and user later buys an add-on,
+  // App will call toolProcessTrigger() for us. As a backup, we also auto-retry
+  // once when the flag is set and user is authenticated.
   useEffect(() => {
-    // Only attempt to re-trigger if analysis was interrupted and user is authenticated
-    // AND if credits are now available.
-    if (analysisInterrupted && isAuthenticated && userSubscription && (userSubscription.scoreChecksTotal - userSubscription.scoreChecksUsed) > 0) {
-      console.log('ResumeScoreChecker: Analysis was interrupted, credits now available, attempting to re-trigger with internal retry.');
-      setAnalysisInterrupted(false); // Reset flag as credits are now available
-      setHasShownCreditExhaustedAlert(false); // Reset alert flag
-
-      let retryCount = 0;
-      let delay = 500;
-      const MAX_RETRIES_INTERNAL = 6; // Max retries for internal re-trigger
-
-      const attemptAnalysis = async () => {
-        while (retryCount < MAX_RETRIES_INTERNAL) {
-          const latestSub = await paymentService.getUserSubscription(user.id); // Re-fetch to be sure
-          if (latestSub && (latestSub.scoreChecksTotal - latestSub.scoreChecksUsed) > 0) {
-            _analyzeResumeInternal(); // Now call the internal analysis function
-            return;
-          }
-          retryCount++;
-          if (retryCount < MAX_RETRIES_INTERNAL) {
-            await new Promise(resolve => setTimeout(resolve, delay));
-            delay *= 2;
-          }
-        }
-        console.error('ResumeScoreChecker: Failed to re-trigger analysis after purchase due to persistent credit check failure.');
-        onShowAlert('Analysis Not Started', 'We could not confirm your new credits. Please try again manually.', 'error');
-      };
-
-      attemptAnalysis();
+    if (analysisInterrupted && isAuthenticated) {
+      console.log('ResumeScoreChecker: Analysis was interrupted; attempting to re-trigger.');
+      setAnalysisInterrupted(false);
+      setHasShownCreditExhaustedAlert(false);
+      analyzeResume();
     }
-  }, [analysisInterrupted, isAuthenticated, userSubscription, _analyzeResumeInternal, onShowAlert, user]); // Depend on _analyzeResumeInternal
+  }, [analysisInterrupted, isAuthenticated, analyzeResume]);
 
   useEffect(() => {
     setToolProcessTrigger(() => analyzeResume);
@@ -271,7 +301,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   const handleFileUpload = (result: ExtractionResult) => {
     setExtractionResult(result);
     setHasShownCreditExhaustedAlert(false);
-    
+
     if (scoringMode === 'general' && autoScoreOnUpload && result.text.trim()) {
       setTimeout(() => analyzeResume(), 500);
     }
@@ -291,9 +321,12 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
 
   const getConfidenceColor = (confidence: ConfidenceLevel) => {
     switch (confidence) {
-      case 'High': return 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/20';
-      case 'Medium': return 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/20';
-      case 'Low': return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20';
+      case 'High':
+        return 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/20';
+      case 'Medium':
+        return 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/20';
+      case 'Low':
+        return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20';
     }
   };
 
@@ -321,10 +354,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   return (
     <>
       {isAnalyzing ? (
-        <LoadingAnimation
-          message={loadingStep}
-          submessage="Please wait while we analyze your resume."
-        />
+        <LoadingAnimation message={loadingStep} submessage="Please wait while we analyze your resume." />
       ) : (
         <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50 px-4 sm:px-0 dark:from-dark-50 dark:to-dark-200 transition-colors duration-300">
           <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40 dark:bg-dark-50 dark:border-dark-300">
@@ -361,9 +391,13 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                         <div className="flex items-center mb-3">
                           <Target className="w-6 h-6 text-blue-600 dark:text-neon-cyan-400 mr-3" />
                           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Score Against a Job</h3>
-                          <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium dark:bg-neon-cyan-500/20 dark:text-neon-cyan-300">Best</span>
+                          <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium dark:bg-neon-cyan-500/20 dark:text-neon-cyan-300">
+                            Best
+                          </span>
                         </div>
-                        <p className="text-gray-600 dark:text-gray-300 text-sm">Get a targeted score by comparing your resume against a specific job description and title.</p>
+                        <p className="text-gray-600 dark:text-gray-300 text-sm">
+                          Get a targeted score by comparing your resume against a specific job description and title.
+                        </p>
                       </button>
                       <button
                         onClick={() => handleSelectScoringMode('general')}
@@ -377,7 +411,9 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                           <BarChart3 className="w-6 h-6 text-purple-600 dark:text-neon-purple-400 mr-3" />
                           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">General Score</h3>
                         </div>
-                        <p className="text-gray-600 dark:text-gray-300 text-sm">Get a general assessment of your resume quality against industry standards.</p>
+                        <p className="text-gray-600 dark:text-gray-300 text-sm">
+                          Get a general assessment of your resume quality against industry standards.
+                        </p>
                         {scoringMode === 'general' && (
                           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-dark-300">
                             <label className="flex items-center space-x-2 cursor-pointer">
@@ -455,17 +491,17 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                           <p className="text-gray-600 dark:text-gray-300 mt-1">
                             {scoringMode === 'jd_based'
                               ? 'Paste the complete job description for targeted analysis'
-                              : 'Add a job description for more specific analysis. If left empty, we\'ll use general industry standards.'
-                            }
+                              : "Add a job description for more specific analysis. If left empty, we'll use general industry standards."}
                           </p>
                         </div>
                         <div className="p-6">
                           <textarea
                             value={jobDescription}
                             onChange={(e) => setJobDescription(e.target.value)}
-                            placeholder={scoringMode === 'jd_based'
-                              ? "Paste the complete job description here including requirements, responsibilities, and qualifications..."
-                              : "Paste the job description here for more specific analysis. If left empty, we'll use general industry standards."
+                            placeholder={
+                              scoringMode === 'jd_based'
+                                ? 'Paste the complete job description here including requirements, responsibilities, and qualifications...'
+                                : "Paste the job description here for more specific analysis. If left empty, we'll use general industry standards."
                             }
                             className="w-full h-32 p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-neon-cyan-500 focus:border-neon-cyan-500 resize-none dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100"
                           />
@@ -475,10 +511,19 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
 
                     <div className="text-center">
                       <button
-                        onClick={() => { setHasShownCreditExhaustedAlert(false); analyzeResume(); }}
-                        disabled={scoringMode === null || !extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))}
+                        onClick={() => {
+                          setHasShownCreditExhaustedAlert(false);
+                          analyzeResume();
+                        }}
+                        disabled={
+                          scoringMode === null ||
+                          !extractionResult.text.trim() ||
+                          (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))
+                        }
                         className={`px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 flex items-center space-x-3 mx-auto shadow-xl hover:shadow-2xl ${
-                          scoringMode === null || !extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))
+                          scoringMode === null ||
+                          !extractionResult.text.trim() ||
+                          (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))
                             ? 'bg-gray-400 cursor-not-allowed text-white'
                             : 'bg-gradient-to-r from-neon-cyan-500 to-neon-purple-500 hover:from-neon-cyan-400 hover:to-neon-purple-400 text-white hover:shadow-neon-cyan transform hover:scale-105'
                         }`}
@@ -505,7 +550,8 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                       <div className="flex items-center">
                         <Calendar className="w-5 h-5 text-blue-600 dark:text-neon-cyan-400 mr-2" />
                         <span className="text-blue-800 dark:text-neon-cyan-300 font-medium">
-                          Cached Result - This analysis was free (expires {scoreResult.cache_expires_at ? new Date(scoreResult.cache_expires_at).toLocaleDateString() : 'soon'})
+                          Cached Result - This analysis was free (expires{' '}
+                          {scoreResult.cache_expires_at ? new Date(scoreResult.cache_expires_at).toLocaleDateString() : 'soon'})
                         </span>
                       </div>
                     </div>
@@ -541,14 +587,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                         <div className="text-center">
                           <div className="relative w-32 h-32 mx-auto mb-4">
                             <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
-                              <circle
-                                cx="60"
-                                cy="60"
-                                r="50"
-                                fill="none"
-                                stroke="#e5e7eb"
-                                strokeWidth="8"
-                              />
+                              <circle cx="60" cy="60" r="50" fill="none" stroke="#e5e7eb" strokeWidth="8" />
                               <circle
                                 cx="60"
                                 cy="60"
@@ -575,9 +614,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                           <div className="bg-gradient-to-br from-blue-50 to-purple-50 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 dark:from-neon-cyan-500/20 dark:to-neon-blue-500/20 dark:shadow-neon-cyan">
                             <Award className="w-8 h-8 text-blue-600 dark:text-neon-cyan-400" />
                           </div>
-                          <div className={`text-lg font-bold ${getMatchBandColor(scoreResult.match_band)} mb-2`}>
-                            {scoreResult.match_band}
-                          </div>
+                          <div className={`text-lg font-bold ${getMatchBandColor(scoreResult.match_band)} mb-2`}>{scoreResult.match_band}</div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">Match Quality</div>
                         </div>
                         <div className="text-center">
@@ -595,9 +632,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                           <div className="space-y-2">
                             <div className="bg-green-50 p-4 rounded-lg border border-green-200 dark:bg-neon-cyan-500/10 dark:border-neon-cyan-400/50">
                               <h4 className="font-medium text-green-800 dark:text-neon-cyan-300 mb-1 text-xs">Key Strengths</h4>
-                              <div className="text-xs text-green-700 dark:text-gray-300">
-                                {scoreResult.keyStrengths.length} key strengths identified
-                              </div>
+                              <div className="text-xs text-green-700 dark:text-gray-300">{scoreResult.keyStrengths.length} key strengths identified</div>
                             </div>
                             <div className="bg-orange-50 p-4 rounded-lg border border-orange-200 dark:bg-orange-900/20 dark:border-orange-500/50">
                               <h4 className="font-medium text-orange-800 dark:text-orange-300 mb-1 text-xs">Areas for Improvement</h4>
@@ -632,15 +667,12 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                                 {metric.score}
                               </span>
                               <span className="text-gray-500 dark:text-gray-400">/{metric.max_score}</span>
-                              <div className="ml-auto text-xs text-gray-600 dark:text-gray-400">
-                                +{metric.contribution.toFixed(1)} pts
-                              </div>
+                              <div className="ml-auto text-xs text-gray-600 dark:text-gray-400">+{metric.contribution.toFixed(1)} pts</div>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2 mb-2 dark:bg-dark-300">
                               <div
                                 className={`h-2 rounded-full transition-all duration-300 ${
-                                  (metric.score / metric.max_score) >= 0.9 ? 'bg-green-500' :
-                                  (metric.score / metric.max_score) >= 0.7 ? 'bg-yellow-500' : 'bg-red-500'
+                                  metric.score / metric.max_score >= 0.9 ? 'bg-green-500' : metric.score / metric.max_score >= 0.7 ? 'bg-yellow-500' : 'bg-red-500'
                                 }`}
                                 style={{ width: `${(metric.score / metric.max_score) * 100}%` }}
                               />
@@ -698,8 +730,6 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                     </div>
                   )}
 
-                  
-
                   <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl mt-6">
                     <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
                       <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
@@ -724,7 +754,6 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                   </div>
 
                   <div className="text-center space-y-4 bg-white rounded-2xl shadow-lg border border-gray-200 p-6 dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl mt-6">
-                   
                     <button
                       onClick={handleCheckAnotherResume}
                       className="bg-gradient-to-r from-neon-cyan-500 to-neon-blue-500 hover:from-neon-cyan-400 hover:to-neon-blue-400 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 mr-4 shadow-neon-cyan"
