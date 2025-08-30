@@ -1,3 +1,4 @@
+// src/components/Header.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { FileText, User, LogOut, Menu, X, Loader2, Sparkles, Shield, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -112,7 +113,10 @@ export const Header: React.FC<HeaderProps> = ({
               {isAuthenticated && user ? (
                 <div className="relative" ref={userMenuRef}>
                   <button
-                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    onClick={() => {
+                      console.log('Profile button clicked. Current showUserMenu:', showUserMenu, 'New state:', !showUserMenu);
+                      setShowUserMenu(!showUserMenu);
+                    }}
                     className="flex items-center space-x-3 bg-gradient-to-r from-secondary-50 to-secondary-100 hover:from-secondary-100 hover:to-secondary-200 rounded-xl px-4 py-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-neon-cyan-500 border border-secondary-200 shadow-sm min-h-touch dark:from-dark-200 dark:to-dark-300 dark:hover:from-dark-300 dark:hover:to-dark-400 dark:border-dark-400"
                   >
                     <div className="bg-gradient-to-br from-neon-cyan-500 to-neon-blue-500 w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-md">
@@ -129,6 +133,7 @@ export const Header: React.FC<HeaderProps> = ({
                   </button>
 
                   {/* User Dropdown Menu */}
+                  {console.log('Header: showUserMenu state before rendering dropdown:', showUserMenu)}
                   {showUserMenu && (
                     <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-secondary-200 py-2 z-50 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
                       <div className="px-4 py-3 border-b border-secondary-100 bg-gradient-to-r from-primary-50 to-accent-50 dark:border-dark-300 dark:from-dark-200 dark:to-dark-300">
@@ -245,4 +250,3 @@ export const Header: React.FC<HeaderProps> = ({
     </>
   );
 };
-
