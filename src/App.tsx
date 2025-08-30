@@ -62,31 +62,15 @@ function App() {
   // NEW STATE: To store the callback for re-triggering tool process
   const [toolProcessTrigger, setToolProcessTrigger] = useState<(() => void) | null>(null);
 
-  const handleMobileMenuToggle = useCallback(() => { // Memoize
+  const logoImage = "https://res.cloudinary.com/dlkovvlud/image/upload/w_1000,c_fill,ar_1:1,g_auto,r_max,bo_5px_solid_red,b_rgb:262c35/v1751536902/a-modern-logo-design-featuring-primoboos_XhhkS8E_Q5iOwxbAXB4CqQ_HnpCsJn4S1yrhb826jmMDw_nmycqj.jpg";
+
+  // --- START REORDERED CALLBACKS (most independent first) ---
+
+  const handleMobileMenuToggle = useCallback(() => {
     setShowMobileMenu(!showMobileMenu);
   }, [showMobileMenu]);
 
-  const logoImage = "https://res.cloudinary.com/dlkovvlud/image/upload/w_1000,c_fill,ar_1:1,g_auto,r_max,bo_5px_solid_red,b_rgb:262c35/v1751536902/a-modern-logo-design-featuring-primoboos_XhhkS8E_Q5iOwxbAXB4CqQ_HnpCsJn4S1yrhb826jmMDw_nmycqj.jpg";
-
-  const handlePageChange = useCallback((path: string) => { // Memoize
-    if (path === 'menu') {
-      handleMobileMenuToggle();
-    } else if (path === 'profile') {
-      handleShowProfile();
-      setShowMobileMenu(false);
-    } else if (path === 'wallet') {
-      handleShowProfile('wallet');
-      setShowMobileMenu(false);
-    } else if (path === 'subscription-plans') {
-      handleShowPlanSelection(undefined, false); 
-      setShowMobileMenu(false);
-    } else {
-      navigate(path);
-      setShowMobileMenu(false);
-    }
-  }, [handleMobileMenuToggle, handleShowProfile, handleShowPlanSelection, navigate]);
-
-  const handleShowAuth = useCallback(() => { // Memoize
+  const handleShowAuth = useCallback(() => {
     console.log('handleShowAuth called in App.tsx');
     setShowAuthModal(true);
     setAuthModalInitialView('login');
@@ -94,50 +78,11 @@ function App() {
     setShowMobileMenu(false);
   }, []);
 
-  const handleShowProfile = useCallback((mode: 'profile' | 'wallet' = 'profile', isPostSignup: boolean = false) => { // Memoize
-    setProfileViewMode(mode);
-    setShowProfileManagement(true);
-    setShowMobileMenu(false);
-    setIsPostSignupProfileFlow(isPostSignup);
-    console.log('App.tsx: handleShowProfile called. showProfileManagement set to true.');
-  }, []);
-
-  const handleNavigateHome = useCallback(() => { // Memoize
+  const handleNavigateHome = useCallback(() => {
     navigate('/');
   }, [navigate]);
 
-  const handleShowPlanSelection = useCallback((featureId?: string, expandAddons: boolean = false, planId?: string, couponCode?: string) => { // Memoize
-     console.log('App.tsx: handleShowPlanSelection called with featureId:', featureId, 'expandAddons:', expandAddons, 'planId:', planId, 'couponCode:', couponCode);
-    setPlanSelectionFeatureId(featureId);
-    setInitialExpandAddons(expandAddons);
-    setShowPlanSelectionModal(true);
-  }, []);
-
-  const handleSelectCareerPlans = useCallback(() => { // Memoize
-    console.log('handleSelectCareerPlans called. Attempting to close PlanSelectionModal and open SubscriptionPlans modal.');
-    setShowPlanSelectionModal(false);
-    setShowSubscriptionPlans(true);
-  }, []);
-
-  const handleShowSubscriptionPlansDirectly = useCallback(() => { // Memoize
-    console.log('App.tsx: handleShowSubscriptionPlansDirectly called. Opening SubscriptionPlans modal directly.');
-    setShowSubscriptionPlans(true);
-    setInitialExpandAddons(false);
-  }, []);
-
-  const handleSubscriptionSuccess = useCallback(async () => { // Memoize
-    setShowSubscriptionPlans(false);
-    setSuccessMessage('Subscription activated successfully!');
-    setShowSuccessNotification(true);
-    setTimeout(() => {
-      setShowSuccessNotification(false);
-      setSuccessMessage('');
-    }, 3000);
-    await fetchSubscription();
-    setWalletRefreshKey(prev => prev + 1);
-  }, []);
-
-  const fetchSubscription = useCallback(async () => { // Memoize
+  const fetchSubscription = useCallback(async () => {
     if (isAuthenticated && user) {
       const sub = await paymentService.getUserSubscription(user.id);
       setUserSubscription(sub);
@@ -147,7 +92,7 @@ function App() {
     }
   }, [isAuthenticated, user]);
 
-  const refreshUserSubscription = useCallback(async () => { // Memoize
+  const refreshUserSubscription = useCallback(async () => {
     if (isAuthenticated && user) {
       console.log('App.tsx: Refreshing user subscription...');
       const sub = await paymentService.getUserSubscription(user.id);
@@ -156,11 +101,7 @@ function App() {
     }
   }, [isAuthenticated, user]);
 
-  useEffect(() => {
-    fetchSubscription();
-  }, [fetchSubscription]); // Dependency on memoized fetchSubscription
-
-  const handleShowAlert = useCallback(( // Memoize
+  const handleShowAlert = useCallback((
     title: string,
     message: string,
     type: 'info' | 'success' | 'warning' | 'error' = 'info',
@@ -177,6 +118,106 @@ function App() {
     });
     setShowAlertModal(true);
   }, []);
+
+  // Functions that depend on handleShowAlert, fetchSubscription, refreshUserSubscription
+  const handleSubscriptionSuccess = useCallback(async () => {
+    setShowSubscriptionPlans(false);
+    setSuccessMessage('Subscription activated successfully!');
+    setShowSuccessNotification(true);
+    setTimeout(() => {
+      setShowSuccessNotification(false);
+      setSuccessMessage('');
+    }, 3000);
+    await fetchSubscription();
+    setWalletRefreshKey(prev => prev + 1);
+  }, [fetchSubscription]);
+
+  const handleAddonPurchaseSuccess = useCallback(async (featureId: string) => {
+    console.log(`App.tsx: Add-on purchase successful for feature: ${featureId}. Triggering tool process.`);
+    await refreshUserSubscription();
+    console.log(`App.tsx: User subscription refreshed. Now attempting to trigger tool process.`);
+
+    let message = 'Credit added successfully!';
+    switch (featureId) {
+      case 'score-checker':
+        message = '1 Resume Score Check credit added successfully!';
+        break;
+      case 'optimizer':
+        message = '1 JD-Based Optimization credit added successfully!';
+        break;
+      case 'guided-builder':
+        message = '1 Guided Resume Build credit added successfully!';
+        break;
+      case 'linkedin-generator':
+        message = 'LinkedIn Message credits added successfully!';
+        break;
+      default:
+        message = 'Add-on credit(s) added successfully!';
+        break;
+    }
+    handleShowAlert('Purchase Complete', message, 'success');
+
+    if (toolProcessTrigger) {
+      console.log("App.tsx: Executing toolProcessTrigger for feature:", featureId);
+      toolProcessTrigger();
+      setToolProcessTrigger(null);
+    }
+    setShowPlanSelectionModal(false);
+  }, [refreshUserSubscription, handleShowAlert, toolProcessTrigger]);
+
+  // Functions that depend on handleMobileMenuToggle, handleShowProfile, handleShowPlanSelection
+  // handleShowProfile needs to be defined before handlePageChange
+  const handleShowProfile = useCallback((mode: 'profile' | 'wallet' = 'profile', isPostSignup: boolean = false) => {
+    setProfileViewMode(mode);
+    setShowProfileManagement(true);
+    setShowMobileMenu(false);
+    setIsPostSignupProfileFlow(isPostSignup);
+    console.log('App.tsx: handleShowProfile called. showProfileManagement set to true.');
+  }, []);
+
+  const handleShowPlanSelection = useCallback((featureId?: string, expandAddons: boolean = false, planId?: string, couponCode?: string) => {
+     console.log('App.tsx: handleShowPlanSelection called with featureId:', featureId, 'expandAddons:', expandAddons, 'planId:', planId, 'couponCode:', couponCode);
+    setPlanSelectionFeatureId(featureId);
+    setInitialExpandAddons(expandAddons);
+    setShowPlanSelectionModal(true);
+  }, []);
+
+  const handleSelectCareerPlans = useCallback(() => {
+    console.log('handleSelectCareerPlans called. Attempting to close PlanSelectionModal and open SubscriptionPlans modal.');
+    setShowPlanSelectionModal(false);
+    setShowSubscriptionPlans(true);
+  }, []);
+
+  const handleShowSubscriptionPlansDirectly = useCallback(() => {
+    console.log('App.tsx: handleShowSubscriptionPlansDirectly called. Opening SubscriptionPlans modal directly.');
+    setShowSubscriptionPlans(true);
+    setInitialExpandAddons(false);
+  }, []);
+
+  // handlePageChange depends on handleMobileMenuToggle, handleShowProfile, handleShowPlanSelection
+  const handlePageChange = useCallback((path: string) => {
+    if (path === 'menu') {
+      handleMobileMenuToggle();
+    } else if (path === 'profile') {
+      handleShowProfile();
+      setShowMobileMenu(false);
+    } else if (path === 'wallet') {
+      handleShowProfile('wallet');
+      setShowMobileMenu(false);
+    } else if (path === 'subscription-plans') {
+      handleShowPlanSelection(undefined, false);
+      setShowMobileMenu(false);
+    } else {
+      navigate(path);
+      setShowMobileMenu(false);
+    }
+  }, [handleMobileMenuToggle, handleShowProfile, handleShowPlanSelection, navigate]);
+
+  // --- END REORDERED CALLBACKS ---
+
+  useEffect(() => {
+    fetchSubscription();
+  }, [fetchSubscription]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -207,48 +248,40 @@ function App() {
       return;
     }
 
-    // If AuthModal was opened by hash (e.g., password reset link)
     if (isAuthModalOpenedByHash) {
-      // If user is authenticated and profile is complete, close the modal
       if (isAuthenticated && user && user.hasSeenProfilePrompt === true) {
         console.log('App.tsx useEffect: Hash-opened modal, user authenticated and profile complete. Closing modal.');
         setShowAuthModal(false);
         setIsAuthModalOpenedByHash(false);
-        setAuthModalInitialView('login'); // Reset initial view
+        setAuthModalInitialView('login');
       }
-      return; // Do not proceed with other AuthModal logic if opened by hash
+      return;
     }
 
-    // General AuthModal logic for post-signup prompt
     if (isAuthenticated && user) {
-      // Wait until hasSeenProfilePrompt is explicitly true or false
       if (user.hasSeenProfilePrompt === undefined) {
         console.log('App.tsx useEffect: user.hasSeenProfilePrompt is undefined, waiting for full profile load.');
         return;
       }
-      // If user is authenticated and profile is incomplete (hasSeenProfilePrompt is false)
       if (user.hasSeenProfilePrompt === false) {
         console.log('App.tsx useEffect: User authenticated and profile incomplete, opening AuthModal to prompt.');
         setAuthModalInitialView('postSignupPrompt');
         setShowAuthModal(true);
       } else {
-        // If user is authenticated and profile is complete, ensure AuthModal is closed
         console.log('App.tsx useEffect: User authenticated and profile complete, ensuring AuthModal is closed.');
         setShowAuthModal(false);
-        setAuthModalInitialView('login'); // Reset initial view
+        setAuthModalInitialView('login');
       }
     } else {
-      // If user is not authenticated, ensure AuthModal is closed (unless opened by hash, handled above)
       console.log('App.tsx useEffect: User not authenticated, ensuring AuthModal is closed.');
       setShowAuthModal(false);
-      setAuthModalInitialView('login'); // Reset initial view
+      setAuthModalInitialView('login');
     }
   }, [isAuthenticated, user, user?.hasSeenProfilePrompt, isLoading, isAuthModalOpenedByHash]);
 
-  // NEW useEffect for Vinayaka Chavithi Offer
   useEffect(() => {
     const offerSeenKey = 'vinayakaChavithiOfferSeen';
-    const offerExpiryDate = new Date('2025-09-10T23:59:59'); // Set your offer expiry date
+    const offerExpiryDate = new Date('2025-09-10T23:59:59');
 
     const hasSeenOffer = localStorage.getItem(offerSeenKey);
     const now = new Date();
@@ -256,49 +289,12 @@ function App() {
     if (!hasSeenOffer && now < offerExpiryDate) {
       const timer = setTimeout(() => {
         setShowVinayakaOffer(true);
-        localStorage.setItem(offerSeenKey, 'true'); // Mark as seen after showing
-      }, 2000); // Show after 2 seconds
+        localStorage.setItem(offerSeenKey, 'true');
+      }, 2000);
 
       return () => clearTimeout(timer);
     }
   }, []);
-
-  // NEW FUNCTION: Callback to trigger tool process after add-on purchase
-  const handleAddonPurchaseSuccess = useCallback(async (featureId: string) => { // Memoize
-    console.log(`App.tsx: Add-on purchase successful for feature: ${featureId}. Triggering tool process.`);
-    await refreshUserSubscription(); // Await the refresh to ensure state is updated
-    console.log(`App.tsx: User subscription refreshed. Now attempting to trigger tool process.`);
-
-    // Determine the specific message based on featureId
-    let message = 'Credit added successfully!';
-    switch (featureId) {
-      case 'score-checker':
-        message = '1 Resume Score Check credit added successfully!';
-        break;
-      case 'optimizer':
-        message = '1 JD-Based Optimization credit added successfully!';
-        break;
-      case 'guided-builder':
-        message = '1 Guided Resume Build credit added successfully!';
-        break;
-      case 'linkedin-generator':
-        message = 'LinkedIn Message credits added successfully!';
-        break;
-      default:
-        // Fallback for any other add-on purchases
-        message = 'Add-on credit(s) added successfully!';
-        break;
-    }
-    handleShowAlert('Purchase Complete', message, 'success'); // Use memoized handleShowAlert
-
-    if (toolProcessTrigger) {
-      console.log("App.tsx: Executing toolProcessTrigger for feature:", featureId); // ADD LOG
-      toolProcessTrigger();
-      setToolProcessTrigger(null); // Clear the trigger after use
-    }
-    // CRITICAL: Ensure PlanSelectionModal is closed here if it was opened for an add-on purchase
-    setShowPlanSelectionModal(false); // ADD THIS LINE
-  }, [refreshUserSubscription, handleShowAlert, toolProcessTrigger]); // Dependencies for memoized function
 
   const commonPageProps = {
     isAuthenticated: isAuthenticated,
@@ -306,10 +302,9 @@ function App() {
     onShowSubscriptionPlans: handleShowPlanSelection,
     onShowSubscriptionPlansDirectly: handleShowSubscriptionPlansDirectly,
     userSubscription: userSubscription,
-    onShowAlert: handleShowAlert, // Pass memoized handleShowAlert
+    onShowAlert: handleShowAlert,
     refreshUserSubscription: refreshUserSubscription,
     onNavigateBack: handleNavigateHome,
-    // Pass the setter for the tool process trigger
     setToolProcessTrigger: setToolProcessTrigger,
   };
 
@@ -337,8 +332,8 @@ function App() {
               onShowPlanSelection={handleShowPlanSelection}
               userSubscription={userSubscription}
               refreshUserSubscription={refreshUserSubscription}
-              toolProcessTrigger={toolProcessTrigger} // Pass the trigger state
-              setToolProcessTrigger={setToolProcessTrigger} // Pass the setter
+              toolProcessTrigger={toolProcessTrigger}
+              setToolProcessTrigger={setToolProcessTrigger}
             />
           </main>
         } />
@@ -589,4 +584,3 @@ const AuthButtons: React.FC<{
   );
 };
 export default App;
-
