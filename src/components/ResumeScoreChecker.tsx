@@ -57,8 +57,12 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   toolProcessTrigger,
   setToolProcessTrigger,
 }) => {
-  const navigate = useNavigate();
-  const { user } = useAuth(); // Get the user object from AuthContext
+  // CRITICAL DEBUGGING STEP: Verify onShowAlert is a function immediately
+  if (typeof onShowAlert !== 'function') {
+    console.error('CRITICAL ERROR: onShowAlert prop is not a function or is undefined!', onShowAlert);
+    // This will cause a React error, but it will confirm if the prop is truly missing at this point.
+    throw new Error('onShowAlert prop is missing or invalid in ResumeScoreChecker');
+  }
 
   // ADDED LOG: Check onShowAlert value at component render
   console.log('ResumeScoreChecker: onShowAlert prop value at render:', onShowAlert);
@@ -570,15 +574,6 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                             {scoreResult.match_band}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">Match Quality</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="bg-gradient-to-br from-green-50 to-emerald-50 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 dark:from-neon-blue-500/20 dark:to-neon-purple-500/20 dark:shadow-neon-blue">
-                            <TrendingUp className="w-8 h-8 text-green-600 dark:text-neon-blue-400" />
-                          </div>
-                          <div className="text-lg font-bold text-green-600 dark:text-neon-blue-400 mb-2">
-                            {scoreResult.interview_probability_range}
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">Interview Chance</div>
                         </div>
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Overall Analysis</h3>
