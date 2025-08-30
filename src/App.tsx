@@ -318,6 +318,11 @@ function App() {
     }
   }, [isAuthenticated, user, user?.hasSeenProfilePrompt, isLoading, isAuthModalOpenedByHash]);
 
+  // NEW useEffect to monitor showProfileManagement
+  useEffect(() => {
+    console.log('App.tsx: showProfileManagement state changed to:', showProfileManagement);
+  }, [showProfileManagement]);
+
   useEffect(() => {
     const offerSeenKey = 'vinayakaChavithiOfferSeen';
     const offerExpiryDate = new Date('2025-09-10T23:59:59');
@@ -530,6 +535,16 @@ function App() {
           }}
         />
       )}
+
+      {showProfileManagement && (
+        <UserProfileManagement
+          isOpen={showProfileManagement}
+          onClose={() => setShowProfileManagement(false)}
+          viewMode={profileViewMode}
+          walletRefreshKey={walletRefreshKey}
+          setWalletRefreshKey={setWalletRefreshKey}
+        />
+      )}
     </div>
   );
 }
@@ -611,4 +626,3 @@ const AuthButtons: React.FC<{
 };
 
 export default App;
-
