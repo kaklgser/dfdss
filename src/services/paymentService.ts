@@ -397,8 +397,10 @@ class PaymentService {
       const finalLinkedinMessagesTotal = cumulativeLinkedinMessagesTotal + aggregatedAddonCredits.linkedin_messages.total;
       const finalGuidedBuildsTotal = cumulativeGuidedBuildsTotal + aggregatedAddonCredits.guided_builds.total;
 
-      // If no active subscriptions and no add-on credits, return null
-      if (subscriptions.length === 0 && Object.values(aggregatedAddonCredits).every(c => c.total === 0)) {
+      // If no active subscriptions AND no add-on credits, then return null
+      const hasAnyCredits = finalOptimizationsTotal > 0 || finalScoreChecksTotal > 0 || finalLinkedinMessagesTotal > 0 || finalGuidedBuildsTotal > 0;
+
+      if (!hasAnyCredits) {
         console.log('PaymentService: No active subscription or add-on credits found for user:', userId);
         return null;
       }
@@ -422,6 +424,12 @@ class PaymentService {
         guidedBuildsUsed: cumulativeGuidedBuildsUsed,
         guidedBuildsTotal: finalGuidedBuildsTotal,
       };
+
+      // If there are add-on credits but no actual subscription, ensure status is 'active'
+      if (subscriptions.length === 0 && hasAnyCredits) {
+          currentSubscription.status = 'active';
+          currentSubscription.endDate = new Date(8640000000000000).toISOString(); // Set to far future
+      }
 
       console.log('PaymentService: Final combined subscription and add-on credits object:', currentSubscription);
       console.log('PaymentService: Successfully fetched combined subscription and add-on credits:', currentSubscription);
