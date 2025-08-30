@@ -66,6 +66,7 @@ export const UserProfileManagement: React.FC<UserProfileManagementProps> = ({
   walletRefreshKey,
   setWalletRefreshKey // Destructure setter prop
 }) => {
+  onsole.log('UserProfileManagement: isOpen prop received:', isOpen); 
   const { user, revalidateUserSession, markProfilePromptSeen } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
