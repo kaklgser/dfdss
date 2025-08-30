@@ -31,33 +31,35 @@ interface PlanConfig {
 }
 
 // Defined plans with their respective features and durations
+// This list should ideally be fetched from a centralized source or database
+// to avoid discrepancies between frontend, backend, and functions.
 const plans: PlanConfig[] = [
   {
     id: "career_pro_max",
     name: "Career Pro Max",
-    price: 1999,
+    price: 2299,
     duration: "One-time Purchase",
     optimizations: 50,
     scoreChecks: 50,
-    linkedinMessages: Infinity,
+    linkedinMessages: 500,
     guidedBuilds: 5,
     durationInHours: 24 * 365 * 10, // 10 years for "one-time purchase"
   },
   {
     id: "career_boost_plus",
     name: "Career Boost+",
-    price: 1499,
+    price: 1699,
     duration: "One-time Purchase",
     optimizations: 30,
     scoreChecks: 30,
-    linkedinMessages: Infinity,
+    linkedinMessages: 300,
     guidedBuilds: 3,
     durationInHours: 24 * 365 * 10,
   },
   {
     id: "pro_resume_kit",
     name: "Pro Resume Kit",
-    price: 999,
+    price: 1199,
     duration: "One-time Purchase",
     optimizations: 20,
     scoreChecks: 20,
@@ -68,7 +70,7 @@ const plans: PlanConfig[] = [
   {
     id: "smart_apply_pack",
     name: "Smart Apply Pack",
-    price: 499,
+    price: 599,
     duration: "One-time Purchase",
     optimizations: 10,
     scoreChecks: 10,
@@ -79,7 +81,7 @@ const plans: PlanConfig[] = [
   {
     id: "resume_fix_pack",
     name: "Resume Fix Pack",
-    price: 199,
+    price: 249,
     duration: "One-time Purchase",
     optimizations: 5,
     scoreChecks: 2,
@@ -90,7 +92,7 @@ const plans: PlanConfig[] = [
   {
     id: "lite_check",
     name: "Lite Check",
-    price: 99,
+    price: 129,
     duration: "One-time Purchase",
     optimizations: 2,
     scoreChecks: 2,
@@ -101,48 +103,81 @@ const plans: PlanConfig[] = [
 ];
 
 // Defined add-ons with their types and quantities
+// This list MUST match the addOns array in src/services/paymentService.ts
 const addOns = [
   {
-    id: "jd_optimization_single",
-    name: "JD-Based Optimization (1x)",
+    id: 'jd_optimization_single',
+    name: 'JD-Based Optimization (1x)',
     price: 49,
-    type: "optimization",
+    type: 'optimization',
     quantity: 1,
   },
   {
-    id: "guided_resume_build_single",
-    name: "Guided Resume Build (1x)",
+    id: 'guided_resume_build_single',
+    name: 'Guided Resume Build (1x)',
     price: 99,
-    type: "guided_build",
+    type: 'guided_build',
     quantity: 1,
   },
   {
-    id: "resume_score_check_single",
-    name: "Resume Score Check (1x)",
+    id: 'resume_score_check_single',
+    name: 'Resume Score Check (1x)',
     price: 19,
-    type: "score_check",
+    type: 'score_check',
     quantity: 1,
   },
   {
-    id: "linkedin_messages_50",
-    name: "LinkedIn Messages (50x)",
+    id: 'linkedin_messages_50',
+    name: 'LinkedIn Messages (50x)',
     price: 29,
-    type: "linkedin_messages",
+    type: 'linkedin_messages',
     quantity: 50,
   },
   {
-    id: "linkedin_optimization_single",
-    name: "LinkedIn Optimization (1x Review)",
+    id: 'linkedin_optimization_single',
+    name: 'LinkedIn Optimization (1x Review)',
     price: 199,
-    type: "linkedin_optimization",
+    type: 'linkedin_optimization',
     quantity: 1,
   },
   {
-    id: "resume_guidance_session",
-    name: "Resume Guidance Session (Live)",
+    id: 'resume_guidance_session',
+    name: 'Resume Guidance Session (Live)',
     price: 299,
-    type: "guidance_session",
+    type: 'guidance_session',
     quantity: 1,
+  },
+  // NEW ADD-ON: Single JD-Based Optimization Purchase
+  {
+    id: 'jd_optimization_single_purchase',
+    name: 'JD-Based Optimization (1 Use)',
+    price: 49, // Example price in Rupees
+    type: 'optimization',
+    quantity: 1,
+  },
+  // NEW ADD-ON: Single Guided Resume Build Purchase
+  {
+    id: 'guided_resume_build_single_purchase',
+    name: 'Guided Resume Build (1 Use)',
+    price: 99, // Example price in Rupees
+    type: 'guided_build',
+    quantity: 1,
+  },
+  // NEW ADD-ON: Single Resume Score Check Purchase
+  {
+    id: 'resume_score_check_single_purchase',
+    name: 'Resume Score Check (1 Use)',
+    price: 19,
+    type: 'score_check',
+    quantity: 1,
+  },
+  // NEW ADD-ON: LinkedIn Messages 50 Purchase
+  {
+    id: 'linkedin_messages_50_purchase',
+    name: 'LinkedIn Messages (50 Uses)',
+    price: 29,
+    type: 'linkedin_messages',
+    quantity: 50,
   },
 ];
 
@@ -168,6 +203,7 @@ serve(async (req) => {
     } = requestBody;
     transactionIdFromRequest = transactionId;
     console.log(`[${new Date().toISOString()}] - verify-payment received. transactionId: ${transactionIdFromRequest}`);
+    console.log(`[${new Date().toISOString()}] - Request Body: ${JSON.stringify(requestBody)}`); // Added log
 
     // Get authorization header
     const authHeader = req.headers.get("authorization");
@@ -185,12 +221,15 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
 
     if (userError || !user) {
+      console.error(`[${new Date().toISOString()}] - User authentication failed:`, userError); // Added log
       throw new Error("Invalid user token");
     }
+    console.log(`[${new Date().toISOString()}] - User authenticated. User ID: ${user.id}`); // Added log
 
     // Get Razorpay secret from environment variables
     const razorpayKeySecret = Deno.env.get("RAZORPAY_KEY_SECRET");
     if (!razorpayKeySecret) {
+      console.error(`[${new Date().toISOString()}] - Razorpay secret not configured.`); // Added log
       throw new Error("Razorpay secret not configured");
     }
 
@@ -201,8 +240,10 @@ serve(async (req) => {
       .digest("hex");
 
     if (expectedSignature !== razorpay_signature) {
+      console.error(`[${new Date().toISOString()}] - Invalid payment signature. Expected: ${expectedSignature}, Received: ${razorpay_signature}`); // Added log
       throw new Error("Invalid payment signature");
     }
+    console.log(`[${new Date().toISOString()}] - Razorpay signature verified successfully.`); // Added log
 
     // Fetch order details from Razorpay
     const razorpayKeyId = Deno.env.get("RAZORPAY_KEY_ID");
@@ -218,10 +259,14 @@ serve(async (req) => {
     );
 
     if (!orderResponse.ok) {
+      const errorText = await orderResponse.text();
+      console.error(`[${new Date().toISOString()}] - Failed to fetch order details from Razorpay. Status: ${orderResponse.status}, Response: ${errorText}`); // Added log
       throw new Error("Failed to fetch order details from Razorpay");
     }
 
     const orderData = await orderResponse.json();
+    console.log(`[${new Date().toISOString()}] - Order Data from Razorpay: ${JSON.stringify(orderData)}`); // Added log
+
     const planId = orderData.notes.planId;
     const couponCode = orderData.notes.couponCode;
     // Explicitly parse walletDeduction and discountAmount as numbers
@@ -229,8 +274,7 @@ serve(async (req) => {
     const walletDeduction = parseFloat(orderData.notes.walletDeduction || "0");
     const selectedAddOns = JSON.parse(orderData.notes.selectedAddOns || "{}");
 
-    console.log(`[${new Date().toISOString()}] - Received selectedAddOns: ${JSON.stringify(selectedAddOns)}`);
-    console.log(`[${new Date().toISOString()}] - walletDeduction retrieved from orderData.notes: ${walletDeduction}`);
+    console.log(`[${new Date().toISOString()}] - Retrieved from orderData.notes: planId=${planId}, couponCode=${couponCode}, walletDeduction=${walletDeduction}, selectedAddOns=${JSON.stringify(selectedAddOns)}`);
 
     // Update payment transaction status in Supabase
     console.log(`[${new Date().toISOString()}] - Attempting to update payment_transactions record with ID: ${transactionId}`);
@@ -249,7 +293,7 @@ serve(async (req) => {
       .single();
 
     if (updateTransactionError) {
-      console.error("Error updating payment transaction to success:", updateTransactionError);
+      console.error(`[${new Date().toISOString()}] - Error updating payment transaction to success:`, updateTransactionError);
       throw new Error("Failed to update payment transaction status.");
     }
     console.log(`[${new Date().toISOString()}] - Payment transaction updated to success. Record ID: ${updatedTransaction.id}, coupon_code: ${updatedTransaction.coupon_code}`);
@@ -315,7 +359,7 @@ serve(async (req) => {
         .maybeSingle(); // Use maybeSingle()
 
       if (existingSubError) {
-        console.error("Error checking existing subscription:", existingSubError);
+        console.error(`[${new Date().toISOString()}] - Error checking existing subscription:`, existingSubError);
       }
 
       if (existingSubscription) {
@@ -332,8 +376,10 @@ serve(async (req) => {
       // Create new subscription
       const plan = plans.find((p) => p.id === planId);
       if (!plan) {
+        console.error(`[${new Date().toISOString()}] - Invalid plan ID: ${planId}`); // Added log
         throw new Error("Invalid plan");
       }
+      console.log(`[${new Date().toISOString()}] - Creating new subscription for plan: ${plan.name}`); // Added log
 
       const { data: subscription, error: subscriptionError } = await supabase
         .from("subscriptions")
@@ -358,10 +404,11 @@ serve(async (req) => {
         .single();
 
       if (subscriptionError) {
-        console.error("Subscription creation error:", subscriptionError);
+        console.error(`[${new Date().toISOString()}] - Subscription creation error:`, subscriptionError);
         throw new Error("Failed to create subscription");
       }
       subscriptionId = subscription.id;
+      console.log(`[${new Date().toISOString()}] - New subscription created with ID: ${subscriptionId}`); // Added log
 
       // Update payment transaction with subscription ID
       const { error: updateSubscriptionIdError } = await supabase
@@ -370,10 +417,11 @@ serve(async (req) => {
         .eq("id", transactionId);
 
       if (updateSubscriptionIdError) {
-        console.error("Error updating payment transaction with subscription_id:", updateSubscriptionIdError);
+        console.error(`[${new Date().toISOString()}] - Error updating payment transaction with subscription_id:`, updateSubscriptionIdError);
       }
     } else {
       subscriptionId = null; // No subscription created for add-on only purchases
+      console.log(`[${new Date().toISOString()}] - No main plan purchase, only add-ons.`); // Added log
     }
 
     // Handle wallet deduction
@@ -488,11 +536,12 @@ serve(async (req) => {
     );
   } catch (error) {
     // Handle errors and update transaction status to failed
-    console.error("Payment verification error:", error);
+    console.error(`[${new Date().toISOString()}] - Payment verification error:`, error);
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     if (transactionIdFromRequest) {
+      console.log(`[${new Date().toISOString()}] - Marking transaction ${transactionIdFromRequest} as failed.`);
       await supabase
         .from("payment_transactions")
         .update({ status: "failed" })
