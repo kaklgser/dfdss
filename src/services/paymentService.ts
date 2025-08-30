@@ -324,6 +324,9 @@ class PaymentService {
         .eq('user_id', userId)
         .gt('quantity_remaining', 0); // Only fetch remaining credits
 
+      // ADD THIS LOG:
+      console.log('PaymentService: Fetched raw add-on credits data:', addonCreditsData);
+
       if (addonCreditsError) {
         console.error('PaymentService: Error fetching add-on credits:', addonCreditsError.message, addonCreditsError.details);
         // Decide how to handle this error: either return null or proceed with only subscription data
@@ -349,6 +352,9 @@ class PaymentService {
           }
         });
       }
+
+      // ADD THIS LOG:
+      console.log('PaymentService: Aggregated add-on credits:', aggregatedAddonCredits);
 
       let currentSubscription: Subscription;
 
@@ -406,6 +412,8 @@ class PaymentService {
         return null;
       }
 
+      // ADD THIS LOG:
+      console.log('PaymentService: Final combined subscription and add-on credits object:', currentSubscription);
       console.log('PaymentService: Successfully fetched combined subscription and add-on credits:', currentSubscription);
       return currentSubscription;
     } catch (error: any) {
@@ -935,3 +943,4 @@ class PaymentService {
 }
 
 export const paymentService = new PaymentService();
+
