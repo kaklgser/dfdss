@@ -48,7 +48,9 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
           icon: <PlusCircle className="w-5 h-5" />,
           addOnId: 'guided_resume_build_single_purchase',
           redirectPath: '/guided-builder',
-          price: 99,
+          price: 29, // New discounted price
+          mrp: 99, // Original price
+          discountPercentage: ((99 - 29) / 99 * 100).toFixed(0), // Calculate discount
         };
       case 'score-checker':
         return {
@@ -57,7 +59,9 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
           icon: <TrendingUp className="w-5 h-5" />,
           addOnId: 'resume_score_check_single_purchase',
           redirectPath: '/score-checker',
-          price: 19,
+          price: 9, // New discounted price
+          mrp: 19, // Original price
+          discountPercentage: ((19 - 9) / 19 * 100).toFixed(0), // Calculate discount
         };
       case 'linkedin-generator':
         return {
@@ -67,15 +71,19 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
           addOnId: 'linkedin_messages_50_purchase',
           redirectPath: '/linkedin-generator',
           price: 29,
+          mrp: 29, // Assuming no discount for this one, or adjust as needed
+          discountPercentage: 0,
         };
-      default:
+      default: // This will be for 'optimizer' by default
         return {
           title: 'Get JD-Based Optimization',
           description: 'Purchase a single resume optimization',
           icon: <Target className="w-5 h-5" />,
           addOnId: 'jd_optimization_single_purchase',
           redirectPath: '/optimizer',
-          price: 49,
+          price: 19, // New discounted price
+          mrp: 49, // Original price
+          discountPercentage: ((49 - 19) / 49 * 100).toFixed(0), // Calculate discount
         };
     }
   };
@@ -104,7 +112,7 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
 
       const paymentData = {
         planId: 'addon_only_purchase',
-        amount: addOn.price * 100, // Convert to paise
+        amount: featureConfig.price * 100, // Use the new discounted price
         currency: 'INR',
       };
 
@@ -119,7 +127,7 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
         session.access_token,
         undefined, // No coupon
         0, // No wallet deduction for this direct purchase
-        addOn.price * 100, // Total add-ons amount
+        featureConfig.price * 100, // Use the new discounted price for addOnsTotal
         selectedAddOns
       );
 
@@ -201,7 +209,22 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
             ) : (
               <>
                 {featureConfig.icon}
-                <span>{featureConfig.title} - ₹{featureConfig.price}</span>
+                <span>
+                  {featureConfig.title} -{' '}
+                  {featureConfig.mrp && featureConfig.mrp > featureConfig.price ? (
+                    <>
+                      <span className="line-through">₹{featureConfig.mrp}</span>{' '}
+                      <span className="font-bold">₹{featureConfig.price}</span>
+                      {featureConfig.discountPercentage && (
+                        <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">
+                          {featureConfig.discountPercentage}% OFF
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    `₹${featureConfig.price}`
+                  )}
+                </span>
               </>
             )}
           </button>
