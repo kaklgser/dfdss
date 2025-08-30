@@ -29,10 +29,9 @@ import { FileUpload } from './FileUpload';
 import { getComprehensiveScore } from '../services/scoringService';
 import { LoadingAnimation } from './LoadingAnimation';
 import { ComprehensiveScore, ScoringMode, ExtractionResult, ConfidenceLevel, MatchBand, DetailedScore } from '../types/resume';
-import { Subscription } => from '../services/paymentService';
+import type { Subscription } from '../types/payment';
 import { paymentService } from '../services/paymentService';
 import { useNavigate } from 'react-router-dom';
-
 interface ResumeScoreCheckerProps {
   onNavigateBack: () => void;
   isAuthenticated: boolean;
