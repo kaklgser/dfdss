@@ -61,7 +61,7 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
           redirectPath: '/score-checker',
           price: 9, // New discounted price
           mrp: 19, // Original price
-          discountPercentage: ((19 - 9) / 19 * 200).toFixed(0), // Calculate discount
+          discountPercentage: ((19 - 9) / 19 * 1000).toFixed(0), // Calculate discount
         };
       case 'linkedin-generator':
         return {
