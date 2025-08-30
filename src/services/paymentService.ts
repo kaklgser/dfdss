@@ -358,6 +358,7 @@ class PaymentService {
       const { data: addonCreditsData, error: addonCreditsError } = await supabase
         .from('user_addon_credits')
         .select(`
+          id,
           addon_type_id,
           quantity_purchased,
           quantity_remaining,
@@ -383,6 +384,7 @@ class PaymentService {
       if (addonCreditsData) {
         addonCreditsData.forEach(credit => {
           const typeKey = (credit.addon_types as { type_key: string }).type_key;
+          console.log(`PaymentService: Processing add-on credit - typeKey: ${typeKey}, purchased: ${credit.quantity_purchased}, remaining: ${credit.quantity_remaining}`); // NEW LOG
           if (aggregatedAddonCredits[typeKey]) { // Ensure typeKey exists in our aggregation object
             aggregatedAddonCredits[typeKey].total += credit.quantity_purchased; // Sum purchased
             aggregatedAddonCredits[typeKey].used += (credit.quantity_purchased - credit.quantity_remaining); // Sum used
@@ -494,11 +496,11 @@ class PaymentService {
       // Find add-on credit matching the singular creditField (type_key)
       const relevantAddon = addonCredits?.find(credit => (credit.addon_types as { type_key: string }).type_key === creditField);
 
+      console.log(`PaymentService: Debugging relevantAddon:`, relevantAddon); // NEW LOG
+      console.log(`PaymentService: Debugging relevantAddon.quantity_remaining:`, relevantAddon?.quantity_remaining); // NEW LOG
+
       if (relevantAddon && relevantAddon.quantity_remaining > 0) {
         const newRemaining = relevantAddon.quantity_remaining - 1;
-        console.log(`PaymentService: Debugging relevantAddon:`, relevantAddon);
-console.log(`PaymentService: Debugging relevantAddon.quantity_remaining:`, relevantAddon?.quantity_remaining);
-
         console.log(`PaymentService: Found add-on credit ${relevantAddon.id}. Current remaining: ${relevantAddon.quantity_remaining}. New remaining: ${newRemaining}`); // NEW LOG
         const { error: updateAddonError } = await supabase
           .from('user_addon_credits')
