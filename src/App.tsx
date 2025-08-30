@@ -1,7 +1,6 @@
-// src/App.tsx
-import React, { useState, useEffect, useCallback } from 'react'; // Import useCallback
-import { Menu, X, Home, Info, BookOpen, Phone, FileText, LogIn, LogOut, User, Wallet, Sparkles } from 'lucide-react';
-import { useAuth } from './contexts/AuthContext'; // Ensure this import is correct
+import React, { useState, useEffect, useCallback } from 'react';
+import { Menu, X, Home, Info, BookOpen, Phone, FileText, LogIn, LogOut, User, Wallet } from 'lucide-react';
+import { useAuth } from './contexts/AuthContext';
 import { Header } from './components/Header';
 import { Navigation } from './components/navigation/Navigation';
 import ResumeOptimizer from './components/ResumeOptimizer';
@@ -21,10 +20,10 @@ import { ToolsAndPagesNavigation } from './components/pages/ToolsAndPagesNavigat
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { PlanSelectionModal } from './components/payment/PlanSelectionModal';
 import { PricingPage } from './components/pages/PricingPage';
-import { OfferOverlay } from './components/OfferOverlay'; // Import OfferOverlay
+import { OfferOverlay } from './components/OfferOverlay';
 
 function App() {
-  const { isAuthenticated, user, markProfilePromptSeen, isLoading } = useAuth(); // This line uses useAuth
+  const { isAuthenticated, user, markProfilePromptSeen, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -42,33 +41,30 @@ function App() {
   const [alertType, setAlertType] = useState<'info' | 'success' | 'warning' | 'error'>('info');
   const [alertActionText, setAlertActionText] = useState<string | undefined>(undefined);
   const [alertActionCallback, setAlertActionCallback] = useState<(() => void) | undefined>(undefined);
-  
-  const [authModalInitialView, setAuthModalInitialView] = useState<'login' | 'signup' | 'forgot-password' | 'success' | 'postSignupPrompt'>('login');
-  
+
+  const [authModalInitialView, setAuthModalInitialView] = useState<
+    'login' | 'signup' | 'forgot-password' | 'success' | 'postSignupPrompt' | 'reset_password'
+  >('login');
+
   const [isPostSignupProfileFlow, setIsPostSignupProfileFlow] = useState(false);
-
   const [walletRefreshKey, setWalletRefreshKey] = useState(0);
-
   const [isAuthModalOpenedByHash, setIsAuthModalOpenedByHash] = useState(false);
 
   const [showPlanSelectionModal, setShowPlanSelectionModal] = useState(false);
   const [planSelectionFeatureId, setPlanSelectionFeatureId] = useState<string | undefined>(undefined);
-
   const [initialExpandAddons, setInitialExpandAddons] = useState(true);
 
-  // NEW STATE FOR OFFER OVERLAY
   const [showVinayakaOffer, setShowVinayakaOffer] = useState(false);
 
-  // NEW STATE: To store the callback for re-triggering tool process
+  // Tool trigger shared state
   const [toolProcessTrigger, setToolProcessTrigger] = useState<(() => void) | null>(null);
 
-  const logoImage = "https://res.cloudinary.com/dlkovvlud/image/upload/w_1000,c_fill,ar_1:1,g_auto,r_max,bo_5px_solid_red,b_rgb:262c35/v1751536902/a-modern-logo-design-featuring-primoboos_XhhkS8E_Q5iOwxbAXB4CqQ_HnpCsJn4S1yrhb826jmMDw_nmycqj.jpg";
-
-  // --- START REORDERED CALLBACKS (most independent first) ---
+  const logoImage =
+    'https://res.cloudinary.com/dlkovvlud/image/upload/w_1000,c_fill,ar_1:1,g_auto,r_max,bo_5px_solid_red,b_rgb:262c35/v1751536902/a-modern-logo-design-featuring-primoboos_XhhkS8E_Q5iOwxbAXB4CqQ_HnpCsJn4S1yrhb826jmMDw_nmycqj.jpg';
 
   const handleMobileMenuToggle = useCallback(() => {
-    setShowMobileMenu(!showMobileMenu);
-  }, [showMobileMenu]);
+    setShowMobileMenu((v) => !v);
+  }, []);
 
   const handleShowAuth = useCallback(() => {
     console.log('handleShowAuth called in App.tsx');
@@ -101,72 +97,83 @@ function App() {
     }
   }, [isAuthenticated, user]);
 
-  const handleShowAlert = useCallback((
-    title: string,
-    message: string,
-    type: 'info' | 'success' | 'warning' | 'error' = 'info',
-    actionText?: string,
-    onAction?: () => void
-  ) => {
-    setAlertTitle(title);
-    setAlertMessage(message);
-    setAlertType(type);
-    setAlertActionText(actionText);
-    setAlertActionCallback(() => {
-      if (onAction) onAction();
-      setShowAlertModal(false);
-    });
-    setShowAlertModal(true);
-  }, []);
+  const handleShowAlert = useCallback(
+    (
+      title: string,
+      message: string,
+      type: 'info' | 'success' | 'warning' | 'error' = 'info',
+      actionText?: string,
+      onAction?: () => void
+    ) => {
+      setAlertTitle(title);
+      setAlertMessage(message);
+      setAlertType(type);
+      setAlertActionText(actionText);
+      setAlertActionCallback(() => {
+        if (onAction) onAction();
+        setShowAlertModal(false);
+      });
+      setShowAlertModal(true);
+    },
+    []
+  );
 
-  // Functions that depend on handleShowAlert, fetchSubscription, refreshUserSubscription
+  // 🔑 Trigger analysis immediately after subscription success
   const handleSubscriptionSuccess = useCallback(async () => {
     setShowSubscriptionPlans(false);
+    setShowPlanSelectionModal(false);
     setSuccessMessage('Subscription activated successfully!');
     setShowSuccessNotification(true);
     setTimeout(() => {
       setShowSuccessNotification(false);
       setSuccessMessage('');
     }, 3000);
+
     await fetchSubscription();
-    setWalletRefreshKey(prev => prev + 1);
-  }, [fetchSubscription]);
+    setWalletRefreshKey((prev) => prev + 1);
 
-  const handleAddonPurchaseSuccess = useCallback(async (featureId: string) => {
-    console.log(`App.tsx: Add-on purchase successful for feature: ${featureId}. Triggering tool process.`);
-    await refreshUserSubscription();
-    console.log(`App.tsx: User subscription refreshed. Now attempting to trigger tool process.`);
+    // Give React a microtask to propagate new props to children, then trigger the tool
+    queueMicrotask(() => {
+      if (toolProcessTrigger) {
+        console.log('App.tsx: Running toolProcessTrigger after subscription success');
+        toolProcessTrigger();
+      }
+    });
+  }, [fetchSubscription, toolProcessTrigger]);
 
-    let message = 'Credit added successfully!';
-    switch (featureId) {
-      case 'score-checker':
-        message = '1 Resume Score Check credit added successfully!';
-        break;
-      case 'optimizer':
-        message = '1 JD-Based Optimization credit added successfully!';
-        break;
-      case 'guided-builder':
-        message = '1 Guided Resume Build credit added successfully!';
-        break;
-      case 'linkedin-generator':
-        message = 'LinkedIn Message credits added successfully!';
-        break;
-      default:
-        message = 'Add-on credit(s) added successfully!';
-        break;
-    }
-    handleShowAlert('Purchase Complete', message, 'success');
+  const handleAddonPurchaseSuccess = useCallback(
+    async (featureId: string) => {
+      console.log(`App.tsx: Add-on purchase successful for feature: ${featureId}. Triggering tool process.`);
+      await refreshUserSubscription();
+      console.log(`App.tsx: User subscription refreshed. Now attempting to trigger tool process.`);
 
-    if (toolProcessTrigger) {
-      console.log("App.tsx: Executing toolProcessTrigger for feature:", featureId);
-      toolProcessTrigger();
-      setToolProcessTrigger(null);
-    }
-    setShowPlanSelectionModal(false);
-  }, [refreshUserSubscription, handleShowAlert, toolProcessTrigger]);
+      let message = 'Add-on credit(s) added successfully!';
+      switch (featureId) {
+        case 'score-checker':
+          message = '1 Resume Score Check credit added successfully!';
+          break;
+        case 'optimizer':
+          message = '1 JD-Based Optimization credit added successfully!';
+          break;
+        case 'guided-builder':
+          message = '1 Guided Resume Build credit added successfully!';
+          break;
+        case 'linkedin-generator':
+          message = 'LinkedIn Message credits added successfully!';
+          break;
+      }
+      handleShowAlert('Purchase Complete', message, 'success');
 
-  // Functions that depend on handleMobileMenuToggle, handleShowProfile, handleShowPlanSelection
-  // handleShowProfile needs to be defined before handlePageChange
+      if (toolProcessTrigger) {
+        console.log('App.tsx: Executing toolProcessTrigger for feature:', featureId);
+        toolProcessTrigger();
+        setToolProcessTrigger(null);
+      }
+      setShowPlanSelectionModal(false);
+    },
+    [refreshUserSubscription, handleShowAlert, toolProcessTrigger]
+  );
+
   const handleShowProfile = useCallback((mode: 'profile' | 'wallet' = 'profile', isPostSignup: boolean = false) => {
     setProfileViewMode(mode);
     setShowProfileManagement(true);
@@ -175,15 +182,29 @@ function App() {
     console.log('App.tsx: handleShowProfile called. showProfileManagement set to true.');
   }, []);
 
-  const handleShowPlanSelection = useCallback((featureId?: string, expandAddons: boolean = false, planId?: string, couponCode?: string) => {
-     console.log('App.tsx: handleShowPlanSelection called with featureId:', featureId, 'expandAddons:', expandAddons, 'planId:', planId, 'couponCode:', couponCode);
-    setPlanSelectionFeatureId(featureId);
-    setInitialExpandAddons(expandAddons);
-    setShowPlanSelectionModal(true);
-  }, []);
+  const handleShowPlanSelection = useCallback(
+    (featureId?: string, expandAddons: boolean = false, planId?: string, couponCode?: string) => {
+      console.log(
+        'App.tsx: handleShowPlanSelection called with featureId:',
+        featureId,
+        'expandAddons:',
+        expandAddons,
+        'planId:',
+        planId,
+        'couponCode:',
+        couponCode
+      );
+      setPlanSelectionFeatureId(featureId);
+      setInitialExpandAddons(expandAddons);
+      setShowPlanSelectionModal(true);
+    },
+    []
+  );
 
   const handleSelectCareerPlans = useCallback(() => {
-    console.log('handleSelectCareerPlans called. Attempting to close PlanSelectionModal and open SubscriptionPlans modal.');
+    console.log(
+      'handleSelectCareerPlans called. Attempting to close PlanSelectionModal and open SubscriptionPlans modal.'
+    );
     setShowPlanSelectionModal(false);
     setShowSubscriptionPlans(true);
   }, []);
@@ -194,26 +215,26 @@ function App() {
     setInitialExpandAddons(false);
   }, []);
 
-  // handlePageChange depends on handleMobileMenuToggle, handleShowProfile, handleShowPlanSelection
-  const handlePageChange = useCallback((path: string) => {
-    if (path === 'menu') {
-      handleMobileMenuToggle();
-    } else if (path === 'profile') {
-      handleShowProfile();
-      setShowMobileMenu(false);
-    } else if (path === 'wallet') {
-      handleShowProfile('wallet');
-      setShowMobileMenu(false);
-    } else if (path === 'subscription-plans') {
-      handleShowPlanSelection(undefined, false);
-      setShowMobileMenu(false);
-    } else {
-      navigate(path);
-      setShowMobileMenu(false);
-    }
-  }, [handleMobileMenuToggle, handleShowProfile, handleShowPlanSelection, navigate]);
-
-  // --- END REORDERED CALLBACKS ---
+  const handlePageChange = useCallback(
+    (path: string) => {
+      if (path === 'menu') {
+        handleMobileMenuToggle();
+      } else if (path === 'profile') {
+        handleShowProfile();
+        setShowMobileMenu(false);
+      } else if (path === 'wallet') {
+        handleShowProfile('wallet');
+        setShowMobileMenu(false);
+      } else if (path === 'subscription-plans') {
+        handleShowPlanSelection(undefined, false);
+        setShowMobileMenu(false);
+      } else {
+        navigate(path);
+        setShowMobileMenu(false);
+      }
+    },
+    [handleMobileMenuToggle, handleShowProfile, handleShowPlanSelection, navigate]
+  );
 
   useEffect(() => {
     fetchSubscription();
@@ -241,7 +262,18 @@ function App() {
   }, []);
 
   useEffect(() => {
-    console.log('App.tsx useEffect: isAuthenticated:', isAuthenticated, 'user:', user?.id, 'hasSeenProfilePrompt:', user?.hasSeenProfilePrompt, 'isLoadingAuth:', isLoading, 'isAuthModalOpenedByHash:', isAuthModalOpenedByHash);
+    console.log(
+      'App.tsx useEffect: isAuthenticated:',
+      isAuthenticated,
+      'user:',
+      user?.id,
+      'hasSeenProfilePrompt:',
+      user?.hasSeenProfilePrompt,
+      'isLoadingAuth:',
+      isLoading,
+      'isAuthModalOpenedByHash:',
+      isAuthModalOpenedByHash
+    );
 
     if (isLoading) {
       console.log('App.tsx useEffect: AuthContext is still loading, deferring AuthModal logic.');
@@ -305,10 +337,12 @@ function App() {
     onShowAlert: handleShowAlert,
     refreshUserSubscription: refreshUserSubscription,
     onNavigateBack: handleNavigateHome,
-    setToolProcessTrigger: setToolProcessTrigger,
+    toolProcessTrigger,                 // ✅ pass down
+    setToolProcessTrigger,              // ✅ pass down
   };
 
   console.log('App.tsx: showPlanSelectionModal state before PlanSelectionModal render:', showPlanSelectionModal);
+
   return (
     <div className="min-h-screen pb-safe-bottom safe-area bg-white dark:bg-dark-50 transition-colors duration-300">
       {showSuccessNotification && (
@@ -316,27 +350,31 @@ function App() {
           {successMessage}
         </div>
       )}
+
       <Header onMobileMenuToggle={handleMobileMenuToggle} showMobileMenu={showMobileMenu} onShowProfile={handleShowProfile}>
         <Navigation onPageChange={handlePageChange} />
       </Header>
-      
+
       <Routes>
         <Route path="/" element={<HomePage {...commonPageProps} />} />
-        <Route path="/optimizer" element={
-          <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-            <ResumeOptimizer
-              isAuthenticated={isAuthenticated}
-              onShowAuth={handleShowAuth}
-              onShowProfile={handleShowProfile}
-              onNavigateBack={handleNavigateHome}
-              onShowPlanSelection={handleShowPlanSelection}
-              userSubscription={userSubscription}
-              refreshUserSubscription={refreshUserSubscription}
-              toolProcessTrigger={toolProcessTrigger}
-              setToolProcessTrigger={setToolProcessTrigger}
-            />
-          </main>
-        } />
+        <Route
+          path="/optimizer"
+          element={
+            <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+              <ResumeOptimizer
+                isAuthenticated={isAuthenticated}
+                onShowAuth={handleShowAuth}
+                onShowProfile={handleShowProfile}
+                onNavigateBack={handleNavigateHome}
+                onShowPlanSelection={handleShowPlanSelection}
+                userSubscription={userSubscription}
+                refreshUserSubscription={refreshUserSubscription}
+                toolProcessTrigger={toolProcessTrigger}
+                setToolProcessTrigger={setToolProcessTrigger}
+              />
+            </main>
+          }
+        />
         <Route path="/score-checker" element={<ResumeScoreChecker {...commonPageProps} />} />
         <Route path="/guided-builder" element={<GuidedResumeBuilder {...commonPageProps} />} />
         <Route path="/linkedin-generator" element={<LinkedInMessageGenerator {...commonPageProps} />} />
@@ -349,20 +387,13 @@ function App() {
 
       {showMobileMenu && (
         <div className="fixed inset-0 z-50 md:hidden">
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm dark:bg-black/70"
-            onClick={() => setShowMobileMenu(false)}
-          />
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm dark:bg-black/70" onClick={() => setShowMobileMenu(false)} />
           <div className="fixed top-0 right-0 h-full w-80 max-w-[90vw] bg-white shadow-2xl overflow-y-auto safe-area dark:bg-dark-100 dark:shadow-dark-xl">
             <div className="flex flex-col space-y-4 p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 sm:space-x-3">
                   <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl overflow-hidden shadow-lg">
-                    <img
-                      src={logoImage}
-                      alt="PrimoBoost AI Logo"
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={logoImage} alt="PrimoBoost AI Logo" className="w-full h-full object-cover" />
                   </div>
                   <h1 className="text-lg sm:text-xl font-bold text-secondary-900 dark:text-gray-100">PrimoBoost AI</h1>
                 </div>
@@ -373,6 +404,7 @@ function App() {
                   <X className="w-6 h-6" />
                 </button>
               </div>
+
               <div className="border-t border-secondary-200 pt-4 dark:border-dark-300">
                 <nav className="flex flex-col space-y-4">
                   {[
@@ -380,7 +412,6 @@ function App() {
                     { id: '/about', label: 'About Us', icon: <Info className="w-5 h-5" /> },
                     { id: '/tutorials', label: 'Tutorials', icon: <BookOpen className="w-5 h-5" /> },
                     { id: '/contact', label: 'Contact', icon: <Phone className="w-5 h-5" /> },
-                   
                     ...(isAuthenticated ? [{ id: 'wallet', label: 'Referral & Wallet', icon: <Wallet className="w-5 h-5" /> }] : []),
                   ].map((item) => (
                     <button
@@ -400,6 +431,7 @@ function App() {
                   ))}
                 </nav>
               </div>
+
               <div className="border-t border-secondary-200 pt-4 dark:border-dark-300">
                 <AuthButtons
                   onPageChange={handlePageChange}
@@ -408,11 +440,10 @@ function App() {
                   onShowProfile={handleShowProfile}
                 />
               </div>
+
               <div className="mt-auto pt-4 border-t border-secondary-200 dark:border-dark-300">
                 <div className="bg-gradient-to-r from-primary-50 to-accent-50 rounded-xl p-4 dark:from-dark-200 dark:to-dark-300">
-                  <p className="text-sm text-secondary-700 mb-2 dark:text-gray-300">
-                    Need help with your resume?
-                  </p>
+                  <p className="text-sm text-secondary-700 mb-2 dark:text-gray-300">Need help with your resume?</p>
                   <button
                     onClick={() => {
                       handlePageChange('/');
@@ -429,6 +460,7 @@ function App() {
           </div>
         </div>
       )}
+
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => {
@@ -448,6 +480,7 @@ function App() {
           setIsAuthModalOpenedByHash(false);
         }}
       />
+
       <UserProfileManagement
         isOpen={showProfileManagement}
         onClose={() => setShowProfileManagement(false)}
@@ -455,27 +488,24 @@ function App() {
         walletRefreshKey={walletRefreshKey}
         setWalletRefreshKey={setWalletRefreshKey}
       />
-      
+
       <PlanSelectionModal
         isOpen={showPlanSelectionModal}
         onClose={() => setShowPlanSelectionModal(false)}
         onSelectCareerPlans={handleSelectCareerPlans}
-        onSubscriptionSuccess={handleSubscriptionSuccess}
+        onSubscriptionSuccess={handleSubscriptionSuccess}   // ✅ triggers analysis
         onShowAlert={handleShowAlert}
         triggeredByFeatureId={planSelectionFeatureId}
-        onAddonPurchaseSuccess={handleAddonPurchaseSuccess} // Pass the new callback
+        onAddonPurchaseSuccess={handleAddonPurchaseSuccess}
       />
 
       {showSubscriptionPlans && (
         <SubscriptionPlans
           isOpen={showSubscriptionPlans}
           onNavigateBack={() => setShowSubscriptionPlans(false)}
-          onSubscriptionSuccess={handleSubscriptionSuccess}
+          onSubscriptionSuccess={handleSubscriptionSuccess} // ✅ triggers analysis
           onShowAlert={handleShowAlert}
           initialExpandAddons={initialExpandAddons}
-          // NEW PROPS: Pass planId and couponCode to SubscriptionPlans
-          // These would typically come from a state variable if set by handleShowPlanSelection
-          // For this specific offer, we'll hardcode them here for the OfferOverlay action
           initialPlanId={showVinayakaOffer ? 'career_pro_max' : undefined}
           initialCouponCode={showVinayakaOffer ? 'VNKR50%' : undefined}
         />
@@ -491,23 +521,20 @@ function App() {
         onAction={alertActionCallback}
       />
 
-      {/* NEW: Render OfferOverlay */}
       {showVinayakaOffer && (
         <OfferOverlay
           isOpen={showVinayakaOffer}
           onClose={() => setShowVinayakaOffer(false)}
           onAction={() => {
-            // When "Claim Offer" is clicked, navigate to pricing page and pre-select plan/coupon
             navigate('/pricing');
-            // This will trigger the PricingPage to open SubscriptionPlans with pre-selected values
-            // The actual pre-selection logic is handled in PricingPage and SubscriptionPlans
-            setShowVinayakaOffer(false); // Close the offer overlay
+            setShowVinayakaOffer(false);
           }}
         />
       )}
     </div>
   );
 }
+
 const AuthButtons: React.FC<{
   onPageChange: (path: string) => void;
   onClose: () => void;
@@ -540,7 +567,7 @@ const AuthButtons: React.FC<{
         <div className="space-y-3">
           <div className="flex items-center space-x-3 px-4 py-3 bg-primary-50 rounded-xl dark:bg-dark-200">
             <div className="bg-gradient-to-br from-neon-cyan-500 to-neon-blue-500 w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold">
-              {user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
+              {user.name.split(' ').map((n) => n[0]).join('').toUpperCase().substring(0, 2)}
             </div>
             <div className="overflow-hidden">
               <p className="font-medium text-secondary-900 dark:text-gray-100 truncate">{user.name}</p>
@@ -583,4 +610,5 @@ const AuthButtons: React.FC<{
     </div>
   );
 };
+
 export default App;
