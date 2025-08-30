@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabaseClient';
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   signup: (credentials: SignupCredentials) => Promise<{ needsVerification: boolean; email: string }>;
-  logout: () => Promise<void>; // Removed optional event parameter as it's not used in the context itself
+  logout: () => Promise<void>;
   forgotPassword: (data: ForgotPasswordData) => Promise<void>;
   resetPassword: (newPassword: string) => Promise<void>;
   refreshSession: () => Promise<void>;
@@ -15,12 +15,12 @@ interface AuthContextType extends AuthState {
   markProfilePromptSeen: () => Promise<void>;
 }
 
-// Change createContext to explicitly use null as default
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  // Check for null instead of undefined
+  // Diagnostic log to check the context value
+  console.log('useAuth hook: context value is', context);
   if (context === null) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
