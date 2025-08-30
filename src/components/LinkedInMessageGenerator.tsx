@@ -1,5 +1,5 @@
 // src/components/LinkedInMessageGenerator.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; // Import useCallback
 import {
   ArrowLeft,
   MessageCircle,
@@ -145,7 +145,7 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
     return () => {
       setToolProcessTrigger(null); // Clean up on unmount
     };
-  }, [setToolProcessTrigger, isAuthenticated, userSubscription]); // Add dependencies for handleGenerateMessage
+  }, [setToolProcessTrigger, handleGenerateMessage]); // Dependency on memoized handleGenerateMessage
 
   // NEW EFFECT: Re-trigger message generation if it was interrupted and credits are now available
   useEffect(() => {
@@ -160,7 +160,7 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
         }
       });
     }
-  }, [messageGenerationInterrupted, refreshUserSubscription, userSubscription]); // Add refreshUserSubscription to dependencies
+  }, [messageGenerationInterrupted, refreshUserSubscription, userSubscription, handleGenerateMessage]); // Dependency on memoized handleGenerateMessage
 
   const messageTypes: Array<{
     id: MessageType;
@@ -206,11 +206,11 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
     }
   ];
 
-  const handleInputChange = <K extends keyof MessageForm>(field: K, value: MessageForm[K]) => {
+  const handleInputChange = useCallback(<K extends keyof MessageForm>(field: K, value: MessageForm[K]) => { // Memoize
     setFormData((prev) => ({ ...prev, [field]: value as string }));
-  };
+  }, []);
 
-  const validateCurrentStep = (): boolean => {
+  const validateCurrentStep = useCallback((): boolean => { // Memoize
     switch (currentStep) {
       // Step 0 – picked a type
       case 0:
@@ -238,9 +238,9 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
       default:
         return false;
     }
-  };
+  }, [currentStep, formData]); // Dependencies for memoized function
 
-  const handleGenerateMessage = async () => {
+  const handleGenerateMessage = useCallback(async () => { // Memoize
     if (!isAuthenticated) {
       onShowAlert(
         'Authentication Required',
@@ -316,9 +316,9 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, [isAuthenticated, onShowAuth, userSubscription, onShowSubscriptionPlans, onShowAlert, refreshUserSubscription, formData, validateCurrentStep]); // Dependencies for memoized function
 
-  const handleCopyMessage = async (message: string, index: number) => {
+  const handleCopyMessage = useCallback(async (message: string, index: number) => { // Memoize
     try {
       if (navigator?.clipboard?.writeText) {
         await navigator.clipboard.writeText(message);
@@ -336,7 +336,7 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
     } catch (err) {
       console.error('Failed to copy message:', err);
     }
-  };
+  }, []);
 
   const steps = [
     {
