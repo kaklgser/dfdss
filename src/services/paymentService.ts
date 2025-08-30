@@ -364,7 +364,7 @@ class PaymentService {
           quantity_remaining,
           addon_types(type_key)
         `)
-        .eq('user_id', userId); // REMOVED .gt('quantity_remaining', 0) filter
+        .eq('user_id', userId);
 
       console.log('PaymentService: Fetched raw add-on credits data:', addonCreditsData); // NEW LOG: Inspect raw data
 
@@ -485,7 +485,6 @@ class PaymentService {
         .from('user_addon_credits')
         .select(`id, quantity_remaining, addon_types(type_key)`)
         .eq('user_id', userId)
-        .gt('quantity_remaining', 0)
         .order('purchased_at', { ascending: true }); // Use oldest available add-on credit
 
       if (addonError) {
@@ -493,8 +492,10 @@ class PaymentService {
         // Do not return here, proceed to check subscriptions if add-on fetch fails
       }
 
-      // Find add-on credit matching the singular creditField (type_key)
-      const relevantAddon = addonCredits?.find(credit => (credit.addon_types as { type_key: string }).type_key === creditField);
+      // Find add-on credit matching the singular creditField (type_key) that has remaining quantity
+      const relevantAddon = addonCredits?.find(credit => 
+        (credit.addon_types as { type_key: string }).type_key === creditField && credit.quantity_remaining > 0
+      );
 
       console.log(`PaymentService: Debugging relevantAddon:`, relevantAddon); // NEW LOG
       console.log(`PaymentService: Debugging relevantAddon.quantity_remaining:`, relevantAddon?.quantity_remaining); // NEW LOG
@@ -512,9 +513,40 @@ class PaymentService {
           return { success: false, error: 'Failed to update add-on credit usage.' };
         }
         console.log(`PaymentService: Successfully updated add-on credit ${relevantAddon.id} to ${newRemaining} remaining.`); // NEW LOG
+        
+        // Diagnostic delay: Wait a bit to ensure DB update propagates
+        await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay
+
         // Re-calculate total remaining across all subscriptions and add-ons for the return value
         const updatedSubscriptionState = await this.getUserSubscription(userId);
-        const totalRemaining = updatedSubscriptionState ? (updatedSubscriptionState as any)[`${dbCreditFieldName}Total`] - (updatedSubscriptionState as any)[`${dbCreditFieldName}Used`] : 0;
+        
+        // FIX for NaN: Access properties using correct camelCase names
+        let totalPropName: keyof Subscription;
+        let usedPropName: keyof Subscription;
+
+        switch (creditField) {
+          case 'optimization':
+            totalPropName = 'optimizationsTotal';
+            usedPropName = 'optimizationsUsed';
+            break;
+          case 'score_check':
+            totalPropName = 'scoreChecksTotal';
+            usedPropName = 'scoreChecksUsed';
+            break;
+          case 'linkedin_messages':
+            totalPropName = 'linkedinMessagesTotal';
+            usedPropName = 'linkedinMessagesUsed';
+            break;
+          case 'guided_build':
+            totalPropName = 'guidedBuildsTotal';
+            usedPropName = 'guidedBuildsUsed';
+            break;
+          default:
+            // This case should ideally not be reached due to CreditType definition
+            throw new Error('Unknown credit type for total/used property names.');
+        }
+
+        const totalRemaining = updatedSubscriptionState ? updatedSubscriptionState[totalPropName] - updatedSubscriptionState[usedPropName] : 0;
         console.log(`PaymentService: After update, calculated total remaining: ${totalRemaining}`); // NEW LOG
         return { success: true, remaining: totalRemaining };
       }
@@ -561,7 +593,34 @@ class PaymentService {
       if (usedFromSubscription) {
         // Re-calculate total remaining across all subscriptions and add-ons for the return value
         const updatedSubscriptionState = await this.getUserSubscription(userId);
-        const totalRemaining = updatedSubscriptionState ? (updatedSubscriptionState as any)[`${dbCreditFieldName}Total`] - (updatedSubscriptionState as any)[`${dbCreditFieldName}Used`] : 0;
+        
+        // FIX for NaN: Access properties using correct camelCase names
+        let totalPropName: keyof Subscription;
+        let usedPropName: keyof Subscription;
+
+        switch (creditField) {
+          case 'optimization':
+            totalPropName = 'optimizationsTotal';
+            usedPropName = 'optimizationsUsed';
+            break;
+          case 'score_check':
+            totalPropName = 'scoreChecksTotal';
+            usedPropName = 'scoreChecksUsed';
+            break;
+          case 'linkedin_messages':
+            totalPropName = 'linkedinMessagesTotal';
+            usedPropName = 'linkedinMessagesUsed';
+            break;
+          case 'guided_build':
+            totalPropName = 'guidedBuildsTotal';
+            usedPropName = 'guidedBuildsUsed';
+            break;
+          default:
+            // This case should ideally not be reached due to CreditType definition
+            throw new Error('Unknown credit type for total/used property names.');
+        }
+
+        const totalRemaining = updatedSubscriptionState ? updatedSubscriptionState[totalPropName] - updatedSubscriptionState[usedPropName] : 0;
         return { success: true, remaining: totalRemaining };
       }
       // --- END: Fallback to subscription credits ---
