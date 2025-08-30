@@ -57,13 +57,19 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   toolProcessTrigger,
   setToolProcessTrigger,
 }) => {
-  const navigate = useNavigate();
-  const { user } = useAuth(); // Get the user object from AuthContext
+  // CRITICAL DEBUGGING STEP: Verify onShowAlert is a function immediately
+  if (typeof onShowAlert !== 'function') {
+    console.error('CRITICAL ERROR: onShowAlert prop is not a function or is undefined!', onShowAlert);
+    // This will cause a React error, but it will confirm if the prop is truly missing at this point.
+    throw new Error('onShowAlert prop is missing or invalid in ResumeScoreChecker');
+  }
 
   // ADDED LOG: Check onShowAlert value at component render
   console.log('ResumeScoreChecker: onShowAlert prop value at render:', onShowAlert);
 
   console.log('ResumeScoreChecker: Component rendered. userSubscription:', userSubscription);
+  const { user } = useAuth(); // Get the user object from AuthContext
+  const navigate = useNavigate();
   const [extractionResult, setExtractionResult] = useState<ExtractionResult>({ text: '', extraction_mode: 'TEXT', trimmed: false });
   const [jobDescription, setJobDescription] = useState('');
   const [jobTitle, setJobTitle] = useState('');
@@ -146,7 +152,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
         }
         setHasShownCreditExhaustedAlert(true);
       }
-      setAnalysisInterrupted(true);
+      setAnalysisInterrupted(true); // Set this flag to true if credits are exhausted
       return;
     }
     console.log('analyzeResume: Credits available. Proceeding with analysis.');
@@ -243,14 +249,14 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   // The useEffect for re-triggering should remain as is, as `analyzeResume` now handles the fresh data internally.
   useEffect(() => {
     // Only attempt to re-trigger if analysis was interrupted and user is authenticated
-    // The actual credit check will happen inside analyzeResume with the latest subscription data
-    if (analysisInterrupted && isAuthenticated) {
-      console.log('ResumeScoreChecker: Analysis was interrupted, attempting to re-trigger.');
-      setAnalysisInterrupted(false); // Reset flag immediately
+    // AND if credits are now available.
+    if (analysisInterrupted && isAuthenticated && userSubscription && (userSubscription.scoreChecksTotal - userSubscription.scoreChecksUsed) > 0) {
+      console.log('ResumeScoreChecker: Analysis was interrupted, credits now available, attempting to re-trigger.');
+      setAnalysisInterrupted(false); // Reset flag as credits are now available
       setHasShownCreditExhaustedAlert(false); // Reset alert flag
       analyzeResume(); // Call the function
     }
-  }, [analysisInterrupted, isAuthenticated, analyzeResume]); // Depend on analysisInterrupted and isAuthenticated
+  }, [analysisInterrupted, isAuthenticated, userSubscription, analyzeResume]); // Depend on userSubscription
 
   useEffect(() => {
     setToolProcessTrigger(() => analyzeResume);
