@@ -493,7 +493,7 @@ class PaymentService {
           .update({ quantity_remaining: newRemaining })
           .eq('id', relevantAddon.id)
           .eq('user_id', userId) // required for RLS
-          .gt('quantity_remaining', 0) // Ensure quantity is > 0 before decrementing
+          // REMOVED: .gt('quantity_remaining', 0) // This line was causing the issue
           .select('id, quantity_remaining')
           .maybeSingle(); // Changed to maybeSingle()
 
