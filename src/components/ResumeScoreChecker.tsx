@@ -32,6 +32,7 @@ import { ComprehensiveScore, ScoringMode, ExtractionResult, ConfidenceLevel, Mat
 import type { Subscription } from '../types/payment';
 import { paymentService } from '../services/paymentService';
 import { useNavigate } from 'react-router-dom';
+
 interface ResumeScoreCheckerProps {
   onNavigateBack: () => void;
   isAuthenticated: boolean;
@@ -73,27 +74,35 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
 
   // Move analyzeResume declaration here, after all state variables it depends on
   const analyzeResume = useCallback(async () => {
+    console.log('analyzeResume: Function started.'); // ADDED LOG
     if (scoringMode === null) {
       onShowAlert('Choose a Scoring Method', 'Please select either "Score Against a Job" or "General Score" to continue.', 'warning');
+      console.log('analyzeResume: Exiting early due to scoringMode === null.'); // ADDED LOG
       return;
     }
 
     if (!isAuthenticated) {
-      console.log('ResumeScoreChecker: analyzeResume called. userSubscription at call time:', userSubscription);
       onShowAlert('Authentication Required', 'Please sign in to get your resume score.', 'error', 'Sign In', onShowAuth);
+      console.log('analyzeResume: Exiting early due to !isAuthenticated.'); // ADDED LOG
       return;
     }
 
-    await refreshUserSubscription();
+    console.log('analyzeResume: Calling refreshUserSubscription()...'); // ADDED LOG
+    await refreshUserSubscription(); // This is crucial for credit check
+    console.log('analyzeResume: refreshUserSubscription() completed.'); // ADDED LOG
 
+    // Check userSubscription after it's potentially refreshed
+    // Use the latest userSubscription from props, not necessarily the one from the closure
+    // This is why userSubscription is in the dependency array of useCallback
     if (!userSubscription || (userSubscription.scoreChecksTotal - userSubscription.scoreChecksUsed) <= 0) {
+      console.log('analyzeResume: Credits exhausted or no subscription.'); // ADDED LOG
       if (!hasShownCreditExhaustedAlert) {
         const planDetails = paymentService.getPlanById(userSubscription?.planId);
         const planName = planDetails?.name || 'your current plan';
         const scoreChecksTotal = planDetails?.scoreChecks || 0;
 
         onShowAlert(
-          'Resume Score Check Credits Exhausted',
+          'LinkedIn Message Credits Exhausted', // Changed from Resume Score Check Credits Exhausted
           `You have used all your ${scoreChecksTotal} Resume Score Checks from ${planName}. Please upgrade your plan to continue checking scores.`,
           'warning',
           'Upgrade Plan',
@@ -105,27 +114,32 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
       return;
     }
 
+    console.log('analyzeResume: Credits available. Proceeding with analysis.'); // ADDED LOG
     setAnalysisInterrupted(false);
 
     if (!extractionResult.text.trim()) {
       onShowAlert('Missing Resume', 'Please upload your resume first to get a score.', 'warning');
+      console.log('analyzeResume: Exiting early due to missing resume text.'); // ADDED LOG
       return;
     }
 
     if (scoringMode === 'jd_based') {
       if (!jobDescription.trim()) {
         onShowAlert('Missing Job Description', 'Job description is required for JD-based scoring.', 'warning');
+        console.log('analyzeResume: Exiting early due to missing job description.'); // ADDED LOG
         return;
       }
       if (!jobTitle.trim()) {
         onShowAlert('Missing Job Title', 'Job title is required for JD-based scoring.', 'warning');
+        console.log('analyzeResume: Exiting early due to missing job title.'); // ADDED LOG
         return;
       }
     }
 
     setScoreResult(null);
-    setIsAnalyzing(true);
+    setIsAnalyzing(true); // This should trigger the LoadingAnimation
     setLoadingStep('Extracting & cleaning your resume...');
+    console.log('analyzeResume: Starting analysis, setIsAnalyzing(true).'); // ADDED LOG
 
     try {
       if (scoringMode === 'jd_based') {
@@ -156,11 +170,12 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
         }
       }
     } catch (error: any) {
-      console.error('Error analyzing resume:', error);
+      console.error('analyzeResume: Error in try block:', error); // ADDED LOG
       onShowAlert('Analysis Failed', `Failed to analyze resume: ${error.message || 'Unknown error'}. Please try again.`, 'error');
     } finally {
-      setIsAnalyzing(false);
+      setIsAnalyzing(false); // This should hide the LoadingAnimation
       setLoadingStep('');
+      console.log('analyzeResume: Analysis finished, setIsAnalyzing(false).'); // ADDED LOG
     }
   }, [extractionResult, jobDescription, jobTitle, scoringMode, isAuthenticated, userSubscription, onShowAuth, onShowSubscriptionPlans, onShowAlert, refreshUserSubscription, hasShownCreditExhaustedAlert, setAnalysisInterrupted, setScoreResult, setIsAnalyzing, setLoadingStep, setCurrentStep]);
 
@@ -173,17 +188,15 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   }, [setToolProcessTrigger, analyzeResume]);
 
   useEffect(() => {
-    if (analysisInterrupted && userSubscription) {
-      refreshUserSubscription().then(() => {
-        if (userSubscription && (userSubscription.scoreChecksTotal - userSubscription.scoreChecksUsed) > 0) {
-          console.log('LinkedInMessageGenerator: Credits replenished, re-attempting message generation.');
-          setAnalysisInterrupted(false);
-          setHasShownCreditExhaustedAlert(false); 
-          analyzeResume();
-        }
-      });
+    // Only attempt to re-trigger if analysis was interrupted and user is authenticated
+    // The actual credit check will happen inside analyzeResume with the latest subscription data
+    if (analysisInterrupted && isAuthenticated) {
+      console.log('ResumeScoreChecker: Analysis was interrupted, attempting to re-trigger.'); // ADDED LOG
+      setAnalysisInterrupted(false); // Reset flag immediately
+      setHasShownCreditExhaustedAlert(false); // Reset alert flag
+      analyzeResume(); // Call the function
     }
-  }, [analysisInterrupted, refreshUserSubscription, userSubscription, analyzeResume]);
+  }, [analysisInterrupted, isAuthenticated, analyzeResume]); // Depend on analysisInterrupted and isAuthenticated
 
   const handleFileUpload = (result: ExtractionResult) => {
     setExtractionResult(result);
