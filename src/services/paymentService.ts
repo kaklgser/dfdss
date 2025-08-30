@@ -363,7 +363,7 @@ class PaymentService {
           quantity_remaining,
           addon_types(type_key)
         `)
-        .eq('user_id', userId); // Removed .gt('quantity_remaining', 0)
+        .eq('user_id', userId); // REMOVED .gt('quantity_remaining', 0) filter
 
       console.log('PaymentService: Fetched raw add-on credits data:', addonCreditsData);
 
