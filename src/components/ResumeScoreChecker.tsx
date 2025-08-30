@@ -178,6 +178,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
         if (userSubscription && (userSubscription.scoreChecksTotal - userSubscription.scoreChecksUsed) > 0) {
           console.log('LinkedInMessageGenerator: Credits replenished, re-attempting message generation.');
           setAnalysisInterrupted(false);
+          setHasShownCreditExhaustedAlert(false); 
           analyzeResume();
         }
       });
