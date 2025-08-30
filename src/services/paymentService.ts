@@ -365,7 +365,7 @@ class PaymentService {
         `)
         .eq('user_id', userId); // REMOVED .gt('quantity_remaining', 0) filter
 
-      console.log('PaymentService: Fetched raw add-on credits data:', addonCreditsData);
+      console.log('PaymentService: Fetched raw add-on credits data:', addonCreditsData); // NEW LOG: Inspect raw data
 
       if (addonCreditsError) {
         console.error('PaymentService: Error fetching add-on credits:', addonCreditsError.message, addonCreditsError.details);
@@ -496,19 +496,21 @@ class PaymentService {
 
       if (relevantAddon && relevantAddon.quantity_remaining > 0) {
         const newRemaining = relevantAddon.quantity_remaining - 1;
+        console.log(`PaymentService: Found add-on credit ${relevantAddon.id}. Current remaining: ${relevantAddon.quantity_remaining}. New remaining: ${newRemaining}`); // NEW LOG
         const { error: updateAddonError } = await supabase
           .from('user_addon_credits')
           .update({ quantity_remaining: newRemaining })
           .eq('id', relevantAddon.id);
 
         if (updateAddonError) {
-          console.error(`PaymentService: Error updating add-on credit usage for ${creditField}:`, updateAddonError.message, updateAddonError.details);
+          console.error(`PaymentService: CRITICAL ERROR updating add-on credit usage for ${creditField}:`, updateAddonError.message, updateAddonError.details); // MODIFIED LOG
           return { success: false, error: 'Failed to update add-on credit usage.' };
         }
-        console.log(`PaymentService: Successfully used 1 add-on credit for ${creditField}. Remaining: ${newRemaining}`);
+        console.log(`PaymentService: Successfully updated add-on credit ${relevantAddon.id} to ${newRemaining} remaining.`); // NEW LOG
         // Re-calculate total remaining across all subscriptions and add-ons for the return value
         const updatedSubscriptionState = await this.getUserSubscription(userId);
         const totalRemaining = updatedSubscriptionState ? (updatedSubscriptionState as any)[`${dbCreditFieldName}Total`] - (updatedSubscriptionState as any)[`${dbCreditFieldName}Used`] : 0;
+        console.log(`PaymentService: After update, calculated total remaining: ${totalRemaining}`); // NEW LOG
         return { success: true, remaining: totalRemaining };
       }
       // --- END: Prioritize add-on credits ---
