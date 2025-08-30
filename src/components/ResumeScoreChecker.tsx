@@ -77,13 +77,17 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   const analyzeResume = useCallback(async () => {
     console.log('analyzeResume: Function started.');
     if (scoringMode === null) {
-      onShowAlert('Choose a Scoring Method', 'Please select either "Score Against a Job" or "General Score" to continue.', 'warning');
+      if (onShowAlert) { // Defensive check
+        onShowAlert('Choose a Scoring Method', 'Please select either "Score Against a Job" or "General Score" to continue.', 'warning');
+      }
       console.log('analyzeResume: Exiting early due to scoringMode === null.');
       return;
     }
 
     if (!isAuthenticated) {
-      onShowAlert('Authentication Required', 'Please sign in to get your resume score.', 'error', 'Sign In', onShowAuth);
+      if (onShowAlert) { // Defensive check
+        onShowAlert('Authentication Required', 'Please sign in to get your resume score.', 'error', 'Sign In', onShowAuth);
+      }
       console.log('analyzeResume: Exiting early due to !isAuthenticated.');
       return;
     }
@@ -93,7 +97,9 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
     // Ensure user is available before attempting to fetch subscription
     if (!user?.id) {
       console.log('analyzeResume: User ID not available, cannot fetch subscription.');
-      onShowAlert('Authentication Required', 'User data not fully loaded. Please try again or sign in.', 'error', 'Sign In', onShowAuth);
+      if (onShowAlert) { // Defensive check
+        onShowAlert('Authentication Required', 'User data not fully loaded. Please try again or sign in.', 'error', 'Sign In', onShowAuth);
+      }
       return;
     }
     const latestUserSubscription = await paymentService.getUserSubscription(user.id); // Fetch directly
@@ -106,13 +112,15 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
         const planName = planDetails?.name || 'your current plan';
         const scoreChecksTotal = planDetails?.scoreChecks || 0;
 
-        onShowAlert(
-          'Resume Score Check Credits Exhausted',
-          `You have used all your ${scoreChecksTotal} Resume Score Checks from ${planName}. Please upgrade your plan to continue checking scores.`,
-          'warning',
-          'Upgrade Plan',
-          () => onShowSubscriptionPlans('score-checker')
-        );
+        if (onShowAlert) { // Defensive check
+          onShowAlert(
+            'Resume Score Check Credits Exhausted',
+            `You have used all your ${scoreChecksTotal} Resume Score Checks from ${planName}. Please upgrade your plan to continue checking scores.`,
+            'warning',
+            'Upgrade Plan',
+            () => onShowSubscriptionPlans('score-checker')
+          );
+        }
         setHasShownCreditExhaustedAlert(true);
       }
       setAnalysisInterrupted(true);
@@ -124,19 +132,25 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
     setAnalysisInterrupted(false); // Reset this flag if credits are now available
 
     if (!extractionResult.text.trim()) {
-      onShowAlert('Missing Resume', 'Please upload your resume first to get a score.', 'warning');
+      if (onShowAlert) { // Defensive check
+        onShowAlert('Missing Resume', 'Please upload your resume first to get a score.', 'warning');
+      }
       console.log('analyzeResume: Exiting early due to missing resume text.');
       return;
     }
 
     if (scoringMode === 'jd_based') {
       if (!jobDescription.trim()) {
-        onShowAlert('Missing Job Description', 'Job description is required for JD-based scoring.', 'warning');
+        if (onShowAlert) { // Defensive check
+          onShowAlert('Missing Job Description', 'Job description is required for JD-based scoring.', 'warning');
+        }
         console.log('analyzeResume: Exiting early due to missing job description.');
         return;
       }
       if (!jobTitle.trim()) {
-        onShowAlert('Missing Job Title', 'Job title is required for JD-based scoring.', 'warning');
+        if (onShowAlert) { // Defensive check
+          onShowAlert('Missing Job Title', 'Job title is required for JD-based scoring.', 'warning');
+        }
         console.log('analyzeResume: Exiting early due to missing job title.');
         return;
       }
@@ -173,12 +187,16 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
           await refreshUserSubscription(); // Refresh App.tsx state after usage
         } else {
           console.error('Failed to decrement score check usage:', usageResult.error);
-          onShowAlert('Usage Update Failed', 'Failed to record score check usage. Please contact support.', 'error');
+          if (onShowAlert) { // Defensive check
+            onShowAlert('Usage Update Failed', 'Failed to record score check usage. Please contact support.', 'error');
+          }
         }
       }
     } catch (error: any) {
       console.error('analyzeResume: Error in try block:', error);
-      onShowAlert('Analysis Failed', `Failed to analyze resume: ${error.message || 'Unknown error'}. Please try again.`, 'error');
+      if (onShowAlert) { // Defensive check
+        onShowAlert('Analysis Failed', `Failed to analyze resume: ${error.message || 'Unknown error'}. Please try again.`, 'error');
+      }
     } finally {
       setIsAnalyzing(false);
       setLoadingStep('');
