@@ -52,13 +52,16 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   onShowAuth,
   userSubscription, // Keep this prop, but we'll fetch fresh data inside analyzeResume
   onShowSubscriptionPlans,
-  onShowAlert,
+  onShowAlert, // This is the prop in question
   refreshUserSubscription,
   toolProcessTrigger,
   setToolProcessTrigger,
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth(); // Get the user object from AuthContext
+
+  // ADDED LOG: Check onShowAlert value at component render
+  console.log('ResumeScoreChecker: onShowAlert prop value at render:', onShowAlert);
 
   console.log('ResumeScoreChecker: Component rendered. userSubscription:', userSubscription);
   const [extractionResult, setExtractionResult] = useState<ExtractionResult>({ text: '', extraction_mode: 'TEXT', trimmed: false });
@@ -81,30 +84,41 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
 
 
   const analyzeResume = useCallback(async () => {
+    // ADDED LOG: Check onShowAlert value inside useCallback
+    console.log('analyzeResume: onShowAlert value inside useCallback:', onShowAlert);
+
     console.log('analyzeResume: Function started.');
     if (scoringMode === null) {
-      if (onShowAlert) { // Defensive check
+      // Defensive check before calling onShowAlert
+      if (onShowAlert) {
         onShowAlert('Choose a Scoring Method', 'Please select either "Score Against a Job" or "General Score" to continue.', 'warning');
+      } else {
+        console.error('onShowAlert is undefined when trying to show "Choose a Scoring Method" alert.');
       }
       console.log('analyzeResume: Exiting early due to scoringMode === null.');
       return;
     }
 
     if (!isAuthenticated) {
-      if (onShowAlert) { // Defensive check
+      // Defensive check before calling onShowAlert
+      if (onShowAlert) {
         onShowAlert('Authentication Required', 'Please sign in to get your resume score.', 'error', 'Sign In', onShowAuth);
+      } else {
+        console.error('onShowAlert is undefined when trying to show "Authentication Required" alert.');
       }
       console.log('analyzeResume: Exiting early due to !isAuthenticated.');
       return;
     }
 
-    // --- MODIFICATION START ---
     console.log('analyzeResume: Fetching latest user subscription directly for credit check...');
     // Ensure user is available before attempting to fetch subscription
     if (!user?.id) {
       console.log('analyzeResume: User ID not available, cannot fetch subscription.');
-      if (onShowAlert) { // Defensive check
+      // Defensive check before calling onShowAlert
+      if (onShowAlert) {
         onShowAlert('Authentication Required', 'User data not fully loaded. Please try again or sign in.', 'error', 'Sign In', onShowAuth);
+      } else {
+        console.error('onShowAlert is undefined when trying to show "User ID not available" alert.');
       }
       return;
     }
@@ -118,7 +132,8 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
         const planName = planDetails?.name || 'your current plan';
         const scoreChecksTotal = planDetails?.scoreChecks || 0;
 
-        if (onShowAlert) { // Defensive check
+        // Defensive check before calling onShowAlert
+        if (onShowAlert) {
           onShowAlert(
             'Resume Score Check Credits Exhausted',
             `You have used all your ${scoreChecksTotal} Resume Score Checks from ${planName}. Please upgrade your plan to continue checking scores.`,
@@ -126,20 +141,23 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
             'Upgrade Plan',
             () => onShowSubscriptionPlans('score-checker')
           );
+        } else {
+          console.error('onShowAlert is undefined when trying to show "Credits Exhausted" alert.');
         }
         setHasShownCreditExhaustedAlert(true);
       }
       setAnalysisInterrupted(true);
       return;
     }
-    // --- MODIFICATION END ---
-
     console.log('analyzeResume: Credits available. Proceeding with analysis.');
     setAnalysisInterrupted(false); // Reset this flag if credits are now available
 
     if (!extractionResult.text.trim()) {
-      if (onShowAlert) { // Defensive check
+      // Defensive check before calling onShowAlert
+      if (onShowAlert) {
         onShowAlert('Missing Resume', 'Please upload your resume first to get a score.', 'warning');
+      } else {
+        console.error('onShowAlert is undefined when trying to show "Missing Resume" alert.');
       }
       console.log('analyzeResume: Exiting early due to missing resume text.');
       return;
@@ -147,15 +165,21 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
 
     if (scoringMode === 'jd_based') {
       if (!jobDescription.trim()) {
-        if (onShowAlert) { // Defensive check
+        // Defensive check before calling onShowAlert
+        if (onShowAlert) {
           onShowAlert('Missing Job Description', 'Job description is required for JD-based scoring.', 'warning');
+        } else {
+          console.error('onShowAlert is undefined when trying to show "Missing Job Description" alert.');
         }
         console.log('analyzeResume: Exiting early due to missing job description.');
         return;
       }
       if (!jobTitle.trim()) {
-        if (onShowAlert) { // Defensive check
+        // Defensive check before calling onShowAlert
+        if (onShowAlert) {
           onShowAlert('Missing Job Title', 'Job title is required for JD-based scoring.', 'warning');
+        } else {
+          console.error('onShowAlert is undefined when trying to show "Missing Job Title" alert.');
         }
         console.log('analyzeResume: Exiting early due to missing job title.');
         return;
@@ -193,22 +217,28 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
           await refreshUserSubscription(); // Refresh App.tsx state after usage
         } else {
           console.error('Failed to decrement score check usage:', usageResult.error);
-          if (onShowAlert) { // Defensive check
+          // Defensive check before calling onShowAlert
+          if (onShowAlert) {
             onShowAlert('Usage Update Failed', 'Failed to record score check usage. Please contact support.', 'error');
+          } else {
+            console.error('onShowAlert is undefined when trying to show "Usage Update Failed" alert.');
           }
         }
       }
     } catch (error: any) {
       console.error('analyzeResume: Error in try block:', error);
-      if (onShowAlert) { // Defensive check
+      // Defensive check before calling onShowAlert
+      if (onShowAlert) {
         onShowAlert('Analysis Failed', `Failed to analyze resume: ${error.message || 'Unknown error'}. Please try again.`, 'error');
+      } else {
+        console.error('onShowAlert is undefined when trying to show "Analysis Failed" alert.');
       }
     } finally {
       setIsAnalyzing(false);
       setLoadingStep('');
       console.log('analyzeResume: Analysis finished, setIsAnalyzing(false).');
     }
-  }, [extractionResult, jobDescription, jobTitle, scoringMode, isAuthenticated, onShowAuth, onShowSubscriptionPlans, onShowAlert, refreshUserSubscription, hasShownCreditExhaustedAlert, setAnalysisInterrupted, setScoreResult, setIsAnalyzing, setLoadingStep, setCurrentStep, user]); // Added 'user' to dependencies for `user?.id`
+  }, [extractionResult, jobDescription, jobTitle, scoringMode, isAuthenticated, onShowAuth, onShowSubscriptionPlans, onShowAlert, refreshUserSubscription, hasShownCreditExhaustedAlert, setAnalysisInterrupted, setScoreResult, setIsAnalyzing, setLoadingStep, setCurrentStep, user]);
 
   // The useEffect for re-triggering should remain as is, as `analyzeResume` now handles the fresh data internally.
   useEffect(() => {
