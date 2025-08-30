@@ -1,3 +1,4 @@
+// src/App.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { Menu, X, Home, Info, BookOpen, Phone, FileText, LogIn, LogOut, User, Wallet } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
@@ -164,12 +165,18 @@ function App() {
       }
       handleShowAlert('Purchase Complete', message, 'success');
 
-      if (toolProcessTrigger) {
-        console.log('App.tsx: Executing toolProcessTrigger for feature:', featureId);
-        toolProcessTrigger();
-        setToolProcessTrigger(null);
-      }
-      setShowPlanSelectionModal(false);
+      // Ensure the modal is closed before triggering the tool
+      setShowPlanSelectionModal(false); // Close the PlanSelectionModal
+      setShowSubscriptionPlans(false); // Also close SubscriptionPlans if it was open
+
+      // Give React a microtask to propagate new props to children, then trigger the tool
+      queueMicrotask(() => {
+        if (toolProcessTrigger) {
+          console.log('App.tsx: Executing toolProcessTrigger for feature:', featureId);
+          toolProcessTrigger();
+          // setToolProcessTrigger(null); // Only nullify if you want it to fire only once per session
+        }
+      });
     },
     [refreshUserSubscription, handleShowAlert, toolProcessTrigger]
   );
@@ -481,14 +488,6 @@ function App() {
         }}
       />
 
-      <UserProfileManagement
-        isOpen={showProfileManagement}
-        onClose={() => setShowProfileManagement(false)}
-        viewMode={profileViewMode}
-        walletRefreshKey={walletRefreshKey}
-        setWalletRefreshKey={setWalletRefreshKey}
-      />
-
       <PlanSelectionModal
         isOpen={showPlanSelectionModal}
         onClose={() => setShowPlanSelectionModal(false)}
@@ -612,3 +611,4 @@ const AuthButtons: React.FC<{
 };
 
 export default App;
+
