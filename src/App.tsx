@@ -260,10 +260,33 @@ function App() {
   }, []);
 
   // NEW FUNCTION: Callback to trigger tool process after add-on purchase
-  const handleAddonPurchaseSuccess = async (featureId: string) => { // Make it async
+  const handleAddonPurchaseSuccess = async (featureId: string) => {
     console.log(`App.tsx: Add-on purchase successful for feature: ${featureId}. Triggering tool process.`);
     await refreshUserSubscription(); // Await the refresh to ensure state is updated
     console.log(`App.tsx: User subscription refreshed. Now attempting to trigger tool process.`);
+
+    // Determine the specific message based on featureId
+    let message = 'Credit added successfully!';
+    switch (featureId) {
+      case 'score-checker':
+        message = '1 Resume Score Check credit added successfully!';
+        break;
+      case 'optimizer':
+        message = '1 JD-Based Optimization credit added successfully!';
+        break;
+      case 'guided-builder':
+        message = '1 Guided Resume Build credit added successfully!';
+        break;
+      case 'linkedin-generator':
+        message = 'LinkedIn Message credits added successfully!';
+        break;
+      default:
+        // Fallback for any other add-on purchases
+        message = 'Add-on credit(s) added successfully!';
+        break;
+    }
+    onShowAlert('Purchase Complete', message, 'success'); // Show specific alert
+
     if (toolProcessTrigger) {
       toolProcessTrigger();
       setToolProcessTrigger(null); // Clear the trigger after use
