@@ -1,5 +1,5 @@
 // src/components/ResumeScoreChecker.tsx
-import React, { useState, useEffect, useCallback } from 'react'; // Import useCallback
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Upload,
   FileText,
@@ -58,39 +58,8 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  console.log('ResumeScoreChecker: Component rendered. userSubscription:', userSubscription);
-  const [extractionResult, setExtractionResult] = useState<ExtractionResult>({ text: '', extraction_mode: 'TEXT', trimmed: false });
-  const [jobDescription, setJobDescription] = useState('');
-  const [jobTitle, setJobTitle] = useState('');
-  const [scoringMode, setScoringMode] = useState<ScoringMode | null>(null);
-  const [autoScoreOnUpload, setAutoScoreOnUpload] = useState(true);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [loadingStep, setLoadingStep] = useState<string>('');
-  const [scoreResult, setScoreResult] = useState<ComprehensiveScore | null>(null);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [hasShownCreditExhaustedAlert, setHasShownCreditExhaustedAlert] = useState(false); // NEW STATE
-
-  // NEW STATE: To track if analysis was interrupted due to credit
-  const [analysisInterrupted, setAnalysisInterrupted] = useState(false);
-
-  // Register the analyzeResume function with the App.tsx trigger
-  useEffect(() => {
-    setToolProcessTrigger(() => analyzeResume);
-    return () => {
-      setToolProcessTrigger(null); // Clean up on unmount
-    };
-  }, [setToolProcessTrigger, analyzeResume]); // Depend on the memoized analyzeResume
-
-  const handleFileUpload = (result: ExtractionResult) => {
-    setExtractionResult(result);
-    setHasShownCreditExhaustedAlert(false); // Reset flag on new file upload
-    
-    if (scoringMode === 'general' && autoScoreOnUpload && result.text.trim()) {
-      setTimeout(() => analyzeResume(), 500);
-    }
-  };
-
-  const analyzeResume = useCallback(async () => { // Wrap in useCallback
+  // Move analyzeResume declaration here
+  const analyzeResume = useCallback(async () => {
     if (scoringMode === null) {
       onShowAlert('Choose a Scoring Method', 'Please select either "Score Against a Job" or "General Score" to continue.', 'warning');
       return;
@@ -102,11 +71,10 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
       return;
     }
 
-    // Ensure userSubscription is up-to-date before checking credits
     await refreshUserSubscription();
 
     if (!userSubscription || (userSubscription.scoreChecksTotal - userSubscription.scoreChecksUsed) <= 0) {
-      if (!hasShownCreditExhaustedAlert) { // Only show if not already shown for this attempt
+      if (!hasShownCreditExhaustedAlert) {
         const planDetails = paymentService.getPlanById(userSubscription?.planId);
         const planName = planDetails?.name || 'your current plan';
         const scoreChecksTotal = planDetails?.scoreChecks || 0;
@@ -118,13 +86,12 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
           'Upgrade Plan',
           () => onShowSubscriptionPlans('score-checker')
         );
-        setHasShownCreditExhaustedAlert(true); // Mark as shown
+        setHasShownCreditExhaustedAlert(true);
       }
-      setAnalysisInterrupted(true); // Set flag: analysis was interrupted
+      setAnalysisInterrupted(true);
       return;
     }
 
-    // If we reach here, credits are available, so reset the flag
     setAnalysisInterrupted(false);
 
     if (!extractionResult.text.trim()) {
@@ -182,23 +149,49 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
       setIsAnalyzing(false);
       setLoadingStep('');
     }
-  }, [extractionResult, jobDescription, jobTitle, scoringMode, isAuthenticated, userSubscription, onShowAuth, onShowSubscriptionPlans, onShowAlert, refreshUserSubscription, hasShownCreditExhaustedAlert, setAnalysisInterrupted, setScoreResult, setIsAnalyzing, setLoadingStep, setCurrentStep]); // Add all dependencies for useCallback
+  }, [extractionResult, jobDescription, jobTitle, scoringMode, isAuthenticated, userSubscription, onShowAuth, onShowSubscriptionPlans, onShowAlert, refreshUserSubscription, hasShownCreditExhaustedAlert, setAnalysisInterrupted, setScoreResult, setIsAnalyzing, setLoadingStep, setCurrentStep]);
 
-  // NEW EFFECT: Re-trigger analysis if it was interrupted and credits are now available
+  console.log('ResumeScoreChecker: Component rendered. userSubscription:', userSubscription);
+  const [extractionResult, setExtractionResult] = useState<ExtractionResult>({ text: '', extraction_mode: 'TEXT', trimmed: false });
+  const [jobDescription, setJobDescription] = useState('');
+  const [jobTitle, setJobTitle] = useState('');
+  const [scoringMode, setScoringMode] = useState<ScoringMode | null>(null);
+  const [autoScoreOnUpload, setAutoScoreOnUpload] = useState(true);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [loadingStep, setLoadingStep] = useState<string>('');
+  const [scoreResult, setScoreResult] = useState<ComprehensiveScore | null>(null);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [hasShownCreditExhaustedAlert, setHasShownCreditExhaustedAlert] = useState(false);
+
+  const [analysisInterrupted, setAnalysisInterrupted] = useState(false);
+
   useEffect(() => {
-    // Only re-trigger if analysis was previously interrupted AND userSubscription exists
+    setToolProcessTrigger(() => analyzeResume);
+    return () => {
+      setToolProcessTrigger(null);
+    };
+  }, [setToolProcessTrigger, analyzeResume]);
+
+  useEffect(() => {
     if (analysisInterrupted && userSubscription) {
-      // Explicitly refresh userSubscription to get the latest data
       refreshUserSubscription().then(() => {
-        // After refresh, check if credits are now available
         if (userSubscription && (userSubscription.scoreChecksTotal - userSubscription.scoreChecksUsed) > 0) {
-          console.log('ResumeScoreChecker: Credits replenished, re-attempting analysis.');
-          setAnalysisInterrupted(false); // Reset the flag immediately
-          analyzeResume(); // Re-run the analysis function
+          console.log('LinkedInMessageGenerator: Credits replenished, re-attempting message generation.');
+          setAnalysisInterrupted(false);
+          analyzeResume();
         }
       });
     }
-  }, [analysisInterrupted, refreshUserSubscription, userSubscription, analyzeResume]); // Add analyzeResume to dependencies
+  }, [analysisInterrupted, refreshUserSubscription, userSubscription, analyzeResume]);
+
+  const handleFileUpload = (result: ExtractionResult) => {
+    setExtractionResult(result);
+    setHasShownCreditExhaustedAlert(false);
+    
+    if (scoringMode === 'general' && autoScoreOnUpload && result.text.trim()) {
+      setTimeout(() => analyzeResume(), 500);
+    }
+  };
 
   const getScoreColor = (score: number) => {
     if (score >= 90) return 'text-green-600';
@@ -238,7 +231,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
     setJobDescription('');
     setJobTitle('');
     setCurrentStep(0);
-    setHasShownCreditExhaustedAlert(false); // Reset flag when starting a new check
+    setHasShownCreditExhaustedAlert(false);
   };
 
   return (
@@ -250,7 +243,6 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
         />
       ) : (
         <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50 px-4 sm:px-0 dark:from-dark-50 dark:to-dark-200 transition-colors duration-300">
-          {/* Header */}
           <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40 dark:bg-dark-50 dark:border-dark-300">
             <div className="container-responsive">
               <div className="flex items-center justify-between h-16 py-3">
@@ -267,7 +259,6 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
             </div>
           </div>
 
-          {/* Main Content Area */}
           <div className="flex-grow flex items-center justify-center py-8">
             {currentStep === 0 && (
               <div className="container-responsive">
@@ -400,7 +391,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
 
                     <div className="text-center">
                       <button
-                        onClick={() => { setHasShownCreditExhaustedAlert(false); analyzeResume(); }} // Reset flag on button click
+                        onClick={() => { setHasShownCreditExhaustedAlert(false); analyzeResume(); }}
                         disabled={scoringMode === null || !extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))}
                         className={`px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 flex items-center space-x-3 mx-auto shadow-xl hover:shadow-2xl ${
                           scoringMode === null || !extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))
