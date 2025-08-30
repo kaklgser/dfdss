@@ -1,27 +1,5 @@
 // src/App.tsx
-import React, { useState, useEffect } from 'react';
-import { Menu, X, Home, Info, BookOpen, Phone, FileText, LogIn, LogOut, User, Wallet, Sparkles } from 'lucide-react';
-import { useAuth } from './contexts/AuthContext';
-import { Header } from './components/Header';
-import { Navigation } from './components/navigation/Navigation';
-import ResumeOptimizer from './components/ResumeOptimizer';
-import { HomePage } from './components/pages/HomePage';
-import { GuidedResumeBuilder } from './components/GuidedResumeBuilder';
-import { ResumeScoreChecker } from './components/ResumeScoreChecker';
-import { LinkedInMessageGenerator } from './components/LinkedInMessageGenerator';
-import { AboutUs } from './components/pages/AboutUs';
-import { Contact } from './components/pages/Contact';
-import { Tutorials } from './components/pages/Tutorials';
-import { AuthModal } from './components/auth/AuthModal';
-import { UserProfileManagement } from './components/UserProfileManagement';
-import { SubscriptionPlans } from './components/payment/SubscriptionPlans';
-import { paymentService } from './services/paymentService';
-import { AlertModal } from './components/AlertModal';
-import { ToolsAndPagesNavigation } from './components/pages/ToolsAndPagesNavigation';
-import { Routes, Route, useNavigate } from 'react-router-dom';
-import { PlanSelectionModal } from './components/payment/PlanSelectionModal';
-import { PricingPage } from './components/pages/PricingPage';
-import { OfferOverlay } from './components/OfferOverlay'; // Import OfferOverlay
+// ... (existing imports)
 
 function App() {
   const { isAuthenticated, user, markProfilePromptSeen, isLoading } = useAuth();
@@ -210,34 +188,41 @@ function App() {
       return;
     }
 
+    // If AuthModal was opened by hash (e.g., password reset link)
     if (isAuthModalOpenedByHash) {
+      // If user is authenticated and profile is complete, close the modal
       if (isAuthenticated && user && user.hasSeenProfilePrompt === true) {
         console.log('App.tsx useEffect: Hash-opened modal, user authenticated and profile complete. Closing modal.');
         setShowAuthModal(false);
         setIsAuthModalOpenedByHash(false);
-        setAuthModalInitialView('login');
+        setAuthModalInitialView('login'); // Reset initial view
       }
-      return;
+      return; // Do not proceed with other AuthModal logic if opened by hash
     }
 
+    // General AuthModal logic for post-signup prompt
     if (isAuthenticated && user) {
+      // Wait until hasSeenProfilePrompt is explicitly true or false
       if (user.hasSeenProfilePrompt === undefined) {
         console.log('App.tsx useEffect: user.hasSeenProfilePrompt is undefined, waiting for full profile load.');
         return;
       }
+      // If user is authenticated and profile is incomplete (hasSeenProfilePrompt is false)
       if (user.hasSeenProfilePrompt === false) {
         console.log('App.tsx useEffect: User authenticated and profile incomplete, opening AuthModal to prompt.');
         setAuthModalInitialView('postSignupPrompt');
         setShowAuthModal(true);
       } else {
+        // If user is authenticated and profile is complete, ensure AuthModal is closed
         console.log('App.tsx useEffect: User authenticated and profile complete, ensuring AuthModal is closed.');
         setShowAuthModal(false);
-        setAuthModalInitialView('login');
+        setAuthModalInitialView('login'); // Reset initial view
       }
     } else {
+      // If user is not authenticated, ensure AuthModal is closed (unless opened by hash, handled above)
       console.log('App.tsx useEffect: User not authenticated, ensuring AuthModal is closed.');
       setShowAuthModal(false);
-      setAuthModalInitialView('login');
+      setAuthModalInitialView('login'); // Reset initial view
     }
   }, [isAuthenticated, user, user?.hasSeenProfilePrompt, isLoading, isAuthModalOpenedByHash]);
 
