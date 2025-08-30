@@ -354,7 +354,7 @@ class PaymentService {
         latestCouponUsed = latestSub.coupon_used;
       }
 
-      // Fetch add-on credits
+      // Fetch ALL add-on credits for the user
       const { data: addonCreditsData, error: addonCreditsError } = await supabase
         .from('user_addon_credits')
         .select(`
@@ -363,8 +363,7 @@ class PaymentService {
           quantity_remaining,
           addon_types(type_key)
         `)
-        .eq('user_id', userId)
-        .gt('quantity_remaining', 0); // Only fetch remaining credits
+        .eq('user_id', userId); // Removed .gt('quantity_remaining', 0)
 
       console.log('PaymentService: Fetched raw add-on credits data:', addonCreditsData);
 
@@ -385,7 +384,8 @@ class PaymentService {
         addonCreditsData.forEach(credit => {
           const typeKey = (credit.addon_types as { type_key: string }).type_key;
           if (aggregatedAddonCredits[typeKey]) { // Ensure typeKey exists in our aggregation object
-            aggregatedAddonCredits[typeKey].total += credit.quantity_remaining;
+            aggregatedAddonCredits[typeKey].total += credit.quantity_purchased; // Sum purchased
+            aggregatedAddonCredits[typeKey].used += (credit.quantity_purchased - credit.quantity_remaining); // Sum used
           }
         });
       }
@@ -397,6 +397,13 @@ class PaymentService {
       const finalScoreChecksTotal = cumulativeScoreChecksTotal + aggregatedAddonCredits.score_check.total;
       const finalLinkedinMessagesTotal = cumulativeLinkedinMessagesTotal + aggregatedAddonCredits.linkedin_messages.total;
       const finalGuidedBuildsTotal = cumulativeGuidedBuildsTotal + aggregatedAddonCredits.guided_build.total;
+
+      // Also update the USED counts with add-on used counts
+      const finalOptimizationsUsed = cumulativeOptimizationsUsed + aggregatedAddonCredits.optimization.used;
+      const finalScoreChecksUsed = cumulativeScoreChecksUsed + aggregatedAddonCredits.score_check.used;
+      const finalLinkedinMessagesUsed = cumulativeLinkedinMessagesUsed + aggregatedAddonCredits.linkedin_messages.used;
+      const finalGuidedBuildsUsed = cumulativeGuidedBuildsUsed + aggregatedAddonCredits.guided_build.used;
+
 
       // If no active subscriptions AND no add-on credits, then return null
       const hasAnyCredits = finalOptimizationsTotal > 0 || finalScoreChecksTotal > 0 || finalLinkedinMessagesTotal > 0 || finalGuidedBuildsTotal > 0;
@@ -414,15 +421,15 @@ class PaymentService {
         status: latestStatus,
         startDate: latestStartDate || new Date().toISOString(),
         endDate: latestEndDate || new Date(8640000000000000).toISOString(), // Far future date for "active" if only add-ons
-        optimizationsUsed: cumulativeOptimizationsUsed,
+        optimizationsUsed: finalOptimizationsUsed, // Use final used count
         optimizationsTotal: finalOptimizationsTotal,
         paymentId: latestPaymentId,
         couponUsed: latestCouponUsed,
-        scoreChecksUsed: cumulativeScoreChecksUsed,
+        scoreChecksUsed: finalScoreChecksUsed, // Use final used count
         scoreChecksTotal: finalScoreChecksTotal,
-        linkedinMessagesUsed: cumulativeLinkedinMessagesUsed,
+        linkedinMessagesUsed: finalLinkedinMessagesUsed, // Use final used count
         linkedinMessagesTotal: finalLinkedinMessagesTotal,
-        guidedBuildsUsed: cumulativeGuidedBuildsUsed,
+        guidedBuildsUsed: finalGuidedBuildsUsed, // Use final used count
         guidedBuildsTotal: finalGuidedBuildsTotal,
       };
 
