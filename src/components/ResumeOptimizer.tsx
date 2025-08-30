@@ -1,5 +1,5 @@
 // src/components/ResumeOptimizer.tsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; // Import useCallback
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
 import { FileText, AlertCircle, Plus, Sparkles, ArrowLeft, X } from 'lucide-react';
@@ -111,7 +111,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
   const userLinkedin = (user as any)?.user_metadata?.linkedin || linkedinUrl || '';
   const userGithub = (user as any)?.user_metadata?.github || githubUrl || '';
 
-  const handleStartNewResume = () => {
+  const handleStartNewResume = useCallback(() => { // Memoize
     setOptimizedResume(null);
     setExtractionResult({ text: '', extraction_mode: 'TEXT', trimmed: false });
     setJobDescription('');
@@ -130,9 +130,9 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     setActiveTab('resume');
     setShowMobileInterface(false);
     setOptimizationInterrupted(false);
-  };
+  }, []);
 
-  const checkSubscriptionStatus = async () => {
+  const checkSubscriptionStatus = useCallback(async () => { // Memoize
     if (!user) return;
     try {
       const userSubscriptionData = await paymentService.getUserSubscription(user.id);
@@ -142,7 +142,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     } finally {
       setLoadingSubscription(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -150,7 +150,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     } else {
       setLoadingSubscription(false);
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, checkSubscriptionStatus]); // Add checkSubscriptionStatus to dependencies
 
   useEffect(() => {
     if (extractionResult.text.trim().length > 0 && currentStep === 0) {
@@ -158,7 +158,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     }
   }, [extractionResult.text, currentStep]);
 
-  function checkForMissingSections(resumeData: ResumeData): string[] {
+  const checkForMissingSections = useCallback((resumeData: ResumeData): string[] => { // Memoize
     const missing: string[] = [];
     if (!resumeData.workExperience || resumeData.workExperience.length === 0 || resumeData.workExperience.every(exp => !exp.role?.trim())) {
       missing.push('workExperience');
@@ -173,68 +173,9 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
       missing.push('education');
     }
     return missing;
-  }
+  }, []);
 
-  async function continueOptimizationProcess(resumeData: ResumeData, accessToken: string) {
-    try {
-      await handleInitialResumeProcessing(resumeData, accessToken);
-    } catch (error) {
-      console.error('Error in optimization process:', error);
-      alert('Failed to continue optimization. Please try again.');
-      setIsOptimizing(false);
-    }
-  }
-
-  async function handleInitialResumeProcessing(resumeData: ResumeData, accessToken: string) {
-    try {
-      setIsCalculatingScore(true);
-      const initialScore = await getDetailedResumeScore(resumeData, jobDescription, setIsCalculatingScore);
-      setInitialResumeScore(initialScore);
-      setOptimizedResume(resumeData);
-      setParsedResumeData(resumeData);
-      if (resumeData.projects && resumeData.projects.length > 0) {
-        setShowProjectAnalysis(true);
-      } else {
-        await proceedWithFinalOptimization(resumeData, initialScore, accessToken);
-      }
-    } catch (error) {
-      console.error('Error in initial resume processing:', error);
-      alert('Failed to process resume. Please try again.');
-    } finally {
-      setIsCalculatingScore(false);
-    }
-  }
-
-  const handleMissingSectionsProvided = useCallback(async (data: any) => {
-    setIsProcessingMissingSections(true);
-    try {
-      if (!pendingResumeData) {
-        throw new Error('No pending resume data to update.');
-      }
-      const updatedResume: ResumeData = {
-        ...pendingResumeData,
-        ...(data.workExperience && data.workExperience.length > 0 && { workExperience: data.workExperience }),
-        ...(data.projects && data.projects.length > 0 && { projects: data.projects }),
-        ...(data.skills && data.skills.length > 0 && { skills: data.skills }),
-        ...(data.education && data.education.length > 0 && { education: data.education }),
-        ...(data.summary && { summary: data.summary })
-      };
-      setShowMissingSectionsModal(false);
-      setMissingSections([]);
-      setPendingResumeData(null);
-      setIsOptimizing(false);
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token || '';
-      await handleInitialResumeProcessing(updatedResume, accessToken);
-    } catch (error) {
-      console.error('Error processing missing sections:', error);
-      alert('Failed to process the provided information. Please try again.');
-    } finally {
-      setIsProcessingMissingSections(false);
-    }
-  }, [pendingResumeData, jobDescription]);
-
-  async function proceedWithFinalOptimization(resumeData: ResumeData, initialScore: DetailedScore, accessToken: string) {
+  const proceedWithFinalOptimization = useCallback(async (resumeData: ResumeData, initialScore: DetailedScore, accessToken: string) => { // Memoize
     try {
       setIsOptimizing(true);
       const finalOptimizedResume = await optimizeResume(
@@ -276,9 +217,68 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
       setIsOptimizing(false);
       setIsCalculatingScore(false);
     }
-  }
+  }, [jobDescription, userType, userName, userEmail, userPhone, userLinkedin, userGithub, targetRole, user, checkSubscriptionStatus]); // Dependencies for memoized function
 
-  const handleOptimize = useCallback(async () => {
+  const handleInitialResumeProcessing = useCallback(async (resumeData: ResumeData, accessToken: string) => { // Memoize
+    try {
+      setIsCalculatingScore(true);
+      const initialScore = await getDetailedResumeScore(resumeData, jobDescription, setIsCalculatingScore);
+      setInitialResumeScore(initialScore);
+      setOptimizedResume(resumeData);
+      setParsedResumeData(resumeData);
+      if (resumeData.projects && resumeData.projects.length > 0) {
+        setShowProjectAnalysis(true);
+      } else {
+        await proceedWithFinalOptimization(resumeData, initialScore, accessToken);
+      }
+    } catch (error) {
+      console.error('Error in initial resume processing:', error);
+      alert('Failed to process resume. Please try again.');
+    } finally {
+      setIsCalculatingScore(false);
+    }
+  }, [jobDescription, proceedWithFinalOptimization]); // Dependencies for memoized function
+
+  const continueOptimizationProcess = useCallback(async (resumeData: ResumeData, accessToken: string) => { // Memoize
+    try {
+      await handleInitialResumeProcessing(resumeData, accessToken);
+    } catch (error) {
+      console.error('Error in optimization process:', error);
+      alert('Failed to continue optimization. Please try again.');
+      setIsOptimizing(false);
+    }
+  }, [handleInitialResumeProcessing]); // Dependencies for memoized function
+
+  const handleMissingSectionsProvided = useCallback(async (data: any) => {
+    setIsProcessingMissingSections(true);
+    try {
+      if (!pendingResumeData) {
+        throw new Error('No pending resume data to update.');
+      }
+      const updatedResume: ResumeData = {
+        ...pendingResumeData,
+        ...(data.workExperience && data.workExperience.length > 0 && { workExperience: data.workExperience }),
+        ...(data.projects && data.projects.length > 0 && { projects: data.projects }),
+        ...(data.skills && data.skills.length > 0 && { skills: data.skills }),
+        ...(data.education && data.education.length > 0 && { education: data.education }),
+        ...(data.summary && { summary: data.summary })
+      };
+      setShowMissingSectionsModal(false);
+      setMissingSections([]);
+      setPendingResumeData(null);
+      setIsOptimizing(false);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token || '';
+      await handleInitialResumeProcessing(updatedResume, accessToken);
+    } catch (error) {
+      console.error('Error processing missing sections:', error);
+      alert('Failed to process the provided information. Please try again.');
+    } finally {
+      setIsProcessingMissingSections(false);
+    }
+  }, [pendingResumeData, handleInitialResumeProcessing]);
+
+  const handleOptimize = useCallback(async () => { // Memoize
     if (!extractionResult.text.trim() || !jobDescription.trim()) {
       alert('Please provide both resume content and job description');
       return;
@@ -342,7 +342,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
       alert(`An error occurred: ${error.message || 'Failed to validate session or check subscription.'}`);
       setIsOptimizing(false);
     }
-  }, [extractionResult, jobDescription, user, onShowAuth, userSubscription, onShowPlanSelection, userType, targetRole, userName, userEmail, userPhone, userLinkedin, userGithub]);
+  }, [extractionResult, jobDescription, user, onShowAuth, userSubscription, onShowPlanSelection, userType, userName, userEmail, userPhone, userLinkedin, userGithub, targetRole, checkForMissingSections, continueOptimizationProcess]); // Dependencies for memoized function
 
   useEffect(() => {
     setToolProcessTrigger(() => handleOptimize);
@@ -362,7 +362,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     }
   }, [optimizationInterrupted, refreshUserSubscription, userSubscription, handleOptimize]);
 
-  const handleProjectMismatchResponse = async (proceed: boolean) => {
+  const handleProjectMismatchResponse = useCallback(async (proceed: boolean) => { // Memoize
     setShowProjectMismatch(false);
     if (proceed) {
       setShowProjectOptions(true);
@@ -372,35 +372,35 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
         await proceedWithFinalOptimization(parsedResumeData, initialResumeScore, sessionData?.session?.access_token || '');
       }
     }
-  };
+  }, [parsedResumeData, initialResumeScore, proceedWithFinalOptimization]);
 
-  const handleProjectOptionSelect = (option: 'manual' | 'ai') => {
+  const handleProjectOptionSelect = useCallback((option: 'manual' | 'ai') => { // Memoize
     setShowProjectOptions(false);
     if (option === 'manual') {
       setShowManualProjectAdd(true);
     } else {
       setShowProjectEnhancement(true);
     }
-  };
+  }, []);
 
-  const addTechToStack = () => {
+  const addTechToStack = useCallback(() => { // Memoize
     if (newTechStack.trim() && !manualProject.techStack.includes(newTechStack.trim())) {
       setManualProject(prev => ({ ...prev, techStack: [...prev.techStack, newTechStack.trim()] }));
       setNewTechStack('');
     }
-  };
+  }, [newTechStack, manualProject.techStack]);
 
-  const removeTechFromStack = (tech: string) => {
+  const removeTechFromStack = useCallback((tech: string) => { // Memoize
     setManualProject(prev => ({ ...prev, techStack: prev.techStack.filter(t => t !== tech) }));
-  };
+  }, []);
 
-  const generateProjectDescription = async (project: ManualProject, jd: string): Promise<string> => {
+  const generateProjectDescription = useCallback(async (project: ManualProject, jd: string): Promise<string> => { // Memoize
     return `• Developed ${project.title} using ${project.techStack.join(', ')} technologies
 • Implemented core features and functionality aligned with industry best practices
 • Delivered scalable solution with focus on performance and user experience`;
-  };
+  }, []);
 
-  const handleManualProjectSubmit = async () => {
+  const handleManualProjectSubmit = useCallback(async () => { // Memoize
     if (!manualProject.title || manualProject.techStack.length === 0 || !parsedResumeData) {
       alert('Please provide project title and tech stack.');
       return;
@@ -428,20 +428,9 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     } finally {
       setIsOptimizing(false);
     }
-  };
+  }, [manualProject, parsedResumeData, generateProjectDescription, jobDescription, initialResumeScore, proceedWithFinalOptimization]); // Dependencies for memoized function
 
-  const handleProjectsUpdated = async (updatedResumeData: ResumeData) => {
-    setOptimizedResume(updatedResumeData);
-    setParsedResumeData(updatedResumeData);
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (initialResumeScore) {
-      await proceedWithFinalOptimization(updatedResumeData, initialResumeScore, sessionData?.session?.access_token || '');
-    } else {
-      await generateScoresAfterProjectAdd(updatedResumeData, sessionData?.session?.access_token || '');
-    }
-  };
-
-  const generateScoresAfterProjectAdd = async (updatedResume: ResumeData, accessToken: string) => {
+  const generateScoresAfterProjectAdd = useCallback(async (updatedResume: ResumeData, accessToken: string) => { // Memoize
     try {
       setIsCalculatingScore(true);
       const freshInitialScore = await getDetailedResumeScore(updatedResume, jobDescription, setIsCalculatingScore);
@@ -453,13 +442,24 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
     } finally {
       setIsCalculatingScore(false);
     }
-  };
+  }, [jobDescription, proceedWithFinalOptimization]); // Dependencies for memoized function
 
-  const handleSubscriptionSuccess = () => {
+  const handleProjectsUpdated = useCallback(async (updatedResumeData: ResumeData) => { // Memoize
+    setOptimizedResume(updatedResumeData);
+    setParsedResumeData(updatedResumeData);
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (initialResumeScore) {
+      await proceedWithFinalOptimization(updatedResumeData, initialResumeScore, sessionData?.session?.access_token || '');
+    } else {
+      await generateScoresAfterProjectAdd(updatedResumeData, sessionData?.session?.access_token || '');
+    }
+  }, [initialResumeScore, proceedWithFinalOptimization, generateScoresAfterProjectAdd]); // Dependencies for memoized function
+
+  const handleSubscriptionSuccess = useCallback(() => { // Memoize
     checkSubscriptionStatus();
     onShowPlanSelection();
     setWalletRefreshKey(prevKey => prevKey + 1);
-  };
+  }, [checkSubscriptionStatus, onShowPlanSelection]); // Dependencies for memoized function
 
   if (showMobileInterface && optimizedResume) {
     const mobileSections = [
@@ -495,7 +495,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
       subMessage = 'Our AI is evaluating your resume based on comprehensive criteria.';
     } else if (isProcessingMissingSections) {
       loadingMessage = 'Processing Your Information...';
-      subMessage = "We're updating your resume with the new sections you provided.";
+      submessage = "We're updating your resume with the new sections you provided.";
     }
     return <LoadingAnimation message={loadingMessage} submessage={subMessage} />;
   }
@@ -676,7 +676,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Start Date *</label>
                     <input
@@ -709,7 +709,10 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                       onKeyDown={(e) => e.key === 'Enter' && addTechToStack()}
                     />
-                    <button onClick={addTechToStack} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    <button
+                      onClick={addTechToStack}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    >
                       Add
                     </button>
                   </div>
@@ -787,3 +790,4 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
 };
 
 export default ResumeOptimizer;
+
