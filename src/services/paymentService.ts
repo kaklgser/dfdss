@@ -496,6 +496,9 @@ class PaymentService {
 
       if (relevantAddon && relevantAddon.quantity_remaining > 0) {
         const newRemaining = relevantAddon.quantity_remaining - 1;
+        console.log(`PaymentService: Debugging relevantAddon:`, relevantAddon);
+console.log(`PaymentService: Debugging relevantAddon.quantity_remaining:`, relevantAddon?.quantity_remaining);
+
         console.log(`PaymentService: Found add-on credit ${relevantAddon.id}. Current remaining: ${relevantAddon.quantity_remaining}. New remaining: ${newRemaining}`); // NEW LOG
         const { error: updateAddonError } = await supabase
           .from('user_addon_credits')
