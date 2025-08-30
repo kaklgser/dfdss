@@ -374,10 +374,10 @@ class PaymentService {
 
       // Initialize aggregated add-on credits
       const aggregatedAddonCredits: { [key: string]: { total: number; used: number } } = {
-        optimizations: { total: 0, used: 0 },
-        score_checks: { total: 0, used: 0 },
-        linkedin_messages: { total: 0, used: 0 },
-        guided_builds: { total: 0, used: 0 },
+        optimization: { total: 0, used: 0 }, // Changed from 'optimizations'
+        score_check: { total: 0, used: 0 },  // Changed from 'score_checks'
+        linkedin_messages: { total: 0, used: 0 }, // This one already matches
+        guided_build: { total: 0, used: 0 },   // Changed from 'guided_builds'
       };
 
       if (addonCreditsData) {
@@ -392,10 +392,10 @@ class PaymentService {
       console.log('PaymentService: Aggregated add-on credits:', aggregatedAddonCredits);
 
       // Combine cumulative plan credits with aggregated add-on credits
-      const finalOptimizationsTotal = cumulativeOptimizationsTotal + aggregatedAddonCredits.optimizations.total;
-      const finalScoreChecksTotal = cumulativeScoreChecksTotal + aggregatedAddonCredits.score_checks.total;
+      const finalOptimizationsTotal = cumulativeOptimizationsTotal + aggregatedAddonCredits.optimization.total;
+      const finalScoreChecksTotal = cumulativeScoreChecksTotal + aggregatedAddonCredits.score_check.total;
       const finalLinkedinMessagesTotal = cumulativeLinkedinMessagesTotal + aggregatedAddonCredits.linkedin_messages.total;
-      const finalGuidedBuildsTotal = cumulativeGuidedBuildsTotal + aggregatedAddonCredits.guided_builds.total;
+      const finalGuidedBuildsTotal = cumulativeGuidedBuildsTotal + aggregatedAddonCredits.guided_build.total;
 
       // If no active subscriptions AND no add-on credits, then return null
       const hasAnyCredits = finalOptimizationsTotal > 0 || finalScoreChecksTotal > 0 || finalLinkedinMessagesTotal > 0 || finalGuidedBuildsTotal > 0;
