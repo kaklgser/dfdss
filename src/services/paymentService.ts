@@ -308,7 +308,7 @@ class PaymentService {
         .maybeSingle();
 
       if (error) {
-        console.error('PaymentService: Error fetching user subscription:', error);
+        console.error('PaymentService: Error fetching user subscription:', error.message, error.details);
         return null;
       }
 
@@ -325,7 +325,7 @@ class PaymentService {
         .gt('quantity_remaining', 0); // Only fetch remaining credits
 
       if (addonCreditsError) {
-        console.error('PaymentService: Error fetching add-on credits:', addonCreditsError);
+        console.error('PaymentService: Error fetching add-on credits:', addonCreditsError.message, addonCreditsError.details);
         // Decide how to handle this error: either return null or proceed with only subscription data
         // For now, we'll proceed, assuming add-on credits might be empty or error out.
       }
@@ -408,8 +408,8 @@ class PaymentService {
 
       console.log('PaymentService: Successfully fetched combined subscription and add-on credits:', currentSubscription);
       return currentSubscription;
-    } catch (error) {
-      console.error('PaymentService: Unexpected error in getUserSubscription:', error);
+    } catch (error: any) {
+      console.error('PaymentService: Unexpected error in getUserSubscription:', error.message);
       return null;
     }
   }
@@ -439,7 +439,7 @@ class PaymentService {
         .maybeSingle();
 
       if (fetchError) {
-        console.error(`PaymentService: Error fetching current subscription for ${creditField}:`, fetchError);
+        console.error(`PaymentService: Error fetching current subscription for ${creditField}:`, fetchError.message, fetchError.details);
         return { success: false, error: 'Failed to fetch current subscription.' };
       }
 
@@ -453,7 +453,7 @@ class PaymentService {
           .order('purchased_at', { ascending: true }); // Use oldest available add-on credit
 
         if (addonError) {
-          console.error(`PaymentService: Error fetching add-on credits for ${creditField}:`, addonError);
+          console.error(`PaymentService: Error fetching add-on credits for ${creditField}:`, addonError.message, addonError.details);
           return { success: false, error: 'Failed to fetch add-on credits.' };
         }
 
@@ -467,7 +467,7 @@ class PaymentService {
             .eq('id', relevantAddon.id);
 
           if (updateAddonError) {
-            console.error(`PaymentService: Error updating add-on credit usage for ${creditField}:`, updateAddonError);
+            console.error(`PaymentService: Error updating add-on credit usage for ${creditField}:`, updateAddonError.message, updateAddonError.details);
             return { success: false, error: 'Failed to update add-on credit usage.' };
           }
           console.log(`PaymentService: Successfully used 1 add-on credit for ${creditField}. Remaining: ${newRemaining}`);
@@ -501,14 +501,14 @@ class PaymentService {
         .eq('id', currentSubscription.id);
 
       if (updateError) {
-        console.error(`PaymentService: Error updating ${usedField}:`, updateError);
+        console.error(`PaymentService: Error updating ${usedField}:`, updateError.message, updateError.details);
         return { success: false, error: 'Failed to update credit usage.' };
       }
 
       console.log(`PaymentService: Successfully used ${creditField} for userId: ${userId}. Remaining: ${remaining}`);
       return { success: true, remaining: remaining };
-    } catch (error) {
-      console.error(`PaymentService: Unexpected error in useCredit (${creditField}):`, error);
+    } catch (error: any) {
+      console.error(`PaymentService: Unexpected error in useCredit (${creditField}):`, error.message);
       return { success: false, error: 'An unexpected error occurred while using credits.' };
     }
   }
@@ -543,7 +543,7 @@ class PaymentService {
         .maybeSingle();
 
       if (fetchError) {
-        console.error('PaymentService: Error checking for existing free trial:', fetchError);
+        console.error('PaymentService: Error checking for existing free trial:', fetchError.message, fetchError.details);
         throw new Error('Failed to check for existing free trial.');
       }
 
@@ -578,12 +578,12 @@ class PaymentService {
       });
 
       if (insertError) {
-        console.error('PaymentService: Error activating free trial:', insertError);
+        console.error('PaymentService: Error activating free trial:', insertError.message, insertError.details);
         throw new Error('Failed to activate free trial.');
       }
       console.log('PaymentService: Free trial activated successfully for userId:', userId);
-    } catch (error) {
-      console.error('PaymentService: Unexpected error in activateFreeTrial:', error);
+    } catch (error: any) {
+      console.error('PaymentService: Unexpected error in activateFreeTrial:', error.message);
       throw error;
     }
   }
@@ -608,8 +608,8 @@ class PaymentService {
         return { isValid: false, message: result.message || 'Failed to validate coupon on server.' };
       }
       return result; // This will contain { isValid: boolean, message: string }
-    } catch (error) {
-      console.error('Network error during coupon validation:', error);
+    } catch (error: any) {
+      console.error('Network error during coupon validation:', error.message);
       return { isValid: false, message: 'Network error during coupon validation. Please try again.' };
     }
   }
@@ -623,8 +623,8 @@ class PaymentService {
 
     // Perform server-side validation first
     if (userId) {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session || !session.access_token) {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session || !session.access_token) {
         return { couponApplied: null, discountAmount: 0, finalAmount: 0, error: 'Authentication required for coupon validation', isValid: false, message: 'Authentication required for coupon validation' };
       }
       const serverValidation = await this.validateCouponServer(couponCode, userId, session.access_token);
@@ -707,7 +707,7 @@ class PaymentService {
       const orderResult = await response.json();
 
       if (!response.ok) {
-        console.error('PaymentService: Error from create-order:', orderResult.error);
+        console.error('PaymentService: Error from create-order:', orderResult.error || response.statusText);
         return { success: false, error: orderResult.error || 'Failed to create order.' };
       }
 
@@ -743,11 +743,11 @@ class PaymentService {
               if (verifyResponse.ok && verifyResult.success) {
                 resolve({ success: true });
               } else {
-                console.error('PaymentService: Error from verify-payment:', verifyResult.error);
+                console.error('PaymentService: Error from verify-payment:', verifyResult.error || verifyResponse.statusText);
                 resolve({ success: false, error: verifyResult.error || 'Payment verification failed.' });
               }
-            } catch (error) {
-              console.error('PaymentService: Error during payment verification:', error);
+            } catch (error: any) {
+              console.error('PaymentService: Error during payment verification:', error.message);
               resolve({ success: false, error: 'An error occurred during payment verification.' });
             }
           },
@@ -769,9 +769,9 @@ class PaymentService {
         const rzp = new (window as any).Razorpay(options);
         rzp.open();
       });
-    } catch (error) {
-      console.error('PaymentService: Error in processPayment:', error);
-      return { success: false, error: (error as Error).message || 'Failed to process payment.' };
+    } catch (error: any) {
+      console.error('PaymentService: Error in processPayment:', error.message);
+      return { success: false, error: error.message || 'Failed to process payment.' };
     }
   }
 
@@ -820,7 +820,7 @@ class PaymentService {
         .single();
 
       if (transactionError) {
-        console.error('PaymentService: Error inserting free transaction:', transactionError);
+        console.error('PaymentService: Error inserting free transaction:', transactionError.message, transactionError.details);
         throw new Error('Failed to record free plan activation.');
       }
       const transactionId = transaction.id;
@@ -843,7 +843,7 @@ class PaymentService {
             .single();
 
           if (addonTypeError || !addonType) {
-            console.error(`[${new Date().toISOString()}] - Error finding addon_type for key ${addOn.type}:`, addonTypeError);
+            console.error(`[${new Date().toISOString()}] - Error finding addon_type for key ${addOn.type}:`, addonTypeError.message, addonTypeError.details);
             continue;
           }
 
@@ -858,7 +858,7 @@ class PaymentService {
             });
 
           if (creditInsertError) {
-            console.error(`[${new Date().toISOString()}] - Error inserting add-on credits for ${addOn.type}:`, creditInsertError);
+            console.error(`[${new Date().toISOString()}] - Error inserting add-on credits for ${addOn.type}:`, creditInsertError.message, creditInsertError.details);
           }
         }
       }
@@ -889,7 +889,7 @@ class PaymentService {
           .single();
 
         if (subscriptionError) {
-          console.error('PaymentService: Subscription creation error for free plan:', subscriptionError);
+          console.error('PaymentService: Subscription creation error for free plan:', subscriptionError.message, subscriptionError.details);
           throw new Error('Failed to create subscription for free plan.');
         }
 
@@ -900,7 +900,7 @@ class PaymentService {
           .eq("id", transactionId);
 
         if (updateSubscriptionIdError) {
-          console.error("Error updating payment transaction with subscription_id for free plan:", updateSubscriptionIdError);
+          console.error("Error updating payment transaction with subscription_id for free plan:", updateSubscriptionIdError.message, updateSubscriptionIdError.details);
         }
       }
 
@@ -922,13 +922,13 @@ class PaymentService {
           });
 
         if (walletError) {
-          console.error(`[${new Date().toISOString()}] - Wallet deduction recording error for free plan:`, walletError);
+          console.error(`[${new Date().toISOString()}] - Wallet deduction recording error for free plan:`, walletError.message, walletError.details);
         }
       }
 
       return { success: true };
-    } catch (error) {
-      console.error('PaymentService: Error in processFreeSubscription:', error);
+    } catch (error: any) {
+      console.error('PaymentService: Error in processFreeSubscription:', error.message);
       throw error;
     }
   }
