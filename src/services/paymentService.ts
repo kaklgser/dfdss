@@ -494,15 +494,14 @@ class PaymentService {
           .eq('id', relevantAddon.id)
           .eq('user_id', userId) // required for RLS
           // REMOVED: .gt('quantity_remaining', 0) // This line was causing the issue
-          .select('id, quantity_remaining')
-          .maybeSingle(); // Changed to maybeSingle()
+          .select('id, quantity_remaining'); // Removed .maybeSingle()
 
-        if (updateAddonError) {
+        if (updateAddonError) { // Check for error object directly
           console.error(`PaymentService: CRITICAL ERROR updating add-on credit usage for ${creditField}:`, updateAddonError.message, updateAddonError.details);
           return { success: false, error: 'Failed to update add-on credit usage.' };
         }
 
-        if (!updated) {
+        if (!updated || updated.length === 0) { // Check if no rows were actually updated
           console.warn(`PaymentService: Add-on credit update returned 0 rows for ID ${relevantAddon.id}. It might have been consumed or updated by another process.`);
           // If no row was updated, it means the credit was already consumed or didn't meet the criteria.
           // In this case, we should fall back to subscription credits or report failure.
