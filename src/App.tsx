@@ -295,9 +295,12 @@ function App() {
     onShowAlert('Purchase Complete', message, 'success'); // Show specific alert
 
     if (toolProcessTrigger) {
+      console.log("App.tsx: Executing toolProcessTrigger for feature:", featureId); // ADD LOG
       toolProcessTrigger();
       setToolProcessTrigger(null); // Clear the trigger after use
     }
+    // CRITICAL: Ensure PlanSelectionModal is closed here if it was opened for an add-on purchase
+    setShowPlanSelectionModal(false); // ADD THIS LINE
   };
 
   const commonPageProps = {
