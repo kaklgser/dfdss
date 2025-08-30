@@ -44,7 +44,7 @@ export interface Subscription {
 }
 
 // Define the credit types and their corresponding database fields
-type CreditType = 'optimization' | 'score_check' | 'linkedin_messages' | 'guided_build'; // Changed to singular forms
+type CreditType = 'optimizations' | 'score_checks' | 'linkedin_messages' | 'guided_builds';
 
 class PaymentService {
   // Define plans data directly in the service
@@ -372,19 +372,18 @@ class PaymentService {
         console.error('PaymentService: Error fetching add-on credits:', addonCreditsError.message, addonCreditsError.details);
       }
 
-      // Initialize aggregated add-on credits (keys match addon_types.type_key)
+      // Initialize aggregated add-on credits
       const aggregatedAddonCredits: { [key: string]: { total: number; used: number } } = {
-        optimization: { total: 0, used: 0 },
-        score_check: { total: 0, used: 0 },
-        linkedin_messages: { total: 0, used: 0 },
-        guided_build: { total: 0, used: 0 },
-        // Add other addon types here if they exist in your addon_types table
+        optimization: { total: 0, used: 0 }, // Changed from 'optimizations'
+        score_check: { total: 0, used: 0 },  // Changed from 'score_checks'
+        linkedin_messages: { total: 0, used: 0 }, // This one already matches
+        guided_build: { total: 0, used: 0 },   // Changed from 'guided_builds'
       };
 
       if (addonCreditsData) {
         addonCreditsData.forEach(credit => {
           const typeKey = (credit.addon_types as { type_key: string }).type_key;
-          if (aggregatedAddonCredits[typeKey]) { // Ensure typeKey exists in our aggregation object
+          if (aggregatedAddonCredits[typeKey]) {
             aggregatedAddonCredits[typeKey].total += credit.quantity_remaining;
           }
         });
@@ -444,32 +443,17 @@ class PaymentService {
   /**
    * Refactored generic method to use a specific credit type.
    * @param userId The ID of the user.
-   * @param creditField The name of the credit field to update (e.g., 'optimization', 'score_check').
+   * @param creditField The name of the credit field to update (e.g., 'optimizations', 'score_checks').
    * @returns An object with success status and remaining credits.
    */
   private async useCredit(
     userId: string,
     creditField: CreditType
   ): Promise<{ success: boolean; remaining?: number; error?: string }> {
-    // Note: totalField and usedField are derived from the plural forms in the DB schema
-    // This means we need to map the singular creditField to its plural DB column name
-    const dbCreditFieldMap: { [key in CreditType]: string } = {
-      'optimization': 'optimizations',
-      'score_check': 'score_checks',
-      'linkedin_messages': 'linkedin_messages',
-      'guided_build': 'guided_builds',
-    };
+    const totalField = `${creditField}_total`;
+    const usedField = `${creditField}_used`;
 
-    const dbCreditFieldName = dbCreditFieldMap[creditField];
-    if (!dbCreditFieldName) {
-      console.error(`PaymentService: Invalid creditField provided: ${creditField}`);
-      return { success: false, error: 'Invalid credit type.' };
-    }
-
-    const totalField = `${dbCreditFieldName}_total`;
-    const usedField = `${dbCreditFieldName}_used`;
-
-    console.log(`PaymentService: Attempting to use ${creditField} (DB field: ${dbCreditFieldName}) for userId:`, userId);
+    console.log(`PaymentService: Attempting to use ${creditField} for userId:`, userId);
     try {
       // Fetch all active subscriptions for the user
       const { data: activeSubscriptions, error: fetchError } = await supabase
@@ -512,7 +496,7 @@ class PaymentService {
       if (usedFromSubscription) {
         // Re-calculate total remaining across all subscriptions and add-ons for the return value
         const updatedSubscriptionState = await this.getUserSubscription(userId);
-        const totalRemaining = updatedSubscriptionState ? (updatedSubscriptionState as any)[`${dbCreditFieldName}Total`] - (updatedSubscriptionState as any)[`${dbCreditFieldName}Used`] : 0;
+        const totalRemaining = updatedSubscriptionState ? (updatedSubscriptionState as any)[`${creditField}Total`] - (updatedSubscriptionState as any)[`${creditField}Used`] : 0;
         return { success: true, remaining: totalRemaining };
       }
 
@@ -529,7 +513,6 @@ class PaymentService {
         return { success: false, error: 'Failed to fetch add-on credits.' };
       }
 
-      // Find add-on credit matching the singular creditField (type_key)
       const relevantAddon = addonCredits?.find(credit => (credit.addon_types as { type_key: string }).type_key === creditField);
 
       if (relevantAddon && relevantAddon.quantity_remaining > 0) {
@@ -546,7 +529,7 @@ class PaymentService {
         console.log(`PaymentService: Successfully used 1 add-on credit for ${creditField}. Remaining: ${newRemaining}`);
         // Re-calculate total remaining across all subscriptions and add-ons for the return value
         const updatedSubscriptionState = await this.getUserSubscription(userId);
-        const totalRemaining = updatedSubscriptionState ? (updatedSubscriptionState as any)[`${dbCreditFieldName}Total`] - (updatedSubscriptionState as any)[`${dbCreditFieldName}Used`] : 0;
+        const totalRemaining = updatedSubscriptionState ? (updatedSubscriptionState as any)[`${creditField}Total`] - (updatedSubscriptionState as any)[`${creditField}Used`] : 0;
         return { success: true, remaining: totalRemaining };
       }
 
@@ -561,11 +544,11 @@ class PaymentService {
 
   // Exposed public methods for using credits, now calling the generic private method
   async useOptimization(userId: string): Promise<{ success: boolean; remaining?: number; error?: string }> {
-    return this.useCredit(userId, 'optimization'); // Changed to singular
+    return this.useCredit(userId, 'optimizations');
   }
 
   async useScoreCheck(userId: string): Promise<{ success: boolean; remaining?: number; error?: string }> {
-    return this.useCredit(userId, 'score_check'); // Changed to singular
+    return this.useCredit(userId, 'score_checks');
   }
 
   async useLinkedInMessage(userId: string): Promise<{ success: boolean; remaining?: number; error?: string }> {
@@ -573,7 +556,7 @@ class PaymentService {
   }
 
   async useGuidedBuild(userId: string): Promise<{ success: boolean; remaining?: number; error?: string }> {
-    return this.useCredit(userId, 'guided_build'); // Changed to singular
+    return this.useCredit(userId, 'guided_builds');
   }
 
 
