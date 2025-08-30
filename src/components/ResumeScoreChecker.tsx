@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+// src/components/ResumeScoreChecker.tsx
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Upload,
   FileText,
@@ -7,28 +8,31 @@ import {
   Lightbulb,
   ArrowLeft,
   Target,
+  Zap,
+  Clock,
+  Palette,
+  Sparkles,
+  FileCheck,
+  Search,
+  Briefcase,
+  LayoutDashboard,
+  Bug,
+  ArrowRight,
   BarChart3,
   Info,
   Eye,
+  RefreshCw,
   Calendar,
   Shield,
-  ArrowRight,
-  Briefcase,
 } from 'lucide-react';
 import { FileUpload } from './FileUpload';
 import { getComprehensiveScore } from '../services/scoringService';
 import { LoadingAnimation } from './LoadingAnimation';
-import {
-  ComprehensiveScore,
-  ScoringMode,
-  ExtractionResult,
-  ConfidenceLevel,
-  MatchBand,
-} from '../types/resume';
+import { ComprehensiveScore, ScoringMode, ExtractionResult, ConfidenceLevel, MatchBand, DetailedScore } from '../types/resume';
 import type { Subscription } from '../types/payment';
 import { paymentService } from '../services/paymentService';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext'; // Import useAuth to get the user object
 
 interface ResumeScoreCheckerProps {
   onNavigateBack: () => void;
@@ -36,13 +40,7 @@ interface ResumeScoreCheckerProps {
   onShowAuth: () => void;
   userSubscription: Subscription | null;
   onShowSubscriptionPlans: (featureId?: string) => void;
-  onShowAlert?: (
-    title: string,
-    message: string,
-    type?: 'info' | 'success' | 'warning' | 'error',
-    actionText?: string,
-    onAction?: () => void
-  ) => void;
+  onShowAlert: (title: string, message: string, type?: 'info' | 'success' | 'warning' | 'error', actionText?: string, onAction?: () => void) => void;
   refreshUserSubscription: () => Promise<void>;
   toolProcessTrigger: (() => void) | null;
   setToolProcessTrigger: React.Dispatch<React.SetStateAction<(() => void) | null>>;
@@ -52,32 +50,27 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   onNavigateBack,
   isAuthenticated,
   onShowAuth,
-  userSubscription, // still received (used for retry effect)
+  userSubscription, // Keep this prop, but we'll fetch fresh data inside analyzeResume
   onShowSubscriptionPlans,
-  onShowAlert,
+  onShowAlert, // This is the prop in question
   refreshUserSubscription,
   toolProcessTrigger,
   setToolProcessTrigger,
 }) => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
+  // CRITICAL DEBUGGING STEP: Verify onShowAlert is a function immediately
+  if (typeof onShowAlert !== 'function') {
+    console.error('CRITICAL ERROR: onShowAlert prop is not a function or is undefined!', onShowAlert);
+    // This will cause a React error, but it will confirm if the prop is truly missing at this point.
+    throw new Error('onShowAlert prop is missing or invalid in ResumeScoreChecker');
+  }
 
-  // Safe, stable wrapper for alerts (prevents transient undefined)
-  const showAlert = useCallback(
-    (...args: Parameters<NonNullable<typeof onShowAlert>>) => {
-      if (typeof onShowAlert === 'function') onShowAlert(...args);
-    },
-    [onShowAlert]
-  );
+  // ADDED LOG: Check onShowAlert value at component render
+  console.log('ResumeScoreChecker: onShowAlert prop value at render:', onShowAlert);
 
-  console.log('ResumeScoreChecker: onShowAlert prop at render:', onShowAlert);
   console.log('ResumeScoreChecker: Component rendered. userSubscription:', userSubscription);
-
-  const [extractionResult, setExtractionResult] = useState<ExtractionResult>({
-    text: '',
-    extraction_mode: 'TEXT',
-    trimmed: false,
-  });
+  const { user } = useAuth(); // Get the user object from AuthContext
+  const navigate = useNavigate();
+  const [extractionResult, setExtractionResult] = useState<ExtractionResult>({ text: '', extraction_mode: 'TEXT', trimmed: false });
   const [jobDescription, setJobDescription] = useState('');
   const [jobTitle, setJobTitle] = useState('');
   const [scoringMode, setScoringMode] = useState<ScoringMode | null>(null);
@@ -87,93 +80,118 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   const [scoreResult, setScoreResult] = useState<ComprehensiveScore | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [hasShownCreditExhaustedAlert, setHasShownCreditExhaustedAlert] = useState(false);
+
   const [analysisInterrupted, setAnalysisInterrupted] = useState(false);
 
-  // Reset credit alert when subscription object changes
+  // NEW useEffect: Reset hasShownCreditExhaustedAlert when userSubscription changes
   useEffect(() => {
     setHasShownCreditExhaustedAlert(false);
-  }, [userSubscription?.status, userSubscription?.scoreChecksUsed, userSubscription?.scoreChecksTotal]);
+  }, [userSubscription]);
+
 
   const analyzeResume = useCallback(async () => {
-    console.log('analyzeResume: started');
+    // ADDED LOG: Check onShowAlert value inside useCallback
+    console.log('analyzeResume: onShowAlert value inside useCallback:', onShowAlert);
+
+    console.log('analyzeResume: Function started.');
     if (scoringMode === null) {
-      showAlert(
-        'Choose a Scoring Method',
-        'Please select either "Score Against a Job" or "General Score" to continue.',
-        'warning'
-      );
-      console.log('analyzeResume: stop — scoringMode is null');
+      // Defensive check before calling onShowAlert
+      if (onShowAlert) {
+        onShowAlert('Choose a Scoring Method', 'Please select either "Score Against a Job" or "General Score" to continue.', 'warning');
+      } else {
+        console.error('onShowAlert is undefined when trying to show "Choose a Scoring Method" alert.');
+      }
+      console.log('analyzeResume: Exiting early due to scoringMode === null.');
       return;
     }
 
     if (!isAuthenticated) {
-      showAlert(
-        'Authentication Required',
-        'Please sign in to get your resume score.',
-        'error',
-        'Sign In',
-        onShowAuth
-      );
-      console.log('analyzeResume: stop — user not authenticated');
+      // Defensive check before calling onShowAlert
+      if (onShowAlert) {
+        onShowAlert('Authentication Required', 'Please sign in to get your resume score.', 'error', 'Sign In', onShowAuth);
+      } else {
+        console.error('onShowAlert is undefined when trying to show "Authentication Required" alert.');
+      }
+      console.log('analyzeResume: Exiting early due to !isAuthenticated.');
       return;
     }
 
-    const userId = user?.id;
-    if (!userId) {
-      showAlert(
-        'Authentication Required',
-        'User data not fully loaded. Please try again or sign in.',
-        'error',
-        'Sign In',
-        onShowAuth
-      );
-      console.log('analyzeResume: stop — no userId');
+    console.log('analyzeResume: Fetching latest user subscription directly for credit check...');
+    // Ensure user is available before attempting to fetch subscription
+    if (!user?.id) {
+      console.log('analyzeResume: User ID not available, cannot fetch subscription.');
+      // Defensive check before calling onShowAlert
+      if (onShowAlert) {
+        onShowAlert('Authentication Required', 'User data not fully loaded. Please try again or sign in.', 'error', 'Sign In', onShowAuth);
+      } else {
+        console.error('onShowAlert is undefined when trying to show "User ID not available" alert.');
+      }
       return;
     }
 
-    // Always fetch fresh subscription right before consuming a credit
-    console.log('analyzeResume: fetching latest subscription');
-    const latestUserSubscription = await paymentService.getUserSubscription(userId);
-    console.log('analyzeResume: latest sub:', latestUserSubscription);
+    // ADDED DELAY HERE
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for 1 second
 
-    const creditsLeft =
-      (latestUserSubscription?.scoreChecksTotal ?? 0) - (latestUserSubscription?.scoreChecksUsed ?? 0);
+    const latestUserSubscription = await paymentService.getUserSubscription(user.id); // Fetch directly
+    console.log('analyzeResume: Latest user subscription fetched:', latestUserSubscription);
 
-    if (!latestUserSubscription || creditsLeft <= 0) {
-      console.log('analyzeResume: stop — no credits');
+    if (!latestUserSubscription || (latestUserSubscription.scoreChecksTotal - latestUserSubscription.scoreChecksUsed) <= 0) {
+      console.log('analyzeResume: Credits exhausted or no subscription found after direct fetch.');
       if (!hasShownCreditExhaustedAlert) {
-        const planDetails = paymentService.getPlanById(latestUserSubscription?.planId);
+        const planDetails = paymentService.getPlanById(latestUserSubscription?.planId); // Use latestUserSubscription here
         const planName = planDetails?.name || 'your current plan';
         const scoreChecksTotal = planDetails?.scoreChecks || 0;
 
-        showAlert(
-          'Resume Score Check Credits Exhausted',
-          `You have used all your ${scoreChecksTotal} Resume Score Checks from ${planName}. Please upgrade your plan to continue checking scores.`,
-          'warning',
-          'Upgrade Plan',
-          () => onShowSubscriptionPlans('score-checker')
-        );
+        // Defensive check before calling onShowAlert
+        if (onShowAlert) {
+          onShowAlert(
+            'Resume Score Check Credits Exhausted',
+            `You have used all your ${scoreChecksTotal} Resume Score Checks from ${planName}. Please upgrade your plan to continue checking scores.`,
+            'warning',
+            'Upgrade Plan',
+            () => onShowSubscriptionPlans('score-checker')
+          );
+        } else {
+          console.error('onShowAlert is undefined when trying to show "Credits Exhausted" alert.');
+        }
         setHasShownCreditExhaustedAlert(true);
       }
-      setAnalysisInterrupted(true);
+      setAnalysisInterrupted(true); // Set this flag to true if credits are exhausted
       return;
     }
-
-    setAnalysisInterrupted(false);
+    console.log('analyzeResume: Credits available. Proceeding with analysis.');
+    setAnalysisInterrupted(false); // Reset this flag if credits are now available
 
     if (!extractionResult.text.trim()) {
-      showAlert('Missing Resume', 'Please upload your resume first to get a score.', 'warning');
-      console.log('analyzeResume: stop — no resume text');
+      // Defensive check before calling onShowAlert
+      if (onShowAlert) {
+        onShowAlert('Missing Resume', 'Please upload your resume first to get a score.', 'warning');
+      } else {
+        console.error('onShowAlert is undefined when trying to show "Missing Resume" alert.');
+      }
+      console.log('analyzeResume: Exiting early due to missing resume text.');
       return;
     }
 
     if (scoringMode === 'jd_based') {
       if (!jobDescription.trim()) {
-        showAlert('Missing Job Description', 'Job description is required for JD-based scoring.', 'warning');
+        // Defensive check before calling onShowAlert
+        if (onShowAlert) {
+          onShowAlert('Missing Job Description', 'Job description is required for JD-based scoring.', 'warning');
+        } else {
+          console.error('onShowAlert is undefined when trying to show "Missing Job Description" alert.');
+        }
+        console.log('analyzeResume: Exiting early due to missing job description.');
         return;
       }
       if (!jobTitle.trim()) {
-        showAlert('Missing Job Title', 'Job title is required for JD-based scoring.', 'warning');
+        // Defensive check before calling onShowAlert
+        if (onShowAlert) {
+          onShowAlert('Missing Job Title', 'Job title is required for JD-based scoring.', 'warning');
+        } else {
+          console.error('onShowAlert is undefined when trying to show "Missing Job Title" alert.');
+        }
+        console.log('analyzeResume: Exiting early due to missing job title.');
         return;
       }
     }
@@ -181,11 +199,13 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
     setScoreResult(null);
     setIsAnalyzing(true);
     setLoadingStep('Extracting & cleaning your resume...');
+    console.log('analyzeResume: Starting analysis, setIsAnalyzing(true).');
 
     try {
       if (scoringMode === 'jd_based') {
         setLoadingStep(`Comparing with Job Title: ${jobTitle}...`);
       }
+      
       setLoadingStep('Scoring across 16 criteria...');
 
       const result = await getComprehensiveScore(
@@ -200,87 +220,61 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
       setScoreResult(result);
       setCurrentStep(2);
 
-      // Decrement usage
-      if (latestUserSubscription) {
-        const usageResult = await paymentService.useScoreCheck(latestUserSubscription.userId);
+      // Use the latestUserSubscription for decrementing usage
+      if (latestUserSubscription) { // Ensure latestUserSubscription is not null
+        const usageResult = await paymentService.useScoreCheck(latestUserSubscription.userId); // Use userId from fetched sub
         if (usageResult.success) {
-          await refreshUserSubscription();
+          await refreshUserSubscription(); // Refresh App.tsx state after usage
         } else {
           console.error('Failed to decrement score check usage:', usageResult.error);
-          showAlert(
-            'Usage Update Failed',
-            'Failed to record score check usage. Please contact support.',
-            'error'
-          );
+          // Defensive check before calling onShowAlert
+          if (onShowAlert) {
+            onShowAlert('Usage Update Failed', 'Failed to record score check usage. Please contact support.', 'error');
+          } else {
+            console.error('onShowAlert is undefined when trying to show "Usage Update Failed" alert.');
+          }
         }
       }
     } catch (error: any) {
-      console.error('analyzeResume: error:', error);
-      showAlert(
-        'Analysis Failed',
-        `Failed to analyze resume: ${error?.message || 'Unknown error'}. Please try again.`,
-        'error'
-      );
+      console.error('analyzeResume: Error in try block:', error);
+      // Defensive check before calling onShowAlert
+      if (onShowAlert) {
+        onShowAlert('Analysis Failed', `Failed to analyze resume: ${error.message || 'Unknown error'}. Please try again.`, 'error');
+      } else {
+        console.error('onShowAlert is undefined when trying to show "Analysis Failed" alert.');
+      }
     } finally {
       setIsAnalyzing(false);
       setLoadingStep('');
-      console.log('analyzeResume: finished');
+      console.log('analyzeResume: Analysis finished, setIsAnalyzing(false).');
     }
-  }, [
-    scoringMode,
-    isAuthenticated,
-    user?.id,
-    extractionResult.text,
-    extractionResult.extraction_mode,
-    extractionResult.trimmed,
-    jobDescription,
-    jobTitle,
-    hasShownCreditExhaustedAlert,
-    showAlert,
-    onShowAuth,
-    onShowSubscriptionPlans,
-    refreshUserSubscription,
-  ]);
+  }, [extractionResult, jobDescription, jobTitle, scoringMode, isAuthenticated, onShowAuth, onShowSubscriptionPlans, onShowAlert, refreshUserSubscription, hasShownCreditExhaustedAlert, setAnalysisInterrupted, setScoreResult, setIsAnalyzing, setLoadingStep, setCurrentStep, user]);
 
-  // Expose a STABLE trigger to the parent (no ping-pong)
-  const analyzeRef = useRef<null | (() => Promise<void>)>(null);
+  // The useEffect for re-triggering should remain as is, as `analyzeResume` now handles the fresh data internally.
   useEffect(() => {
-    analyzeRef.current = analyzeResume;
-  }, [analyzeResume]);
-
-  useEffect(() => {
-    setToolProcessTrigger(() => () => analyzeRef.current?.());
-    return () => setToolProcessTrigger(null);
-    // NOTE: only depends on the setter so this effect runs once
-  }, [setToolProcessTrigger]);
-
-  // If analysis previously failed due to credits, retry automatically once credits become available
-  useEffect(() => {
-    if (!analysisInterrupted) return;
-
-    const total = userSubscription?.scoreChecksTotal ?? 0;
-    const used = userSubscription?.scoreChecksUsed ?? 0;
-    const credits = total - used;
-
-    if (isAuthenticated && credits > 0) {
-      console.log('Retrying analysis after credits became available...');
-      setAnalysisInterrupted(false);
-      setHasShownCreditExhaustedAlert(false);
-      analyzeRef.current?.();
+    // Only attempt to re-trigger if analysis was interrupted and user is authenticated
+    // AND if credits are now available.
+    if (analysisInterrupted && isAuthenticated && userSubscription && (userSubscription.scoreChecksTotal - userSubscription.scoreChecksUsed) > 0) {
+      console.log('ResumeScoreChecker: Analysis was interrupted, credits now available, attempting to re-trigger.');
+      setAnalysisInterrupted(false); // Reset flag as credits are now available
+      setHasShownCreditExhaustedAlert(false); // Reset alert flag
+      analyzeResume(); // Call the function
     }
-  }, [
-    analysisInterrupted,
-    isAuthenticated,
-    userSubscription?.scoreChecksTotal,
-    userSubscription?.scoreChecksUsed,
-  ]);
+  }, [analysisInterrupted, isAuthenticated, userSubscription, analyzeResume]); // Depend on userSubscription
+
+  useEffect(() => {
+    setToolProcessTrigger(() => analyzeResume);
+    return () => {
+      setToolProcessTrigger(null);
+    };
+  }, [setToolProcessTrigger, analyzeResume]);
 
   const handleFileUpload = (result: ExtractionResult) => {
     setExtractionResult(result);
     setHasShownCreditExhaustedAlert(false);
-
+    
     if (scoringMode === 'general' && autoScoreOnUpload && result.text.trim()) {
-      setTimeout(() => analyzeRef.current?.(), 500);
+      setTimeout(() => analyzeResume(), 500);
     }
   };
 
@@ -298,12 +292,9 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
 
   const getConfidenceColor = (confidence: ConfidenceLevel) => {
     switch (confidence) {
-      case 'High':
-        return 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/20';
-      case 'Medium':
-        return 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/20';
-      case 'Low':
-        return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20';
+      case 'High': return 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/20';
+      case 'Medium': return 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/20';
+      case 'Low': return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20';
     }
   };
 
@@ -331,7 +322,10 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   return (
     <>
       {isAnalyzing ? (
-        <LoadingAnimation message={loadingStep} submessage="Please wait while we analyze your resume." />
+        <LoadingAnimation
+          message={loadingStep}
+          submessage="Please wait while we analyze your resume."
+        />
       ) : (
         <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50 px-4 sm:px-0 dark:from-dark-50 dark:to-dark-200 transition-colors duration-300">
           <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40 dark:bg-dark-50 dark:border-dark-300">
@@ -345,7 +339,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                   <span className="hidden sm:block">Back to Home</span>
                 </button>
                 <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Resume Score Checker</h1>
-                <div className="w-24" />
+                <div className="w-24"></div>
               </div>
             </div>
           </div>
@@ -372,7 +366,6 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                         </div>
                         <p className="text-gray-600 dark:text-gray-300 text-sm">Get a targeted score by comparing your resume against a specific job description and title.</p>
                       </button>
-
                       <button
                         onClick={() => handleSelectScoringMode('general')}
                         className={`p-6 rounded-xl border-2 transition-all duration-300 text-left ${
@@ -418,7 +411,6 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                       <span>Back to Scoring Method</span>
                     </button>
                   </div>
-
                   <div className="space-y-8">
                     <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
                       <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
@@ -464,17 +456,17 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                           <p className="text-gray-600 dark:text-gray-300 mt-1">
                             {scoringMode === 'jd_based'
                               ? 'Paste the complete job description for targeted analysis'
-                              : "Add a job description for more specific analysis. If left empty, we'll use general industry standards."}
+                              : 'Add a job description for more specific analysis. If left empty, we\'ll use general industry standards.'
+                            }
                           </p>
                         </div>
                         <div className="p-6">
                           <textarea
                             value={jobDescription}
                             onChange={(e) => setJobDescription(e.target.value)}
-                            placeholder={
-                              scoringMode === 'jd_based'
-                                ? 'Paste the complete job description here including requirements, responsibilities, and qualifications...'
-                                : "Paste the job description here for more specific analysis. If left empty, we'll use general industry standards."
+                            placeholder={scoringMode === 'jd_based'
+                              ? "Paste the complete job description here including requirements, responsibilities, and qualifications..."
+                              : "Paste the job description here for more specific analysis. If left empty, we'll use general industry standards."
                             }
                             className="w-full h-32 p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-neon-cyan-500 focus:border-neon-cyan-500 resize-none dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100"
                           />
@@ -484,19 +476,10 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
 
                     <div className="text-center">
                       <button
-                        onClick={() => {
-                          setHasShownCreditExhaustedAlert(false);
-                          analyzeRef.current?.();
-                        }}
-                        disabled={
-                          scoringMode === null ||
-                          !extractionResult.text.trim() ||
-                          (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))
-                        }
+                        onClick={() => { setHasShownCreditExhaustedAlert(false); analyzeResume(); }}
+                        disabled={scoringMode === null || !extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))}
                         className={`px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 flex items-center space-x-3 mx-auto shadow-xl hover:shadow-2xl ${
-                          scoringMode === null ||
-                          !extractionResult.text.trim() ||
-                          (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))
+                          scoringMode === null || !extractionResult.text.trim() || (scoringMode === 'jd_based' && (!jobDescription.trim() || !jobTitle.trim()))
                             ? 'bg-gray-400 cursor-not-allowed text-white'
                             : 'bg-gradient-to-r from-neon-cyan-500 to-neon-purple-500 hover:from-neon-cyan-400 hover:to-neon-purple-400 text-white hover:shadow-neon-cyan transform hover:scale-105'
                         }`}
@@ -523,8 +506,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                       <div className="flex items-center">
                         <Calendar className="w-5 h-5 text-blue-600 dark:text-neon-cyan-400 mr-2" />
                         <span className="text-blue-800 dark:text-neon-cyan-300 font-medium">
-                          Cached Result - This analysis was free (expires{' '}
-                          {scoreResult.cache_expires_at ? new Date(scoreResult.cache_expires_at).toLocaleDateString() : 'soon'})
+                          Cached Result - This analysis was free (expires {scoreResult.cache_expires_at ? new Date(scoreResult.cache_expires_at).toLocaleDateString() : 'soon'})
                         </span>
                       </div>
                     </div>
@@ -555,13 +537,19 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                         </span>
                       </div>
                     </div>
-
                     <div className="p-8">
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-center">
                         <div className="text-center">
                           <div className="relative w-32 h-32 mx-auto mb-4">
                             <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
-                              <circle cx="60" cy="60" r="50" fill="none" stroke="#e5e7eb" strokeWidth="8" />
+                              <circle
+                                cx="60"
+                                cy="60"
+                                r="50"
+                                fill="none"
+                                stroke="#e5e7eb"
+                                strokeWidth="8"
+                              />
                               <circle
                                 cx="60"
                                 cy="60"
@@ -584,7 +572,6 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                             </div>
                           </div>
                         </div>
-
                         <div className="text-center">
                           <div className="bg-gradient-to-br from-blue-50 to-purple-50 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 dark:from-neon-cyan-500/20 dark:to-neon-blue-500/20 dark:shadow-neon-cyan">
                             <Award className="w-8 h-8 text-blue-600 dark:text-neon-cyan-400" />
@@ -594,7 +581,6 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">Match Quality</div>
                         </div>
-
                         <div className="text-center">
                           <div className="bg-gradient-to-br from-green-50 to-emerald-50 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 dark:from-neon-blue-500/20 dark:to-neon-purple-500/20 dark:shadow-neon-blue">
                             <TrendingUp className="w-8 h-8 text-green-600 dark:text-neon-blue-400" />
@@ -604,7 +590,6 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">Interview Chance</div>
                         </div>
-
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Overall Analysis</h3>
                           <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm mb-4">{scoreResult.analysis}</p>
@@ -627,7 +612,6 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                     </div>
                   </div>
 
-                  {/* Detailed breakdown */}
                   <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl mt-6">
                     <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
                       <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
@@ -656,11 +640,8 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                             <div className="w-full bg-gray-200 rounded-full h-2 mb-2 dark:bg-dark-300">
                               <div
                                 className={`h-2 rounded-full transition-all duration-300 ${
-                                  (metric.score / metric.max_score) >= 0.9
-                                    ? 'bg-green-500'
-                                    : (metric.score / metric.max_score) >= 0.7
-                                    ? 'bg-yellow-500'
-                                    : 'bg-red-500'
+                                  (metric.score / metric.max_score) >= 0.9 ? 'bg-green-500' :
+                                  (metric.score / metric.max_score) >= 0.7 ? 'bg-yellow-500' : 'bg-red-500'
                                 }`}
                                 style={{ width: `${(metric.score / metric.max_score) * 100}%` }}
                               />
@@ -671,8 +652,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                       </div>
                     </div>
                   </div>
-
-                  {/* Actionable items */}
+                  
                   <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl mt-6">
                     <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
                       <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
@@ -690,15 +670,37 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                             </li>
                           ))
                         ) : (
-                          <p className="text-gray-600 dark:text-gray-300 italic">
-                            No specific recommendations at this time. Your resume looks great!
-                          </p>
+                          <p className="text-gray-600 dark:text-gray-300 italic">No specific recommendations at this time. Your resume looks great!</p>
                         )}
                       </ul>
                     </div>
                   </div>
 
-                  {/* Recommendations */}
+                  {scoringMode === 'jd_based' && (
+                    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl mt-6">
+                      <div className="bg-gradient-to-r from-neon-cyan-50 to-neon-blue-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                          <FileText className="w-5 h-5 mr-2 text-neon-cyan-600 dark:text-neon-cyan-400" />
+                          Ready to Optimize?
+                        </h2>
+                      </div>
+                      <div className="p-6">
+                        <p className="text-gray-700 dark:text-gray-300 mb-4">
+                          Your resume score is a great first step. Now, let's use the full power of our JD-based optimizer to generate tailored resume bullets based on your job description.
+                        </p>
+                        <button
+                          onClick={() => navigate('/optimizer')}
+                          className="w-full bg-gradient-to-r from-neon-cyan-500 to-neon-blue-500 hover:from-neon-cyan-400 hover:to-neon-blue-400 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-neon-cyan flex items-center justify-center space-x-2"
+                        >
+                          <span>Go to JD-Based Resume Optimizer</span>
+                          <ArrowRight className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  
+
                   <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl mt-6">
                     <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
                       <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
@@ -716,39 +718,14 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                             </li>
                           ))
                         ) : (
-                          <p className="text-gray-600 dark:text-gray-300 italic">
-                            No specific recommendations at this time. Your resume looks great!
-                          </p>
+                          <p className="text-gray-600 dark:text-gray-300 italic">No specific recommendations at this time. Your resume looks great!</p>
                         )}
                       </ul>
                     </div>
                   </div>
 
-                  {scoringMode === 'jd_based' && (
-                    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl mt-6">
-                      <div className="bg-gradient-to-r from-neon-cyan-50 to-neon-blue-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
-                          <FileText className="w-5 h-5 mr-2 text-neon-cyan-600 dark:text-neon-cyan-400" />
-                          Ready to Optimize?
-                        </h2>
-                      </div>
-                      <div className="p-6">
-                        <p className="text-gray-700 dark:text-gray-300 mb-4">
-                          Your resume score is a great first step. Now, let's use the full power of our JD-based
-                          optimizer to generate tailored resume bullets based on your job description.
-                        </p>
-                        <button
-                          onClick={() => navigate('/optimizer')}
-                          className="w-full bg-gradient-to-r from-neon-cyan-500 to-neon-blue-500 hover:from-neon-cyan-400 hover:to-neon-blue-400 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-neon-cyan flex items-center justify-center space-x-2"
-                        >
-                          <span>Go to JD-Based Resume Optimizer</span>
-                          <ArrowRight className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
                   <div className="text-center space-y-4 bg-white rounded-2xl shadow-lg border border-gray-200 p-6 dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl mt-6">
+                   
                     <button
                       onClick={handleCheckAnotherResume}
                       className="bg-gradient-to-r from-neon-cyan-500 to-neon-blue-500 hover:from-neon-cyan-400 hover:to-neon-blue-400 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 mr-4 shadow-neon-cyan"
