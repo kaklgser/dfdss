@@ -50,7 +50,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   onNavigateBack,
   isAuthenticated,
   onShowAuth,
-  userSubscription, // Keep this prop, but we'll fetch fresh data inside analyzeResume
+  userSubscription, // Keep this prop, but we'll fetch fresh data inside _analyzeResumeInternal
   onShowSubscriptionPlans,
   onShowAlert, // This is the prop in question
   refreshUserSubscription,
@@ -89,109 +89,38 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   }, [userSubscription]);
 
 
-  const analyzeResume = useCallback(async () => {
-    // ADDED LOG: Check onShowAlert value inside useCallback
-    console.log('analyzeResume: onShowAlert value inside useCallback:', onShowAlert);
+  // Renamed analyzeResume to _analyzeResumeInternal
+  const _analyzeResumeInternal = useCallback(async () => {
+    console.log('_analyzeResumeInternal: Function started. Assuming credits are available.');
 
-    console.log('analyzeResume: Function started.');
-    if (scoringMode === null) {
-      // Defensive check before calling onShowAlert
-      if (onShowAlert) {
-        onShowAlert('Choose a Scoring Method', 'Please select either "Score Against a Job" or "General Score" to continue.', 'warning');
-      } else {
-        console.error('onShowAlert is undefined when trying to show "Choose a Scoring Method" alert.');
-      }
-      console.log('analyzeResume: Exiting early due to scoringMode === null.');
-      return;
-    }
-
-    if (!isAuthenticated) {
-      // Defensive check before calling onShowAlert
-      if (onShowAlert) {
-        onShowAlert('Authentication Required', 'Please sign in to get your resume score.', 'error', 'Sign In', onShowAuth);
-      } else {
-        console.error('onShowAlert is undefined when trying to show "Authentication Required" alert.');
-      }
-      console.log('analyzeResume: Exiting early due to !isAuthenticated.');
-      return;
-    }
-
-    console.log('analyzeResume: Fetching latest user subscription directly for credit check...');
     // Ensure user is available before attempting to fetch subscription
     if (!user?.id) {
-      console.log('analyzeResume: User ID not available, cannot fetch subscription.');
-      // Defensive check before calling onShowAlert
-      if (onShowAlert) {
-        onShowAlert('Authentication Required', 'User data not fully loaded. Please try again or sign in.', 'error', 'Sign In', onShowAuth);
-      } else {
-        console.error('onShowAlert is undefined when trying to show "User ID not available" alert.');
-      }
+      console.error('_analyzeResumeInternal: User ID not available, cannot proceed with analysis.');
+      onShowAlert('Authentication Required', 'User data not fully loaded. Please try again or sign in.', 'error', 'Sign In', onShowAuth);
       return;
     }
 
-    // ADDED DELAY HERE
-    await new Promise(resolve => setTimeout(resolve, 3000)); // Increased delay to 3 seconds
-
-    const latestUserSubscription = await paymentService.getUserSubscription(user.id); // Fetch directly
-    console.log('analyzeResume: Latest user subscription fetched:', latestUserSubscription);
-
+    // Re-fetch subscription to get the latest state for decrementing usage
+    const latestUserSubscription = await paymentService.getUserSubscription(user.id);
     if (!latestUserSubscription || (latestUserSubscription.scoreChecksTotal - latestUserSubscription.scoreChecksUsed) <= 0) {
-      console.log('analyzeResume: Credits exhausted or no subscription found after direct fetch.');
-      if (!hasShownCreditExhaustedAlert) {
-        const planDetails = paymentService.getPlanById(latestUserSubscription?.planId); // Use latestUserSubscription here
-        const planName = planDetails?.name || 'your current plan';
-        const scoreChecksTotal = planDetails?.scoreChecks || 0;
-
-        // Defensive check before calling onShowAlert
-        if (onShowAlert) {
-          onShowAlert(
-            'Resume Score Check Credits Exhausted',
-            `You have used all your ${scoreChecksTotal} Resume Score Checks from ${planName}. Please upgrade your plan to continue checking scores.`,
-            'warning',
-            'Upgrade Plan',
-            () => onShowSubscriptionPlans('score-checker')
-          );
-        } else {
-          console.error('onShowAlert is undefined when trying to show "Credits Exhausted" alert.');
-        }
-        setHasShownCreditExhaustedAlert(true);
-      }
-      setAnalysisInterrupted(true); // Set this flag to true if credits are exhausted
+      console.error('_analyzeResumeInternal: Credits unexpectedly exhausted during internal analysis. This should not happen if pre-check worked.');
+      onShowAlert('Credits Exhausted', 'Your credits were used up before analysis could complete. Please upgrade.', 'error', 'Upgrade Plan', () => onShowSubscriptionPlans('score-checker'));
+      setAnalysisInterrupted(true);
       return;
     }
-    console.log('analyzeResume: Credits available. Proceeding with analysis.');
-    setAnalysisInterrupted(false); // Reset this flag if credits are now available
 
     if (!extractionResult.text.trim()) {
-      // Defensive check before calling onShowAlert
-      if (onShowAlert) {
-        onShowAlert('Missing Resume', 'Please upload your resume first to get a score.', 'warning');
-      } else {
-        console.error('onShowAlert is undefined when trying to show "Missing Resume" alert.');
-      }
-      console.log('analyzeResume: Exiting early due to missing resume text.');
+      onShowAlert('Missing Resume', 'Please upload your resume first to get a score.', 'warning');
       return;
     }
 
     if (scoringMode === 'jd_based') {
       if (!jobDescription.trim()) {
-        // Defensive check before calling onShowAlert
-        if (onShowAlert) {
-          onShowAlert('Missing Job Description', 'Job description is required for JD-based scoring.', 'warning');
-        } else {
-          console.error('onShowAlert is undefined when trying to show "Missing Job Description" alert.');
-        }
-        console.log('analyzeResume: Exiting early due to missing job description.');
+        onShowAlert('Missing Job Description', 'Job description is required for JD-based scoring.', 'warning');
         return;
       }
       if (!jobTitle.trim()) {
-        // Defensive check before calling onShowAlert
-        if (onShowAlert) {
-          onShowAlert('Missing Job Title', 'Job title is required for JD-based scoring.', 'warning');
-        } else {
-          console.error('onShowAlert is undefined when trying to show "Missing Job Title" alert.');
-        }
-        console.log('analyzeResume: Exiting early due to missing job title.');
+        onShowAlert('Missing Job Title', 'Job title is required for JD-based scoring.', 'warning');
         return;
       }
     }
@@ -199,7 +128,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
     setScoreResult(null);
     setIsAnalyzing(true);
     setLoadingStep('Extracting & cleaning your resume...');
-    console.log('analyzeResume: Starting analysis, setIsAnalyzing(true).');
+    console.log('_analyzeResumeInternal: Starting analysis, setIsAnalyzing(true).');
 
     try {
       if (scoringMode === 'jd_based') {
@@ -220,47 +149,117 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
       setScoreResult(result);
       setCurrentStep(2);
 
-      // Use the latestUserSubscription for decrementing usage
-      if (latestUserSubscription) { // Ensure latestUserSubscription is not null
-        const usageResult = await paymentService.useScoreCheck(latestUserSubscription.userId); // Use userId from fetched sub
-        if (usageResult.success) {
-          await refreshUserSubscription(); // Refresh App.tsx state after usage
-        } else {
-          console.error('Failed to decrement score check usage:', usageResult.error);
-          // Defensive check before calling onShowAlert
-          if (onShowAlert) {
-            onShowAlert('Usage Update Failed', 'Failed to record score check usage. Please contact support.', 'error');
-          } else {
-            console.error('onShowAlert is undefined when trying to show "Usage Update Failed" alert.');
-          }
-        }
+      // Decrement usage after successful analysis
+      const usageResult = await paymentService.useScoreCheck(latestUserSubscription.userId);
+      if (usageResult.success) {
+        await refreshUserSubscription(); // Refresh App.tsx state after usage
+      } else {
+        console.error('Failed to decrement score check usage:', usageResult.error);
+        onShowAlert('Usage Update Failed', 'Failed to record score check usage. Please contact support.', 'error');
       }
     } catch (error: any) {
-      console.error('analyzeResume: Error in try block:', error);
-      // Defensive check before calling onShowAlert
-      if (onShowAlert) {
-        onShowAlert('Analysis Failed', `Failed to analyze resume: ${error.message || 'Unknown error'}. Please try again.`, 'error');
-      } else {
-        console.error('onShowAlert is undefined when trying to show "Analysis Failed" alert.');
-      }
+      console.error('_analyzeResumeInternal: Error in try block:', error);
+      onShowAlert('Analysis Failed', `Failed to analyze resume: ${error.message || 'Unknown error'}. Please try again.`, 'error');
     } finally {
       setIsAnalyzing(false);
       setLoadingStep('');
-      console.log('analyzeResume: Analysis finished, setIsAnalyzing(false).');
+      console.log('_analyzeResumeInternal: Analysis finished, setIsAnalyzing(false).');
     }
-  }, [extractionResult, jobDescription, jobTitle, scoringMode, isAuthenticated, onShowAuth, onShowSubscriptionPlans, onShowAlert, refreshUserSubscription, hasShownCreditExhaustedAlert, setAnalysisInterrupted, setScoreResult, setIsAnalyzing, setLoadingStep, setCurrentStep, user]);
+  }, [extractionResult, jobDescription, jobTitle, scoringMode, isAuthenticated, onShowAuth, onShowSubscriptionPlans, onShowAlert, refreshUserSubscription, user]);
 
-  // The useEffect for re-triggering should remain as is, as `analyzeResume` now handles the fresh data internally.
+
+  // New public function called by the button click
+  const analyzeResume = useCallback(async () => {
+    console.log('analyzeResume: Public function called.');
+
+    if (scoringMode === null) {
+      onShowAlert('Choose a Scoring Method', 'Please select either "Score Against a Job" or "General Score" to continue.', 'warning');
+      return;
+    }
+
+    if (!isAuthenticated) {
+      onShowAlert('Authentication Required', 'Please sign in to get your resume score.', 'error', 'Sign In', onShowAuth);
+      return;
+    }
+
+    if (!user?.id) {
+      onShowAlert('Authentication Required', 'User data not fully loaded. Please try again or sign in.', 'error', 'Sign In', onShowAuth);
+      return;
+    }
+
+    if (!extractionResult.text.trim()) {
+      onShowAlert('Missing Resume', 'Please upload your resume first to get a score.', 'warning');
+      return;
+    }
+
+    if (scoringMode === 'jd_based') {
+      if (!jobDescription.trim()) {
+        onShowAlert('Missing Job Description', 'Job description is required for JD-based scoring.', 'warning');
+        return;
+      }
+      if (!jobTitle.trim()) {
+        onShowAlert('Missing Job Title', 'Job title is required for JD-based scoring.', 'warning');
+        return;
+      }
+    }
+
+    // IMMEDIATE CREDIT CHECK (NO RETRIES HERE)
+    const currentSubscription = await paymentService.getUserSubscription(user.id);
+    if (!currentSubscription || (currentSubscription.scoreChecksTotal - currentSubscription.scoreChecksUsed) <= 0) {
+      console.log('analyzeResume: Credits exhausted. Showing alert immediately.');
+      onShowAlert(
+        'Resume Score Check Credits Exhausted',
+        `You have used all your ${currentSubscription?.scoreChecksTotal || 0} Resume Score Checks from ${paymentService.getPlanById(currentSubscription?.planId || '')?.name || 'your current plan'}. Please upgrade your plan to continue checking scores.`,
+        'warning',
+        'Upgrade Plan',
+        () => onShowSubscriptionPlans('score-checker')
+      );
+      setHasShownCreditExhaustedAlert(true); // Set flag to prevent repeated alerts
+      setAnalysisInterrupted(true); // Indicate analysis was interrupted due to credits
+      return;
+    }
+
+    // If credits are available, proceed to the internal analysis function
+    setHasShownCreditExhaustedAlert(false); // Reset flag if credits are now available
+    setAnalysisInterrupted(false); // Reset interrupted flag
+    _analyzeResumeInternal();
+
+  }, [extractionResult, jobDescription, jobTitle, scoringMode, isAuthenticated, onShowAuth, onShowSubscriptionPlans, onShowAlert, user, _analyzeResumeInternal]); // Depend on _analyzeResumeInternal
+
+
+  // The useEffect for re-triggering should remain as is, but now calls _analyzeResumeInternal with retries
   useEffect(() => {
     // Only attempt to re-trigger if analysis was interrupted and user is authenticated
     // AND if credits are now available.
     if (analysisInterrupted && isAuthenticated && userSubscription && (userSubscription.scoreChecksTotal - userSubscription.scoreChecksUsed) > 0) {
-      console.log('ResumeScoreChecker: Analysis was interrupted, credits now available, attempting to re-trigger.');
+      console.log('ResumeScoreChecker: Analysis was interrupted, credits now available, attempting to re-trigger with internal retry.');
       setAnalysisInterrupted(false); // Reset flag as credits are now available
       setHasShownCreditExhaustedAlert(false); // Reset alert flag
-      analyzeResume(); // Call the function
+
+      let retryCount = 0;
+      let delay = 500;
+      const MAX_RETRIES_INTERNAL = 6; // Max retries for internal re-trigger
+
+      const attemptAnalysis = async () => {
+        while (retryCount < MAX_RETRIES_INTERNAL) {
+          const latestSub = await paymentService.getUserSubscription(user.id); // Re-fetch to be sure
+          if (latestSub && (latestSub.scoreChecksTotal - latestSub.scoreChecksUsed) > 0) {
+            _analyzeResumeInternal(); // Now call the internal analysis function
+            return;
+          }
+          retryCount++;
+          if (retryCount < MAX_RETRIES_INTERNAL) {
+            await new Promise(resolve => setTimeout(resolve, delay));
+            delay *= 2;
+          }
+        }
+        console.error('ResumeScoreChecker: Failed to re-trigger analysis after purchase due to persistent credit check failure.');
+        onShowAlert('Analysis Not Started', 'We could not confirm your new credits. Please try again manually.', 'error');
+      };
+
+      attemptAnalysis();
     }
-  }, [analysisInterrupted, isAuthenticated, userSubscription, analyzeResume]); // Depend on userSubscription
+  }, [analysisInterrupted, isAuthenticated, userSubscription, _analyzeResumeInternal, onShowAlert, user]); // Depend on _analyzeResumeInternal
 
   useEffect(() => {
     setToolProcessTrigger(() => analyzeResume);
@@ -652,7 +651,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl mt-6">
                     <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
                       <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
