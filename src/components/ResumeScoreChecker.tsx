@@ -29,7 +29,7 @@ import { FileUpload } from './FileUpload';
 import { getComprehensiveScore } from '../services/scoringService';
 import { LoadingAnimation } from './LoadingAnimation';
 import { ComprehensiveScore, ScoringMode, ExtractionResult, ConfidenceLevel, MatchBand, DetailedScore } from '../types/resume';
-import { Subscription } from '../types/payment';
+import { Subscription } => from '../services/paymentService';
 import { paymentService } from '../services/paymentService';
 import { useNavigate } from 'react-router-dom';
 
@@ -58,7 +58,21 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  // Move analyzeResume declaration here
+  console.log('ResumeScoreChecker: Component rendered. userSubscription:', userSubscription);
+  const [extractionResult, setExtractionResult] = useState<ExtractionResult>({ text: '', extraction_mode: 'TEXT', trimmed: false });
+  const [jobDescription, setJobDescription] = useState('');
+  const [jobTitle, setJobTitle] = useState('');
+  const [scoringMode, setScoringMode] = useState<ScoringMode | null>(null);
+  const [autoScoreOnUpload, setAutoScoreOnUpload] = useState(true);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [loadingStep, setLoadingStep] = useState<string>('');
+  const [scoreResult, setScoreResult] = useState<ComprehensiveScore | null>(null);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [hasShownCreditExhaustedAlert, setHasShownCreditExhaustedAlert] = useState(false);
+
+  const [analysisInterrupted, setAnalysisInterrupted] = useState(false);
+
+  // Move analyzeResume declaration here, after all state variables it depends on
   const analyzeResume = useCallback(async () => {
     if (scoringMode === null) {
       onShowAlert('Choose a Scoring Method', 'Please select either "Score Against a Job" or "General Score" to continue.', 'warning');
@@ -151,19 +165,6 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
     }
   }, [extractionResult, jobDescription, jobTitle, scoringMode, isAuthenticated, userSubscription, onShowAuth, onShowSubscriptionPlans, onShowAlert, refreshUserSubscription, hasShownCreditExhaustedAlert, setAnalysisInterrupted, setScoreResult, setIsAnalyzing, setLoadingStep, setCurrentStep]);
 
-  console.log('ResumeScoreChecker: Component rendered. userSubscription:', userSubscription);
-  const [extractionResult, setExtractionResult] = useState<ExtractionResult>({ text: '', extraction_mode: 'TEXT', trimmed: false });
-  const [jobDescription, setJobDescription] = useState('');
-  const [jobTitle, setJobTitle] = useState('');
-  const [scoringMode, setScoringMode] = useState<ScoringMode | null>(null);
-  const [autoScoreOnUpload, setAutoScoreOnUpload] = useState(true);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [loadingStep, setLoadingStep] = useState<string>('');
-  const [scoreResult, setScoreResult] = useState<ComprehensiveScore | null>(null);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [hasShownCreditExhaustedAlert, setHasShownCreditExhaustedAlert] = useState(false);
-
-  const [analysisInterrupted, setAnalysisInterrupted] = useState(false);
 
   useEffect(() => {
     setToolProcessTrigger(() => analyzeResume);
