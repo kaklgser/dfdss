@@ -363,9 +363,10 @@ class PaymentService {
           quantity_purchased,
           quantity_remaining,
           addon_types(type_key)
-        `); // REMOVED .gt('quantity_remaining', 0) filter
+        `)
+        .eq('user_id', userId);
 
-      console.log('PaymentService: Fetched raw add-on credits data:', addonCreditsData); // NEW LOG: Inspect raw data
+      console.log('PaymentService: Fetched raw add-on credits data (before aggregation):', addonCreditsData); // NEW LOG HERE
 
       if (addonCreditsError) {
         console.error('PaymentService: Error fetching add-on credits:', addonCreditsError.message, addonCreditsError.details);
