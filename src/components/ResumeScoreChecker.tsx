@@ -128,6 +128,10 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
       }
       return;
     }
+
+    // ADDED DELAY HERE
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for 1 second
+
     const latestUserSubscription = await paymentService.getUserSubscription(user.id); // Fetch directly
     console.log('analyzeResume: Latest user subscription fetched:', latestUserSubscription);
 
