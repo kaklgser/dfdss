@@ -482,28 +482,67 @@ class PaymentService {
       if (relevantAddon && Number(relevantAddon.quantity_remaining) > 0) {
         const newRemaining = Number(relevantAddon.quantity_remaining) - 1;
 
+        console.log(`PaymentService: Found add-on credit ${relevantAddon.id}. Current remaining: ${relevantAddon.quantity_remaining}. New remaining: ${newRemaining}`);
+        console.log(`PaymentService: Attempting to update add-on credit with ID: ${relevantAddon.id} for user: ${userId}`);
+        console.log(`PaymentService: Relevant Addon details for update:`, JSON.stringify(relevantAddon, null, 2));
+        console.log(`PaymentService: User ID for update: ${userId}`);
+
         // Atomic update + return the updated row from writer
         const { data: updated, error: updateAddonError } = await supabase
           .from('user_addon_credits')
           .update({ quantity_remaining: newRemaining })
           .eq('id', relevantAddon.id)
           .eq('user_id', userId) // required for RLS
+          .gt('quantity_remaining', 0) // Ensure quantity is > 0 before decrementing
           .select('id, quantity_remaining')
-          .single();
+          .maybeSingle(); // Changed to maybeSingle()
 
         if (updateAddonError) {
-          console.error(`PaymentService: updating add-on ${creditField} failed:`, updateAddonError.message, updateAddonError.details);
+          console.error(`PaymentService: CRITICAL ERROR updating add-on credit usage for ${creditField}:`, updateAddonError.message, updateAddonError.details);
           return { success: false, error: 'Failed to update add-on credit usage.' };
         }
 
         if (!updated) {
-          console.error('PaymentService: update succeeded but no row returned for add-on usage.');
-        }
+          console.warn(`PaymentService: Add-on credit update returned 0 rows for ID ${relevantAddon.id}. It might have been consumed or updated by another process.`);
+          // If no row was updated, it means the credit was already consumed or didn't meet the criteria.
+          // In this case, we should fall back to subscription credits or report failure.
+          // For now, let's proceed to subscription check if this fails.
+        } else {
+          console.log(`PaymentService: Successfully updated add-on credit ${relevantAddon.id} to ${newRemaining} remaining.`);
+          // Diagnostic delay: Wait a bit to ensure DB update propagates
+          await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay
 
-        // Compute remaining directly from tables to avoid replica staleness
-        const totalRemaining = await this.computeRemainingFromTables(userId, creditField);
-        console.log(`PaymentService: Used 1 ${creditField} add-on credit. Remaining total (plan + add-ons): ${totalRemaining}`);
-        return { success: true, remaining: totalRemaining };
+          // Re-calculate total remaining across all subscriptions and add-ons for the return value
+          const updatedSubscriptionState = await this.getUserSubscription(userId);
+          
+          let totalPropName: keyof Subscription;
+          let usedPropName: keyof Subscription;
+
+          switch (creditField) {
+            case 'optimization':
+              totalPropName = 'optimizationsTotal';
+              usedPropName = 'optimizationsUsed';
+              break;
+            case 'score_check':
+              totalPropName = 'scoreChecksTotal';
+              usedPropName = 'scoreChecksUsed';
+              break;
+            case 'linkedin_messages':
+              totalPropName = 'linkedinMessagesTotal';
+              usedPropName = 'linkedinMessagesUsed';
+              break;
+            case 'guided_build':
+              totalPropName = 'guidedBuildsTotal';
+              usedPropName = 'guidedBuildsUsed';
+              break;
+            default:
+              throw new Error('Unknown credit type for total/used property names.');
+          }
+
+          const totalRemaining = updatedSubscriptionState ? updatedSubscriptionState[totalPropName] - updatedSubscriptionState[usedPropName] : 0;
+          console.log(`PaymentService: After update, calculated total remaining: ${totalRemaining}`);
+          return { success: true, remaining: totalRemaining };
+        }
       }
 
       // --- Fallback: use plan credits if add-ons are exhausted/not present ---
@@ -519,6 +558,7 @@ class PaymentService {
         return { success: false, error: 'Failed to fetch active subscriptions.' };
       }
 
+      let usedFromSubscription = false;
       for (const sub of activeSubscriptions || []) {
         const currentUsed = Number(sub[usedField] ?? 0);
         const currentTotal = Number(sub[totalField] ?? 0);
@@ -537,8 +577,41 @@ class PaymentService {
 
           const updatedRemaining = await this.computeRemainingFromTables(userId, creditField);
           console.log(`PaymentService: Used 1 ${creditField} plan credit. Remaining total (plan + add-ons): ${updatedRemaining}`);
-          return { success: true, remaining: updatedRemaining };
+          usedFromSubscription = true;
+          break;
         }
+      }
+
+      if (usedFromSubscription) {
+        // Re-calculate total remaining across all subscriptions and add-ons for the return value
+        const updatedSubscriptionState = await this.getUserSubscription(userId);
+        
+        let totalPropName: keyof Subscription;
+        let usedPropName: keyof Subscription;
+
+        switch (creditField) {
+          case 'optimization':
+            totalPropName = 'optimizationsTotal';
+            usedPropName = 'optimizationsUsed';
+            break;
+          case 'score_check':
+            totalPropName = 'scoreChecksTotal';
+            usedPropName = 'scoreChecksUsed';
+            break;
+          case 'linkedin_messages':
+            totalPropName = 'linkedinMessagesTotal';
+            usedPropName = 'linkedinMessagesUsed';
+            break;
+          case 'guided_build':
+            totalPropName = 'guidedBuildsTotal';
+            usedPropName = 'guidedBuildsUsed';
+            break;
+          default:
+            throw new Error('Unknown credit type for total/used property names.');
+        }
+
+        const totalRemaining = updatedSubscriptionState ? updatedSubscriptionState[totalPropName] - updatedSubscriptionState[usedPropName] : 0;
+        return { success: true, remaining: totalRemaining };
       }
 
       console.warn(`PaymentService: No active subscription or add-on credits found for ${creditField} for userId:`, userId);
