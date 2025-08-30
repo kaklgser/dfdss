@@ -131,13 +131,14 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
         if (triggeredByFeatureId) {
             // Call the new callback for add-on purchase success
             if (onAddonPurchaseSuccess) {
+                console.log("PlanSelectionModal: Calling onAddonPurchaseSuccess for feature:", triggeredByFeatureId); // ADD LOG
                 onAddonPurchaseSuccess(triggeredByFeatureId);
             }
-            onClose(); // Close the modal
+            onClose(); // CRITICAL: Close the modal after successful purchase and callback
         } else {
             // For full plan purchases or general plan selection, navigate to pricing page
             navigate('/pricing');
-            onClose();
+            onClose(); // CRITICAL: Close the modal
         }
       } else {
         setError(result.error || 'Payment failed. Please try again.');
