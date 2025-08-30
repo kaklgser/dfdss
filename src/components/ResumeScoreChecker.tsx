@@ -74,6 +74,12 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
 
   const [analysisInterrupted, setAnalysisInterrupted] = useState(false);
 
+  // NEW useEffect: Reset hasShownCreditExhaustedAlert when userSubscription changes
+  useEffect(() => {
+    setHasShownCreditExhaustedAlert(false);
+  }, [userSubscription]);
+
+
   const analyzeResume = useCallback(async () => {
     console.log('analyzeResume: Function started.');
     if (scoringMode === null) {
