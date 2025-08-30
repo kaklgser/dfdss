@@ -298,18 +298,60 @@ class PaymentService {
   async getUserSubscription(userId: string): Promise<Subscription | null> {
     console.log('PaymentService: Fetching user subscription for userId:', userId);
     try {
-      const { data, error } = await supabase
+      // Fetch ALL active subscriptions for the user
+      const { data: subscriptions, error } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('user_id', userId)
-        .eq('status', 'active') // Ensure we only fetch active subscriptions
-        .order('created_at', { ascending: false }) // Get the latest one if multiple
-        .limit(1)
-        .maybeSingle();
+        .eq('status', 'active')
+        .order('created_at', { ascending: false }); // Order by creation date, but fetch all
 
       if (error) {
-        console.error('PaymentService: Error fetching user subscription:', error.message, error.details);
+        console.error('PaymentService: Error fetching user subscriptions:', error.message, error.details);
         return null;
+      }
+
+      // Initialize cumulative totals from all active subscriptions
+      let cumulativeOptimizationsUsed = 0;
+      let cumulativeOptimizationsTotal = 0;
+      let cumulativeScoreChecksUsed = 0;
+      let cumulativeScoreChecksTotal = 0;
+      let cumulativeLinkedinMessagesUsed = 0;
+      let cumulativeLinkedinMessagesTotal = 0;
+      let cumulativeGuidedBuildsUsed = 0;
+      let cumulativeGuidedBuildsTotal = 0;
+
+      let latestSubscriptionId: string | null = null;
+      let latestPlanId: string | null = null;
+      let latestStatus: string = 'inactive';
+      let latestStartDate: string = '';
+      let latestEndDate: string = '';
+      let latestPaymentId: string | null = null;
+      let latestCouponUsed: string | null = null;
+
+      if (subscriptions && subscriptions.length > 0) {
+        // Sum up credits from all active subscriptions
+        subscriptions.forEach(sub => {
+          cumulativeOptimizationsUsed += sub.optimizations_used;
+          cumulativeOptimizationsTotal += sub.optimizations_total;
+          cumulativeScoreChecksUsed += sub.score_checks_used;
+          cumulativeScoreChecksTotal += sub.score_checks_total;
+          cumulativeLinkedinMessagesUsed += sub.linkedin_messages_used;
+          cumulativeLinkedinMessagesTotal += sub.linkedin_messages_total;
+          cumulativeGuidedBuildsUsed += sub.guided_builds_used;
+          cumulativeGuidedBuildsTotal += sub.guided_builds_total;
+        });
+
+        // For the purpose of returning a single 'currentSubscription' object,
+        // we'll use details from the most recent active subscription.
+        const latestSub = subscriptions[0]; // Since it's ordered by created_at descending
+        latestSubscriptionId = latestSub.id;
+        latestPlanId = latestSub.plan_id;
+        latestStatus = latestSub.status;
+        latestStartDate = latestSub.start_date;
+        latestEndDate = latestSub.end_date;
+        latestPaymentId = latestSub.payment_id;
+        latestCouponUsed = latestSub.coupon_used;
       }
 
       // Fetch add-on credits
@@ -324,13 +366,10 @@ class PaymentService {
         .eq('user_id', userId)
         .gt('quantity_remaining', 0); // Only fetch remaining credits
 
-      // ADD THIS LOG:
       console.log('PaymentService: Fetched raw add-on credits data:', addonCreditsData);
 
       if (addonCreditsError) {
         console.error('PaymentService: Error fetching add-on credits:', addonCreditsError.message, addonCreditsError.details);
-        // Decide how to handle this error: either return null or proceed with only subscription data
-        // For now, we'll proceed, assuming add-on credits might be empty or error out.
       }
 
       // Initialize aggregated add-on credits
@@ -345,74 +384,45 @@ class PaymentService {
         addonCreditsData.forEach(credit => {
           const typeKey = (credit.addon_types as { type_key: string }).type_key;
           if (aggregatedAddonCredits[typeKey]) {
-            aggregatedAddonCredits[typeKey].total += credit.quantity_remaining; // Use remaining as total for add-ons
-            // For add-ons, 'used' is implicitly handled by 'remaining'.
-            // If we want to track 'used' for add-ons, we'd need a different approach or a 'used' column in user_addon_credits.
-            // For now, we'll assume quantity_remaining is the 'total' available from add-ons.
+            aggregatedAddonCredits[typeKey].total += credit.quantity_remaining;
           }
         });
       }
 
-      // ADD THIS LOG:
       console.log('PaymentService: Aggregated add-on credits:', aggregatedAddonCredits);
 
-      let currentSubscription: Subscription;
+      // Combine cumulative plan credits with aggregated add-on credits
+      const finalOptimizationsTotal = cumulativeOptimizationsTotal + aggregatedAddonCredits.optimizations.total;
+      const finalScoreChecksTotal = cumulativeScoreChecksTotal + aggregatedAddonCredits.score_checks.total;
+      const finalLinkedinMessagesTotal = cumulativeLinkedinMessagesTotal + aggregatedAddonCredits.linkedin_messages.total;
+      const finalGuidedBuildsTotal = cumulativeGuidedBuildsTotal + aggregatedAddonCredits.guided_builds.total;
 
-      if (!data) {
-        // No active main subscription, create a virtual one based on add-ons
-        currentSubscription = {
-          id: 'virtual-addon-subscription', // A placeholder ID
-          userId: userId,
-          planId: 'addon_only', // Indicate it's only add-ons
-          status: 'active', // Consider it active if add-ons are present
-          startDate: new Date().toISOString(),
-          endDate: new Date(8640000000000000).toISOString(), // Far future date for "active"
-          optimizationsUsed: 0,
-          optimizationsTotal: 0,
-          paymentId: null,
-          couponUsed: null,
-          scoreChecksUsed: 0,
-          scoreChecksTotal: 0,
-          linkedinMessagesUsed: 0,
-          linkedinMessagesTotal: 0,
-          guidedBuildsUsed: 0,
-          guidedBuildsTotal: 0,
-        };
-      } else {
-        // Active main subscription found
-        currentSubscription = {
-          id: data.id,
-          userId: data.user_id,
-          planId: data.plan_id,
-          status: data.status,
-          startDate: data.start_date,
-          endDate: data.end_date,
-          optimizationsUsed: data.optimizations_used,
-          optimizationsTotal: data.optimizations_total,
-          paymentId: data.payment_id,
-          couponUsed: data.coupon_used,
-          scoreChecksUsed: data.score_checks_used,
-          scoreChecksTotal: data.score_checks_total,
-          linkedinMessagesUsed: data.linkedin_messages_used,
-          linkedinMessagesTotal: data.linkedin_messages_total,
-          guidedBuildsUsed: data.guided_builds_used,
-          guidedBuildsTotal: data.guided_builds_total,
-        };
-      }
-
-      // Add aggregated add-on credits to the current subscription (or virtual one)
-      currentSubscription.optimizationsTotal += aggregatedAddonCredits.optimizations.total;
-      currentSubscription.scoreChecksTotal += aggregatedAddonCredits.score_checks.total;
-      currentSubscription.linkedinMessagesTotal += aggregatedAddonCredits.linkedin_messages.total;
-      currentSubscription.guidedBuildsTotal += aggregatedAddonCredits.guided_builds.total;
-
-      // If no main subscription and no add-on credits, return null
-      if (!data && Object.values(aggregatedAddonCredits).every(c => c.total === 0)) {
+      // If no active subscriptions and no add-on credits, return null
+      if (subscriptions.length === 0 && Object.values(aggregatedAddonCredits).every(c => c.total === 0)) {
         console.log('PaymentService: No active subscription or add-on credits found for user:', userId);
         return null;
       }
 
-      // ADD THIS LOG:
+      // Construct the final currentSubscription object
+      const currentSubscription: Subscription = {
+        id: latestSubscriptionId || 'virtual-addon-subscription', // Use latest sub ID or a virtual one
+        userId: userId,
+        planId: latestPlanId || 'addon_only', // Use latest plan ID or indicate add-on only
+        status: latestStatus,
+        startDate: latestStartDate || new Date().toISOString(),
+        endDate: latestEndDate || new Date(8640000000000000).toISOString(), // Far future date for "active" if only add-ons
+        optimizationsUsed: cumulativeOptimizationsUsed,
+        optimizationsTotal: finalOptimizationsTotal,
+        paymentId: latestPaymentId,
+        couponUsed: latestCouponUsed,
+        scoreChecksUsed: cumulativeScoreChecksUsed,
+        scoreChecksTotal: finalScoreChecksTotal,
+        linkedinMessagesUsed: cumulativeLinkedinMessagesUsed,
+        linkedinMessagesTotal: finalLinkedinMessagesTotal,
+        guidedBuildsUsed: cumulativeGuidedBuildsUsed,
+        guidedBuildsTotal: finalGuidedBuildsTotal,
+      };
+
       console.log('PaymentService: Final combined subscription and add-on credits object:', currentSubscription);
       console.log('PaymentService: Successfully fetched combined subscription and add-on credits:', currentSubscription);
       return currentSubscription;
@@ -437,84 +447,87 @@ class PaymentService {
 
     console.log(`PaymentService: Attempting to use ${creditField} for userId:`, userId);
     try {
-      const { data: currentSubscription, error: fetchError } = await supabase
+      // Fetch all active subscriptions for the user
+      const { data: activeSubscriptions, error: fetchError } = await supabase
         .from('subscriptions')
         .select(`id, ${usedField}, ${totalField}`)
         .eq('user_id', userId)
-        .eq('status', 'active') // Ensure we only fetch active subscriptions
-        .order('created_at', { ascending: false }) // Get the latest one if multiple
-        .limit(1)
-        .maybeSingle();
+        .eq('status', 'active')
+        .order('created_at', { ascending: true }); // Order by creation date to use oldest first
 
       if (fetchError) {
-        console.error(`PaymentService: Error fetching current subscription for ${creditField}:`, fetchError.message, fetchError.details);
-        return { success: false, error: 'Failed to fetch current subscription.' };
+        console.error(`PaymentService: Error fetching active subscriptions for ${creditField}:`, fetchError.message, fetchError.details);
+        return { success: false, error: 'Failed to fetch active subscriptions.' };
       }
 
-      // Check add-on credits first if main subscription is exhausted or non-existent
-      if (!currentSubscription || (currentSubscription[totalField] - currentSubscription[usedField]) <= 0) {
-        const { data: addonCredits, error: addonError } = await supabase
-          .from('user_addon_credits')
-          .select(`id, quantity_remaining, addon_types(type_key)`)
-          .eq('user_id', userId)
-          .gt('quantity_remaining', 0)
-          .order('purchased_at', { ascending: true }); // Use oldest available add-on credit
+      // Try to use credit from an active subscription first
+      let usedFromSubscription = false;
+      let remainingInSubscription = 0;
+      for (const sub of activeSubscriptions || []) {
+        const currentUsed = sub[usedField] || 0;
+        const currentTotal = sub[totalField] || 0;
+        if (currentUsed < currentTotal) {
+          const newUsed = currentUsed + 1;
+          remainingInSubscription = currentTotal - newUsed;
 
-        if (addonError) {
-          console.error(`PaymentService: Error fetching add-on credits for ${creditField}:`, addonError.message, addonError.details);
-          return { success: false, error: 'Failed to fetch add-on credits.' };
-        }
+          const { error: updateError } = await supabase
+            .from('subscriptions')
+            .update({ [usedField]: newUsed, updated_at: new Date().toISOString() })
+            .eq('id', sub.id);
 
-        const relevantAddon = addonCredits?.find(credit => (credit.addon_types as { type_key: string }).type_key === creditField);
-
-        if (relevantAddon && relevantAddon.quantity_remaining > 0) {
-          const newRemaining = relevantAddon.quantity_remaining - 1;
-          const { error: updateAddonError } = await supabase
-            .from('user_addon_credits')
-            .update({ quantity_remaining: newRemaining })
-            .eq('id', relevantAddon.id);
-
-          if (updateAddonError) {
-            console.error(`PaymentService: Error updating add-on credit usage for ${creditField}:`, updateAddonError.message, updateAddonError.details);
-            return { success: false, error: 'Failed to update add-on credit usage.' };
+          if (updateError) {
+            console.error(`PaymentService: Error updating ${usedField} for subscription ${sub.id}:`, updateError.message, updateError.details);
+            return { success: false, error: 'Failed to update credit usage in subscription.' };
           }
-          console.log(`PaymentService: Successfully used 1 add-on credit for ${creditField}. Remaining: ${newRemaining}`);
-          return { success: true, remaining: newRemaining };
+          console.log(`PaymentService: Successfully used 1 credit from subscription ${sub.id} for ${creditField}. Remaining: ${remainingInSubscription}`);
+          usedFromSubscription = true;
+          break; // Credit used, exit loop
         }
       }
 
-      // If no add-on credits or main subscription is still active, use main subscription
-      if (!currentSubscription) {
-        console.warn(`PaymentService: No active subscription or add-on credits found for ${creditField} for userId:`, userId);
-        return { success: false, error: 'No active subscription or add-on credits found.' };
+      if (usedFromSubscription) {
+        // Re-calculate total remaining across all subscriptions and add-ons for the return value
+        const updatedSubscriptionState = await this.getUserSubscription(userId);
+        const totalRemaining = updatedSubscriptionState ? (updatedSubscriptionState as any)[`${creditField}Total`] - (updatedSubscriptionState as any)[`${creditField}Used`] : 0;
+        return { success: true, remaining: totalRemaining };
       }
 
-      const newCreditsUsed = (currentSubscription[usedField] || 0) + 1;
-      const remaining = currentSubscription[totalField] - newCreditsUsed;
+      // If no active subscription credit was used, try add-on credits
+      const { data: addonCredits, error: addonError } = await supabase
+        .from('user_addon_credits')
+        .select(`id, quantity_remaining, addon_types(type_key)`)
+        .eq('user_id', userId)
+        .gt('quantity_remaining', 0)
+        .order('purchased_at', { ascending: true }); // Use oldest available add-on credit
 
-      if (remaining < 0 && currentSubscription[totalField] !== Infinity) {
-        console.warn(`PaymentService: ${creditField} credits exhausted for userId:`, userId);
-        return { success: false, error: 'Credits exhausted.' };
+      if (addonError) {
+        console.error(`PaymentService: Error fetching add-on credits for ${creditField}:`, addonError.message, addonError.details);
+        return { success: false, error: 'Failed to fetch add-on credits.' };
       }
 
-      console.log(`PaymentService: Updating ${usedField} for subscription ${currentSubscription.id} from ${currentSubscription[usedField]} to ${newCreditsUsed}`);
-      const updateData: { [key: string]: any } = {
-        [usedField]: newCreditsUsed,
-        updated_at: new Date().toISOString(),
-      };
-      
-      const { error: updateError } = await supabase
-        .from('subscriptions')
-        .update(updateData)
-        .eq('id', currentSubscription.id);
+      const relevantAddon = addonCredits?.find(credit => (credit.addon_types as { type_key: string }).type_key === creditField);
 
-      if (updateError) {
-        console.error(`PaymentService: Error updating ${usedField}:`, updateError.message, updateError.details);
-        return { success: false, error: 'Failed to update credit usage.' };
+      if (relevantAddon && relevantAddon.quantity_remaining > 0) {
+        const newRemaining = relevantAddon.quantity_remaining - 1;
+        const { error: updateAddonError } = await supabase
+          .from('user_addon_credits')
+          .update({ quantity_remaining: newRemaining })
+          .eq('id', relevantAddon.id);
+
+        if (updateAddonError) {
+          console.error(`PaymentService: Error updating add-on credit usage for ${creditField}:`, updateAddonError.message, updateAddonError.details);
+          return { success: false, error: 'Failed to update add-on credit usage.' };
+        }
+        console.log(`PaymentService: Successfully used 1 add-on credit for ${creditField}. Remaining: ${newRemaining}`);
+        // Re-calculate total remaining across all subscriptions and add-ons for the return value
+        const updatedSubscriptionState = await this.getUserSubscription(userId);
+        const totalRemaining = updatedSubscriptionState ? (updatedSubscriptionState as any)[`${creditField}Total`] - (updatedSubscriptionState as any)[`${creditField}Used`] : 0;
+        return { success: true, remaining: totalRemaining };
       }
 
-      console.log(`PaymentService: Successfully used ${creditField} for userId: ${userId}. Remaining: ${remaining}`);
-      return { success: true, remaining: remaining };
+      console.warn(`PaymentService: No active subscription or add-on credits found for ${creditField} for userId:`, userId);
+      return { success: false, error: 'No active subscription or add-on credits found.' };
+
     } catch (error: any) {
       console.error(`PaymentService: Unexpected error in useCredit (${creditField}):`, error.message);
       return { success: false, error: 'An unexpected error occurred while using credits.' };
