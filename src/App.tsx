@@ -1,8 +1,30 @@
 // src/App.tsx
-// ... (existing imports)
+import React, { useState, useEffect } from 'react';
+import { Menu, X, Home, Info, BookOpen, Phone, FileText, LogIn, LogOut, User, Wallet, Sparkles } from 'lucide-react';
+import { useAuth } from './contexts/AuthContext'; // Ensure this import is correct
+import { Header } from './components/Header';
+import { Navigation } from './components/navigation/Navigation';
+import ResumeOptimizer from './components/ResumeOptimizer';
+import { HomePage } from './components/pages/HomePage';
+import { GuidedResumeBuilder } from './components/GuidedResumeBuilder';
+import { ResumeScoreChecker } from './components/ResumeScoreChecker';
+import { LinkedInMessageGenerator } from './components/LinkedInMessageGenerator';
+import { AboutUs } from './components/pages/AboutUs';
+import { Contact } from './components/pages/Contact';
+import { Tutorials } from './components/pages/Tutorials';
+import { AuthModal } from './components/auth/AuthModal';
+import { UserProfileManagement } from './components/UserProfileManagement';
+import { SubscriptionPlans } from './components/payment/SubscriptionPlans';
+import { paymentService } from './services/paymentService';
+import { AlertModal } from './components/AlertModal';
+import { ToolsAndPagesNavigation } from './components/pages/ToolsAndPagesNavigation';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import { PlanSelectionModal } from './components/payment/PlanSelectionModal';
+import { PricingPage } from './components/pages/PricingPage';
+import { OfferOverlay } from './components/OfferOverlay'; // Import OfferOverlay
 
 function App() {
-  const { isAuthenticated, user, markProfilePromptSeen, isLoading } = useAuth();
+  const { isAuthenticated, user, markProfilePromptSeen, isLoading } = useAuth(); // This line uses useAuth
   const navigate = useNavigate();
 
   const [showMobileMenu, setShowMobileMenu] = useState(false);
