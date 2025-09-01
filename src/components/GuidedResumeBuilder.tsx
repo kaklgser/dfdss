@@ -511,7 +511,7 @@ const ExperienceLevelStep: React.FC<{ userType: UserType; setUserType: React.Dis
         {[
           { id: 'student', title: 'Student', description: 'Currently studying or recent graduate', icon: <GraduationCap className="w-8 h-8" /> },
           { id: 'fresher', title: 'Fresher', description: 'New graduate or entry-level professional', icon: <User className="w-8 h-8" /> },
-          { id: 'experienced', title: 'Experienced', description: 'Professional with 1+ years of experience', icon: <Briefcase className="w-8 h-8" /> }
+          { id: 'experienced', title: 'Experienced', description: 'Professional with 1+ years of work experience', icon: <Briefcase className="w-8 h-8" /> }
         ].map((type) => (
           <button
             key={type.id}
@@ -921,13 +921,13 @@ const ProjectsStep: React.FC<{ resumeData: ResumeData; setResumeData: React.Disp
                 <input
                   type="text"
                   value={bullet}
-                  onChange={(e) => updateBullet(index, bulletIndex, e.target.value)}
+                  onChange={(e) => updateProjectBullet(index, bulletIndex, e.target.value)}
                   placeholder="Describe what you built/achieved"
                   className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100"
                 />
                 {project.bullets.length > 1 && (
                   <button
-                    onClick={() => removeBullet(index, bulletIndex)}
+                    onClick={() => removeProjectBullet(index, bulletIndex)}
                     className="text-red-600 hover:text-red-700 p-2"
                   >
                     <X className="w-5 h-5" />
@@ -1061,7 +1061,7 @@ const SkillCategoryCard: React.FC<{
 
   const handleAddSkill = () => {
     if (newSkill.trim()) {
-      onAddSkill(index, newSkill);
+      onAddSkill(index, newSkill); // Use 'index' here
       setNewSkill('');
     }
   };
@@ -1096,26 +1096,18 @@ const SkillCategoryCard: React.FC<{
         <div className="flex gap-2 mb-2">
           <input
             type="text"
-            value={''} // Controlled input for adding new skill
-            onChange={(e) => { /* No direct state update here */ }}
+            value={newSkill} // CORRECTED: Use newSkill state
+            onChange={(e) => setNewSkill(e.target.value)} // CORRECTED: Update newSkill state
             onKeyPress={(e) => {
               if (e.key === 'Enter') {
-                addSkillToCategory(categoryIndex, e.currentTarget.value);
-                e.currentTarget.value = ''; // Clear input after adding
+                handleAddSkill(); // Call the handler
               }
             }}
             placeholder="e.g., JavaScript, React, Node.js"
             className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100"
           />
           <button
-            onClick={() => {
-              // Manually get value from input if not using onKeyPress
-              const inputElement = document.querySelector<HTMLInputElement>(`input[placeholder="e.g., JavaScript, React, Node.js"]`);
-              if (inputElement) {
-                addSkillToCategory(categoryIndex, inputElement.value);
-                inputElement.value = '';
-              }
-            }}
+            onClick={handleAddSkill} // CORRECTED: Call the handler
             className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-3 py-3 rounded-lg transition-colors text-sm min-h-[44px]"
           >
             Add
@@ -1130,7 +1122,7 @@ const SkillCategoryCard: React.FC<{
             >
               {skill}
               <button
-                onClick={() => removeSkillFromCategory(categoryIndex, skillIndex)}
+                onClick={() => onRemoveSkill(index, skillIndex)} // CORRECTED: Use 'index'
                 className="ml-2 text-blue-600 hover:text-blue-800"
               >
                 <X className="w-3 h-3" />
