@@ -300,7 +300,7 @@ export const InputWizard: React.FC<InputWizardProps> = ({
   const currentStepData = steps[currentStep];
 
   return (
-     <div className="container-responsive space-y-6">
+     <div className="container-responsive space-y-7">
       {/* Progress Indicator */}
       <div className="bg-white rounded-xl shadow-lg p-3 border border-gray-200 dark:bg-dark-50 dark:border-dark-400">
         <div className="flex items-center justify-between mb-6">
