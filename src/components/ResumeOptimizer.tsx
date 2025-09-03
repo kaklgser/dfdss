@@ -279,7 +279,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
   }, [pendingResumeData, handleInitialResumeProcessing]);
 
   const handleOptimize = useCallback(async () => { // Memoize
-    if (!extractionResult.text.trim()) {
+    if (!extractionResult.text.trim() || !jobDescription.trim()) {
       alert('Please provide both resume content and job description');
       return;
     }
@@ -501,8 +501,8 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
   }
 
   return (
-    <div className="container-responsive min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 pb-16 dark:from-dark-50 dark:to-dark-200 transition-colors duration-300">
-      <div className="py-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 pb-16 px-4 sm:px-0 dark:from-dark-50 dark:to-dark-200 transition-colors duration-300">
+      <div className="w-[90vh] max-w-7xl mx-auto px-0 sm:px-6 lg:px-8 py-8">
         {!optimizedResume ? (
           <>
             <button
@@ -790,3 +790,4 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
 };
 
 export default ResumeOptimizer;
+
