@@ -71,7 +71,7 @@ h2 {
 @layer components {
   /* Container with responsive padding */
   .container-responsive {
-    @apply w-full max-w-10xl mx-auto px-4 sm:px-6 lg:px-8;
+     @apply w-full mx-auto px-4 sm:px-6 lg:px-8;
   }
   
   /* Button base styles */
