@@ -346,7 +346,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
           <div className="flex-grow flex items-center justify-center py-8">
             {currentStep === 0 && (
               <div className="container-responsive">
-                <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
+                 <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-dark-100 dark:border-dark-300 dark:shadow-dark-xl">
                   <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 border-b border-gray-200 dark:from-dark-200 dark:to-dark-300 dark:border-dark-400">
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Choose Scoring Method</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
