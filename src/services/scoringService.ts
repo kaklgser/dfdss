@@ -204,6 +204,15 @@ Respond ONLY with valid JSON in this exact structure:
       try {
         const parsedResult = JSON.parse(cleanedResult);
         
+        // Post-process confidence based on overall score
+        if (parsedResult.overall >= 80) {
+          parsedResult.confidence = 'High';
+        } else if (parsedResult.overall >= 60) {
+          parsedResult.confidence = 'Medium';
+        } else {
+          parsedResult.confidence = 'Low';
+        }
+
         scoreCache.set(cacheKey, {
           result: parsedResult,
           timestamp: Date.now()
