@@ -203,30 +203,63 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
       }
     }
 
-    // IMMEDIATE CREDIT CHECK (NO RETRIES HERE)
+    // --- Credit Check Logic ---
     const currentSubscription = await paymentService.getUserSubscription(user.id);
-    if (!currentSubscription || (currentSubscription.scoreChecksTotal - currentSubscription.scoreChecksUsed) <= 0) {
-      console.log('DEBUG: analyzeResume - currentSubscription:', currentSubscription);
-    console.log('DEBUG: analyzeResume - currentSubscription?.planId:', currentSubscription?.planId);
-      console.log('analyzeResume: Credits exhausted. Showing alert immediately.');
+    const hasScoreCheckCredits = currentSubscription && (currentSubscription.scoreChecksTotal - currentSubscription.scoreChecksUsed) > 0;
+    const liteCheckPlan = paymentService.getPlanById('lite_check');
+    const hasFreeTrialAvailable = liteCheckPlan && (!currentSubscription || currentSubscription.planId !== 'lite_check');
+
+    console.log('DEBUG: analyzeResume - currentSubscription:', currentSubscription);
+    console.log('DEBUG: analyzeResume - hasScoreCheckCredits:', hasScoreCheckCredits);
+    console.log('DEBUG: analyzeResume - hasFreeTrialAvailable:', hasFreeTrialAvailable);
+
+    if (hasScoreCheckCredits) {
+      // User has credits, proceed with analysis
+      console.log('analyzeResume: User has credits. Proceeding with internal analysis.');
+      _analyzeResumeInternal();
+    } else if (hasFreeTrialAvailable) {
+      // No credits, but free trial is available. Activate it and then analyze.
+      console.log('analyzeResume: No credits, but free trial available. Activating free trial...');
+      onShowAlert('Activating Free Trial', 'Activating your free trial for Resume Score Check...', 'info');
+      try {
+        await paymentService.activateFreeTrial(user.id);
+        await refreshUserSubscription(); // Refresh subscription state after trial activation
+        onShowAlert('Free Trial Activated!', 'Your free trial has been activated. Analyzing your resume now.', 'success');
+        _analyzeResumeInternal(); // Proceed with analysis using the newly activated trial credits
+      } catch (error: any) {
+        console.error('analyzeResume: Error activating free trial:', error);
+        onShowAlert('Free Trial Activation Failed', `Failed to activate free trial: ${error.message || 'Unknown error'}. Please try again.`, 'error');
+      }
+    } else {
+      // No credits and no free trial available. Show exhaustion message and prompt for payment.
+      console.log('analyzeResume: Credits exhausted and no free trial available. Showing payment prompt.');
+      const planName = currentSubscription ? paymentService.getPlanById(currentSubscription.planId)?.name || 'your current plan' : 'your account';
+      const totalCredits = currentSubscription?.scoreChecksTotal || 0;
+      const usedCredits = currentSubscription?.scoreChecksUsed || 0;
+      const remainingCredits = totalCredits - usedCredits;
+
+      let message = '';
+      if (currentSubscription && remainingCredits <= 0) {
+        message = `You have used all your ${totalCredits} Resume Score Checks from ${planName}.`;
+      } else if (!currentSubscription) {
+        message = `You don't have any active plan for Resume Score Checks.`;
+      } else {
+        message = `Your Resume Score Check credits are exhausted.`;
+      }
+      message += ' Please upgrade your plan to continue checking scores.';
+
       onShowAlert(
         'Resume Score Check Credits Exhausted',
-        `You have used all your ${currentSubscription?.scoreChecksTotal || 0} Resume Score Checks from ${paymentService.getPlanById(currentSubscription?.planId || '')?.name || 'your current plan'}. Please upgrade your plan to continue checking scores.`,
+        message,
         'warning',
         'Upgrade Plan',
         () => onShowSubscriptionPlans('score-checker')
       );
       setHasShownCreditExhaustedAlert(true); // Set flag to prevent repeated alerts
       setAnalysisInterrupted(true); // Indicate analysis was interrupted due to credits
-      return;
     }
 
-    // If credits are available, proceed to the internal analysis function
-    setHasShownCreditExhaustedAlert(false); // Reset flag if credits are now available
-    setAnalysisInterrupted(false); // Reset interrupted flag
-    _analyzeResumeInternal();
-
-  }, [extractionResult, jobDescription, jobTitle, scoringMode, isAuthenticated, onShowAuth, onShowSubscriptionPlans, onShowAlert, user, _analyzeResumeInternal]); // Depend on _analyzeResumeInternal
+  }, [extractionResult, jobDescription, jobTitle, scoringMode, isAuthenticated, onShowAuth, onShowSubscriptionPlans, onShowAlert, refreshUserSubscription, user, _analyzeResumeInternal]); // Depend on _analyzeResumeInternal
 
 
   // The useEffect for re-triggering should remain as is, but now calls _analyzeResumeInternal with retries
@@ -293,9 +326,9 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
 
   const getConfidenceColor = (confidence: ConfidenceLevel) => {
     switch (confidence) {
-      case 'High': return 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/20';
-      case 'Medium': return 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/20';
-      case 'Low': return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20';
+      case 'High': return 'text-green-600 bg-green-100 dark:text-green-900/20';
+      case 'Medium': return 'text-yellow-600 bg-yellow-100 dark:text-yellow-900/20';
+      case 'Low': return 'text-red-600 bg-red-100 dark:text-red-900/20';
     }
   };
 
@@ -376,7 +409,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
                         }`}
                       >
                         <div className="flex items-center mb-3">
-                          <BarChart3 className="w-6 h-6 text-purple-600 dark:text-neon-purple-400 mr-3" />
+                          <BarChart3 className="w-6 h-6 text-purple-600 dark:text-purple-400 mr-3" />
                           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">General Score</h3>
                         </div>
                         <p className="text-gray-600 dark:text-gray-300 text-sm">Get a general assessment of your resume quality against industry standards.</p>
@@ -749,3 +782,4 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
     </>
   );
 };
+
