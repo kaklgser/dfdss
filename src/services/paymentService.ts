@@ -991,7 +991,7 @@ class PaymentService {
           .insert({
             user_id: userId,
             type: 'purchase_use',
-            amount: -walletDeduction,
+            amount: -(walletDeduction / 100), // Convert paise to Rupees
             status: 'completed',
             transaction_ref: `free_plan_deduction_${transactionId}`,
             redeem_details: {
@@ -1015,3 +1015,4 @@ class PaymentService {
 }
 
 export const paymentService = new PaymentService();
+
