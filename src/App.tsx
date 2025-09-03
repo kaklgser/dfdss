@@ -112,9 +112,16 @@ function App() {
       setAlertActionText(actionText);
       setAlertActionCallback(() => {
         if (onAction) onAction();
-        setShowAlertModal(false);
+        setShowAlertModal(false); // Always close on action
       });
       setShowAlertModal(true);
+
+      // Auto-dismiss if no action button is present
+      if (!actionText) {
+        setTimeout(() => {
+          setShowAlertModal(false);
+        }, 5000); // Dismiss after 5 seconds
+      }
     },
     []
   );
@@ -626,3 +633,4 @@ const AuthButtons: React.FC<{
 };
 
 export default App;
+
