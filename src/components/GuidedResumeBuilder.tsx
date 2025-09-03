@@ -287,7 +287,7 @@ export const GuidedResumeBuilder: React.FC<GuidedResumeBuilderProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-dark-50 dark:to-dark-200 px-4 py-8">
+    <div className="container-responsive min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-dark-50 dark:to-dark-200 py-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
@@ -786,7 +786,7 @@ const WorkExperienceStep: React.FC<{
                   value={bullet}
                   onChange={(e) => updateBullet(index, bulletIndex, e.target.value)}
                   placeholder="Describe your responsibility/achievement"
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100"
                 />
                 {work.bullets.length > 1 && (
                   <button
@@ -923,7 +923,7 @@ const ProjectsStep: React.FC<{ resumeData: ResumeData; setResumeData: React.Disp
                   value={bullet}
                   onChange={(e) => updateProjectBullet(index, bulletIndex, e.target.value)}
                   placeholder="Describe what you built/achieved"
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-dark-200 dark:border-dark-300 dark:text-gray-100"
                 />
                 {project.bullets.length > 1 && (
                   <button
