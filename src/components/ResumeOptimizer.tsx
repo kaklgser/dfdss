@@ -501,7 +501,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 pb-16 px-4 sm:px-0 dark:from-dark-50 dark:to-dark-200 transition-colors duration-300">
+   <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 pb-16 dark:from-dark-50 dark:to-dark-200 transition-colors duration-300">
       <div className="container-responsive py-8">
         {!optimizedResume ? (
           <>
