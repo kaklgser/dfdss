@@ -230,8 +230,13 @@ export const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
     if (!user || !selectedPlanData) return;
     setIsProcessing(true);
 
-    // Log walletDeduction before processing payment for debugging
-    console.log('SubscriptionPlans: walletDeduction before payment processing:', walletDeduction);
+    // ADDED DEBUGGING LOGS
+    console.log('DEBUG: handlePayment - walletBalance (paise):', walletBalance);
+    console.log('DEBUG: handlePayment - planPrice (paise, after coupon):', planPrice);
+    console.log('DEBUG: handlePayment - walletDeduction (paise):', walletDeduction);
+    console.log('DEBUG: handlePayment - finalPlanPrice (paise):', finalPlanPrice);
+    console.log('DEBUG: handlePayment - addOnsTotal (paise):', addOnsTotal);
+    console.log('DEBUG: handlePayment - grandTotal (paise):', grandTotal);
 
     try {
       // Retrieve the session and access token for authentication
@@ -288,7 +293,7 @@ export const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
           appliedCoupon ? appliedCoupon.code : undefined,
           walletDeduction, // walletDeduction is already in paise
           addOnsTotal, // addOnsTotal is already in paise
-          selectedAddOns // Pass selectedAddOns to processPayment
+          selectedAddOns
         );
         if (result.success) {
           // Refresh wallet balance after any successful payment
@@ -296,8 +301,13 @@ export const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
           onSubscriptionSuccess();
           onShowAlert('Payment Successful!', 'Your subscription has been activated.', 'success');
         } else {
-          console.error(result.error || 'Payment failed.');
-          onShowAlert('Payment Failed', result.error || 'Payment processing failed. Please try again.', 'error');
+          console.error('Payment failed:', result.error);
+          // If payment failed, and it was due to user cancellation, show a specific message
+          if (result.error && result.error.includes('Payment cancelled by user')) {
+            onShowAlert('Payment Cancelled', 'You have cancelled the payment. Please try again if you wish to proceed.', 'info');
+          } else {
+            onShowAlert('Payment Failed', result.error || 'Payment processing failed. Please try again.', 'error');
+          }
         }
       }
     } catch (error) {
@@ -514,8 +524,8 @@ export const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
                   </div>
                   {/* Resume Credits - Adjusted mb */}
                   <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg lg:rounded-2xl p-2 lg:p-4 text-center mb-4"> {/* Adjusted mb */}
-                    <div className="text-lg lg:text-2xl font-bold text-indigo-600 dark:text-neon-cyan-400">{plan.optimizations}</div>
-                    <div className="text-xs lg:text-sm text-gray-600 dark:text-gray-400">Resume Credits</div>
+                    <div className="text-lg lg:text-2xl font-bold text-indigo-600">{plan.optimizations}</div>
+                    <div className="text-xs lg:text-sm text-gray-600">Resume Credits</div>
                   </div>
                   {/* MODIFIED LINE BELOW */}
                   <ul className="space-y-1 lg:space-y-3 mb-3 lg:mb-6 max-h-32 lg:max-h-none overflow-y-auto lg:overflow-visible">
@@ -728,3 +738,4 @@ export const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
     </div>
   );
 };
+
