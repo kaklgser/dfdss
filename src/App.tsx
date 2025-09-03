@@ -481,13 +481,16 @@ function App() {
       )}
 
       <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => {
-          setShowAuthModal(false);
-          setAuthModalInitialView('login');
-          setIsAuthModalOpenedByHash(false);
-          console.log('AuthModal closed, showAuthModal set to false');
-        }}
+         isOpen={showAuthModal}
+  onClose={() => {
+    // 👇 mark seen if user closed the post-signup prompt via X/backdrop
+    if (authModalInitialView === 'postSignupPrompt' && user) {
+      markProfilePromptSeen();
+    }
+    setShowAuthModal(false);
+    setAuthModalInitialView('login');
+    setIsAuthModalOpenedByHash(false);
+  }}
         onProfileFillRequest={() => handleShowProfile('profile', true)}
         initialView={authModalInitialView}
         onPromptDismissed={() => {
