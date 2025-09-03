@@ -206,6 +206,8 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
     // IMMEDIATE CREDIT CHECK (NO RETRIES HERE)
     const currentSubscription = await paymentService.getUserSubscription(user.id);
     if (!currentSubscription || (currentSubscription.scoreChecksTotal - currentSubscription.scoreChecksUsed) <= 0) {
+      console.log('DEBUG: analyzeResume - currentSubscription:', currentSubscription);
+    console.log('DEBUG: analyzeResume - currentSubscription?.planId:', currentSubscription?.planId);
       console.log('analyzeResume: Credits exhausted. Showing alert immediately.');
       onShowAlert(
         'Resume Score Check Credits Exhausted',
