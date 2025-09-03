@@ -371,7 +371,21 @@ function App() {
         <Route path="/" element={<HomePage {...commonPageProps} />} />
         <Route
           path="/optimizer"
-          element={<ResumeOptimizer {...commonPageProps} />}
+          element={
+            <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+              <ResumeOptimizer
+                isAuthenticated={isAuthenticated}
+                onShowAuth={handleShowAuth}
+                onShowProfile={handleShowProfile}
+                onNavigateBack={handleNavigateHome}
+                onShowPlanSelection={handleShowPlanSelection}
+                userSubscription={userSubscription}
+                refreshUserSubscription={refreshUserSubscription}
+                toolProcessTrigger={toolProcessTrigger}
+                setToolProcessTrigger={setToolProcessTrigger}
+              />
+            </main>
+          }
         />
         <Route path="/score-checker" element={<ResumeScoreChecker {...commonPageProps} />} />
         <Route path="/guided-builder" element={<GuidedResumeBuilder {...commonPageProps} />} />
@@ -456,7 +470,8 @@ function App() {
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
       <AuthModal
         isOpen={showAuthModal}
