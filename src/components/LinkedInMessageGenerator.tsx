@@ -139,73 +139,6 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
     }
   }, [user]);
 
-  // Register the handleGenerateMessage function with the App.tsx trigger
-  useEffect(() => {
-    setToolProcessTrigger(() => handleGenerateMessage);
-    return () => {
-      setToolProcessTrigger(null); // Clean up on unmount
-    };
-  }, [setToolProcessTrigger, handleGenerateMessage]); // Dependency on memoized handleGenerateMessage
-
-  // NEW EFFECT: Re-trigger message generation if it was interrupted and credits are now available
-  useEffect(() => {
-    if (messageGenerationInterrupted && userSubscription) { // Check userSubscription for existence
-      // Explicitly refresh userSubscription to get the latest data
-      refreshUserSubscription().then(() => {
-        // After refresh, check if credits are now available
-        if (userSubscription && (userSubscription.linkedinMessagesTotal - userSubscription.linkedinMessagesUsed) > 0) {
-          console.log('LinkedInMessageGenerator: Credits replenished, re-attempting message generation.');
-          setMessageGenerationInterrupted(false); // Reset the flag immediately
-          handleGenerateMessage(); // Re-run the message generation function
-        }
-      });
-    }
-  }, [messageGenerationInterrupted, refreshUserSubscription, userSubscription, handleGenerateMessage]); // Dependency on memoized handleGenerateMessage
-
-  const messageTypes: Array<{
-    id: MessageType;
-    title: string;
-    description: string;
-    icon: React.ReactNode;
-    color: string;
-  }> = [
-    {
-      id: 'connection',
-      title: 'Connection Request',
-      description: 'Send a personalized connection request to expand your network',
-      icon: <Users className="w-6 h-6" />,
-      color: 'from-blue-500 to-cyan-500'
-    },
-    {
-      id: 'cold-outreach',
-      title: 'Cold Outreach',
-      description: 'Reach out to prospects or potential collaborators',
-      icon: <Mail className="w-6 h-6" />,
-      color: 'from-green-500 to-emerald-500'
-    },
-    {
-      id: 'follow-up',
-      title: 'Follow-up Message',
-      description: 'Follow up on previous conversations or meetings',
-      icon: <RefreshCw className="w-6 h-6" />,
-      color: 'from-purple-500 to-pink-500'
-    },
-    {
-      id: 'job-inquiry',
-      title: 'Job Inquiry',
-      description: 'Inquire about job opportunities or express interest',
-      icon: <Briefcase className="w-6 h-6" />,
-      color: 'from-orange-500 to-red-500'
-    },
-    {
-      id: 'referral',
-      title: 'Referral',
-      description: 'Connect with someone based on a referral or recommendation',
-      icon: <Share2 className="w-6 h-6" />,
-      color: 'from-yellow-500 to-amber-500'
-    }
-  ];
-
   const handleInputChange = useCallback(<K extends keyof MessageForm>(field: K, value: MessageForm[K]) => { // Memoize
     setFormData((prev) => ({ ...prev, [field]: value as string }));
   }, []);
@@ -318,6 +251,29 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
     }
   }, [isAuthenticated, onShowAuth, userSubscription, onShowSubscriptionPlans, onShowAlert, refreshUserSubscription, formData, validateCurrentStep]); // Dependencies for memoized function
 
+  // Register the handleGenerateMessage function with the App.tsx trigger
+  useEffect(() => {
+    setToolProcessTrigger(() => handleGenerateMessage);
+    return () => {
+      setToolProcessTrigger(null); // Clean up on unmount
+    };
+  }, [setToolProcessTrigger, handleGenerateMessage]); // Dependency on memoized handleGenerateMessage
+
+  // NEW EFFECT: Re-trigger message generation if it was interrupted and credits are now available
+  useEffect(() => {
+    if (messageGenerationInterrupted && userSubscription) { // Check userSubscription for existence
+      // Explicitly refresh userSubscription to get the latest data
+      refreshUserSubscription().then(() => {
+        // After refresh, check if credits are now available
+        if (userSubscription && (userSubscription.linkedinMessagesTotal - userSubscription.linkedinMessagesUsed) > 0) {
+          console.log('LinkedInMessageGenerator: Credits replenished, re-attempting message generation.');
+          setMessageGenerationInterrupted(false); // Reset the flag immediately
+          handleGenerateMessage(); // Re-run the message generation function
+        }
+      });
+    }
+  }, [messageGenerationInterrupted, refreshUserSubscription, userSubscription, handleGenerateMessage]); // Dependency on memoized handleGenerateMessage
+
   const handleCopyMessage = useCallback(async (message: string, index: number) => { // Memoize
     try {
       if (navigator?.clipboard?.writeText) {
@@ -337,6 +293,50 @@ export const LinkedInMessageGenerator: React.FC<LinkedInMessageGeneratorProps> =
       console.error('Failed to copy message:', err);
     }
   }, []);
+
+  const messageTypes: Array<{
+    id: MessageType;
+    title: string;
+    description: string;
+    icon: React.ReactNode;
+    color: string;
+  }> = [
+    {
+      id: 'connection',
+      title: 'Connection Request',
+      description: 'Send a personalized connection request to expand your network',
+      icon: <Users className="w-6 h-6" />,
+      color: 'from-blue-500 to-cyan-500'
+    },
+    {
+      id: 'cold-outreach',
+      title: 'Cold Outreach',
+      description: 'Reach out to prospects or potential collaborators',
+      icon: <Mail className="w-6 h-6" />,
+      color: 'from-green-500 to-emerald-500'
+    },
+    {
+      id: 'follow-up',
+      title: 'Follow-up Message',
+      description: 'Follow up on previous conversations or meetings',
+      icon: <RefreshCw className="w-6 h-6" />,
+      color: 'from-purple-500 to-pink-500'
+    },
+    {
+      id: 'job-inquiry',
+      title: 'Job Inquiry',
+      description: 'Inquire about job opportunities or express interest',
+      icon: <Briefcase className="w-6 h-6" />,
+      color: 'from-orange-500 to-red-500'
+    },
+    {
+      id: 'referral',
+      title: 'Referral',
+      description: 'Connect with someone based on a referral or recommendation',
+      icon: <Share2 className="w-6 h-6" />,
+      color: 'from-yellow-500 to-amber-500'
+    }
+  ];
 
   const steps = [
     {
